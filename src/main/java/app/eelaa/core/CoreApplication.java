@@ -1,13 +1,17 @@
 package app.eelaa.core;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@SpringBootApplication
-public class CoreApplication {
+/**
+ * Main application class to be executed.
+ *
+ * @author Alireza Pourtaghi
+ */
+public final class CoreApplication {
+    private static final Logger logger = LoggerFactory.getLogger(CoreApplication.class);
 
-	public static void main(String[] args) {
-		SpringApplication.run(CoreApplication.class, args);
-	}
-
+    public static void main(String... args) {
+        logger.info("Starting core version: {}", CoreApplication.class.getPackage().getImplementationVersion());
+    }
 }
