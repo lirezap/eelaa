@@ -8,11 +8,13 @@ package app.eelaa.core.net;
 public final class TCPServerConfig {
     private final String host;
     private final int port;
+    private final int maxFrameSize;
     private final boolean logFrameHeader;
 
     private TCPServerConfig(final Builder builder) {
         this.host = builder.host;
         this.port = builder.port;
+        this.maxFrameSize = builder.maxFrameSize;
         this.logFrameHeader = builder.logFrameHeader;
     }
 
@@ -24,6 +26,10 @@ public final class TCPServerConfig {
         return port;
     }
 
+    public int getMaxFrameSize() {
+        return maxFrameSize;
+    }
+
     public boolean isLogFrameHeader() {
         return logFrameHeader;
     }
@@ -33,6 +39,7 @@ public final class TCPServerConfig {
         return "TCPServerConfig{" +
                 "host='" + host + '\'' +
                 ", port=" + port +
+                ", maxFrameSize=" + maxFrameSize +
                 ", logFrameHeader=" + logFrameHeader +
                 '}';
     }
@@ -45,6 +52,7 @@ public final class TCPServerConfig {
     public static final class Builder {
         private String host = "localhost";
         private int port = 7178;
+        private int maxFrameSize = 5242880;
         private boolean logFrameHeader = false;
 
         public Builder() {
@@ -59,6 +67,12 @@ public final class TCPServerConfig {
         public Builder port(final int port) {
             // TODO: validate input.
             this.port = port;
+            return this;
+        }
+
+        public Builder maxFrameSize(final int maxFrameSize) {
+            // TODO: validate input.
+            this.maxFrameSize = maxFrameSize;
             return this;
         }
 

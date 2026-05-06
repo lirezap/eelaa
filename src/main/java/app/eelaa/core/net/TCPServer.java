@@ -25,12 +25,10 @@ public final class TCPServer implements AutoCloseable {
 
     private final TCPServerConfig config;
     private final ServerBootstrap bootstrap;
-    private final ChildChannelInitializer channelInitializer;
 
     private TCPServer(final TCPServerConfig config) {
         this.config = config;
         this.bootstrap = new ServerBootstrap();
-        this.channelInitializer = new ChildChannelInitializer();
     }
 
     public static TCPServer newInstance(final TCPServerConfig config) {
@@ -42,7 +40,7 @@ public final class TCPServer implements AutoCloseable {
         bootstrap.group(group());
         bootstrap.channel(channel());
         bootstrap.childAttr(AttributeKey.valueOf("logFrameHeader"), config.isLogFrameHeader());
-        bootstrap.childHandler(channelInitializer);
+        bootstrap.childHandler(new ClientSocketChannelInitializer(config.getMaxFrameSize()));
         bootstrap.bind(config.getHost(), config.getPort()).sync();
         logger.info("Started TCP server using configuration: {} ...", config);
     }
