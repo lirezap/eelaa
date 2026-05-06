@@ -33,13 +33,13 @@ public final class TCPServer implements AutoCloseable {
         this.channelInitializer = new ChildChannelInitializer();
     }
 
-    public void start() {
+    public void start() throws Exception {
         // TODO: Check server channel options.
         bootstrap.group(group());
         bootstrap.channel(channel());
         bootstrap.childAttr(AttributeKey.valueOf("logFrameHeader"), config.isLogFrameHeader());
         bootstrap.childHandler(channelInitializer);
-        bootstrap.bind(config.getHost(), config.getPort());
+        bootstrap.bind(config.getHost(), config.getPort()).sync();
         logger.info("Started TCP server using configuration: {} ...", config);
     }
 
