@@ -27,10 +27,14 @@ public final class TCPServer implements AutoCloseable {
     private final ServerBootstrap bootstrap;
     private final ChildChannelInitializer channelInitializer;
 
-    public TCPServer(final TCPServerConfig config) {
+    private TCPServer(final TCPServerConfig config) {
         this.config = config;
         this.bootstrap = new ServerBootstrap();
         this.channelInitializer = new ChildChannelInitializer();
+    }
+
+    public static TCPServer newInstance(final TCPServerConfig config) {
+        return new TCPServer(config);
     }
 
     public void start() throws Exception {
