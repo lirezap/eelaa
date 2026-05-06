@@ -10,7 +10,7 @@ import io.netty.channel.socket.SocketChannel;
  * @author Alireza Pourtaghi
  */
 @Sharable
-public final class ChildChannelInitializer extends ChannelInitializer<SocketChannel> {
+final class ChildChannelInitializer extends ChannelInitializer<SocketChannel> {
 
     @Override
     protected void initChannel(final SocketChannel ch) throws Exception {
