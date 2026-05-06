@@ -11,7 +11,6 @@ import io.netty.channel.kqueue.KQueueIoHandler;
 import io.netty.channel.kqueue.KQueueServerSocketChannel;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.util.AttributeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,10 +38,9 @@ public final class TCPServer implements AutoCloseable {
         // TODO: Check server channel options.
         bootstrap.group(group());
         bootstrap.channel(channel());
-        bootstrap.childAttr(AttributeKey.valueOf("logFrameHeader"), config.isLogFrameHeader());
-        bootstrap.childHandler(new ClientSocketChannelInitializer(config.getMaxFrameSize()));
+        bootstrap.childHandler(new ClientSocketChannelInitializer(config));
         bootstrap.bind(config.getHost(), config.getPort()).sync();
-        logger.info("Started TCP server using configuration: {} ...", config);
+        logger.info("Started TCP server using configuration: {}", config);
     }
 
     private EventLoopGroup group() {
