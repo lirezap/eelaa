@@ -1,0 +1,70 @@
+package app.eelaa.core.net;
+
+import app.eelaa.core.util.OSDetector;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.ServerChannel;
+import io.netty.channel.epoll.EpollIoHandler;
+import io.netty.channel.epoll.EpollServerSocketChannel;
+import io.netty.channel.kqueue.KQueueIoHandler;
+import io.netty.channel.kqueue.KQueueServerSocketChannel;
+import io.netty.channel.nio.NioIoHandler;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.AttributeKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * TCP server implementation based on netty.
+ *
+ * @author Alireza Pourtaghi
+ */
+public final class TCPServer implements AutoCloseable {
+    private static final Logger logger = LoggerFactory.getLogger(TCPServer.class);
+
+    private final TCPServerConfig config;
+    private final ServerBootstrap bootstrap;
+    private final ChildChannelInitializer channelInitializer;
+
+    public TCPServer(final TCPServerConfig config) {
+        this.config = config;
+        this.bootstrap = new ServerBootstrap();
+        this.channelInitializer = new ChildChannelInitializer();
+    }
+
+    public void start() {
+        // TODO: Check server channel options.
+        bootstrap.group(group());
+        bootstrap.channel(channel());
+        bootstrap.childAttr(AttributeKey.valueOf("logFrameHeader"), config.isLogFrameHeader());
+        bootstrap.childHandler(channelInitializer);
+        bootstrap.bind(config.getHost(), config.getPort());
+        logger.info("Started TCP server using configuration: {} ...", config);
+    }
+
+    private EventLoopGroup group() {
+        final var os = OSDetector.os();
+        logger.info("Detected {} as operating system", os);
+
+        return switch (os) {
+            case LINUX -> new MultiThreadIoEventLoopGroup(EpollIoHandler.newFactory());
+            case MACOS -> new MultiThreadIoEventLoopGroup(KQueueIoHandler.newFactory());
+            case OTHER -> new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+        };
+    }
+
+    private Class<? extends ServerChannel> channel() {
+        return switch (OSDetector.os()) {
+            case LINUX -> EpollServerSocketChannel.class;
+            case MACOS -> KQueueServerSocketChannel.class;
+            case OTHER -> NioServerSocketChannel.class;
+        };
+    }
+
+    @Override
+    public void close() throws Exception {
+        bootstrap.config().group().shutdownGracefully().sync();
+        logger.info("TCP server closed gracefully!");
+    }
+}
