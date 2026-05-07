@@ -1,6 +1,8 @@
 package app.eelaa.core.net;
 
-import app.eelaa.core.net.handler.FrameHeaderLoggerHandler;
+import app.eelaa.core.net.handler.FrameHeaderLogger;
+import app.eelaa.core.net.handler.HeaderProcessor;
+import app.eelaa.core.net.handler.InboundExceptionHandler;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
@@ -21,17 +23,29 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
 
     @Override
     protected void initChannel(final SocketChannel channel) throws Exception {
-        addFrameDecoderHandler(channel);
-        addFrameHeaderLoggerHandler(channel);
+        addFrameDecoder(channel);
+        addFrameHeaderLogger(channel);
+        addHeaderProcessor(channel);
+
+        // Must be the latest inbound handler.
+        addInboundExceptionHandler(channel);
     }
 
-    private void addFrameDecoderHandler(final SocketChannel channel) {
+    private void addFrameDecoder(final SocketChannel channel) {
         channel.pipeline().addLast(new LengthFieldBasedFrameDecoder(config.getMaxFrameSize(), 2, 4, 0, 0));
     }
 
-    private void addFrameHeaderLoggerHandler(final SocketChannel channel) {
+    private void addFrameHeaderLogger(final SocketChannel channel) {
         if (config.isLogFrameHeader()) {
-            channel.pipeline().addLast(new FrameHeaderLoggerHandler());
+            channel.pipeline().addLast(new FrameHeaderLogger());
         }
+    }
+
+    private void addHeaderProcessor(final SocketChannel channel) {
+        channel.pipeline().addLast(new HeaderProcessor());
+    }
+
+    private void addInboundExceptionHandler(final SocketChannel channel) {
+        channel.pipeline().addLast(new InboundExceptionHandler());
     }
 }
