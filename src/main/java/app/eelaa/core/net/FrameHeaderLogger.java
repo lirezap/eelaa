@@ -1,4 +1,4 @@
-package app.eelaa.core.net.handler;
+package app.eelaa.core.net;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler.Sharable;
@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
  * @author Alireza Pourtaghi
  */
 @Sharable
-public final class FrameHeaderLogger extends SimpleChannelInboundHandler<ByteBuf> {
+final class FrameHeaderLogger extends SimpleChannelInboundHandler<ByteBuf> {
     private static final Logger logger = LoggerFactory.getLogger(FrameHeaderLogger.class);
 
     public FrameHeaderLogger() {

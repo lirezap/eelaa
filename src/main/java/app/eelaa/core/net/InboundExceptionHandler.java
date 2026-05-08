@@ -1,4 +1,4 @@
-package app.eelaa.core.net.handler;
+package app.eelaa.core.net;
 
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
  * @author Alireza Pourtaghi
  */
 @Sharable
-public final class InboundExceptionHandler extends ChannelInboundHandlerAdapter {
+final class InboundExceptionHandler extends ChannelInboundHandlerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(InboundExceptionHandler.class);
 
     @Override
