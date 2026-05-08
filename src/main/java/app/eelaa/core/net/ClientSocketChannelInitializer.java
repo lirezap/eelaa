@@ -17,8 +17,16 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChannel> {
     private final TCPServerConfig config;
 
+    // Sharable handlers.
+    private final FrameHeaderLogger frameHeaderLogger;
+    private final HeaderProcessor headerProcessor;
+    private final InboundExceptionHandler inboundExceptionHandler;
+
     public ClientSocketChannelInitializer(final TCPServerConfig config) {
         this.config = config;
+        this.frameHeaderLogger = new FrameHeaderLogger();
+        this.headerProcessor = new HeaderProcessor();
+        this.inboundExceptionHandler = new InboundExceptionHandler();
     }
 
     @Override
@@ -37,15 +45,15 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
 
     private void addFrameHeaderLogger(final SocketChannel channel) {
         if (config.isLogFrameHeader()) {
-            channel.pipeline().addLast(new FrameHeaderLogger());
+            channel.pipeline().addLast(frameHeaderLogger);
         }
     }
 
     private void addHeaderProcessor(final SocketChannel channel) {
-        channel.pipeline().addLast(new HeaderProcessor());
+        channel.pipeline().addLast(headerProcessor);
     }
 
     private void addInboundExceptionHandler(final SocketChannel channel) {
-        channel.pipeline().addLast(new InboundExceptionHandler());
+        channel.pipeline().addLast(inboundExceptionHandler);
     }
 }

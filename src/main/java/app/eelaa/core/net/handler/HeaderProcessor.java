@@ -1,6 +1,7 @@
 package app.eelaa.core.net.handler;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.ReferenceCountUtil;
@@ -10,6 +11,7 @@ import io.netty.util.ReferenceCountUtil;
  *
  * @author Alireza Pourtaghi
  */
+@Sharable
 public final class HeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
 
     public HeaderProcessor() {

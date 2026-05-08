@@ -1,6 +1,7 @@
 package app.eelaa.core.net.handler;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.ReferenceCountUtil;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Alireza Pourtaghi
  */
+@Sharable
 public final class FrameHeaderLogger extends SimpleChannelInboundHandler<ByteBuf> {
     private static final Logger logger = LoggerFactory.getLogger(FrameHeaderLogger.class);
 
