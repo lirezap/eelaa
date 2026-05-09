@@ -10,12 +10,14 @@ public final class TCPServerConfig {
     private final int port;
     private final int maxFrameSize;
     private final boolean logFrameHeader;
+    private final int cpuHeavyExecutorThreads;
 
     private TCPServerConfig(final Builder builder) {
         this.host = builder.host;
         this.port = builder.port;
         this.maxFrameSize = builder.maxFrameSize;
         this.logFrameHeader = builder.logFrameHeader;
+        this.cpuHeavyExecutorThreads = builder.cpuHeavyExecutorThreads;
     }
 
     public String getHost() {
@@ -34,6 +36,10 @@ public final class TCPServerConfig {
         return logFrameHeader;
     }
 
+    public int getCpuHeavyExecutorThreads() {
+        return cpuHeavyExecutorThreads;
+    }
+
     @Override
     public String toString() {
         return "TCPServerConfig{" +
@@ -41,6 +47,7 @@ public final class TCPServerConfig {
                 ", port=" + port +
                 ", maxFrameSize=" + maxFrameSize +
                 ", logFrameHeader=" + logFrameHeader +
+                ", cpuHeavyExecutorThreads=" + cpuHeavyExecutorThreads +
                 '}';
     }
 
@@ -54,6 +61,7 @@ public final class TCPServerConfig {
         private int port = 7178;
         private int maxFrameSize = 5242880;
         private boolean logFrameHeader = false;
+        private int cpuHeavyExecutorThreads = 4;
 
         public Builder() {
         }
@@ -78,6 +86,12 @@ public final class TCPServerConfig {
 
         public Builder logFrameHeader(final boolean logFrameHeader) {
             this.logFrameHeader = logFrameHeader;
+            return this;
+        }
+
+        public Builder cpuHeavyExecutorThreads(final int cpuHeavyExecutorThreads) {
+            // TODO: validate input.
+            this.cpuHeavyExecutorThreads = cpuHeavyExecutorThreads;
             return this;
         }
 

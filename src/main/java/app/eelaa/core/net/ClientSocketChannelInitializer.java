@@ -4,6 +4,7 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.util.concurrent.EventExecutorGroup;
 
 /**
  * Channel initializer to be able to initialize incoming client socket channels.
@@ -16,13 +17,13 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
 
     // Sharable handlers.
     private final FrameHeaderLogger frameHeaderLogger;
-    private final HeaderProcessor headerProcessor;
+    private final FrameHeaderProcessor frameHeaderProcessor;
     private final InboundExceptionHandler inboundExceptionHandler;
 
-    public ClientSocketChannelInitializer(final TCPServerConfig config) {
+    public ClientSocketChannelInitializer(final TCPServerConfig config, final EventExecutorGroup cpuHeavyExecutor) {
         this.config = config;
         this.frameHeaderLogger = new FrameHeaderLogger();
-        this.headerProcessor = new HeaderProcessor();
+        this.frameHeaderProcessor = new FrameHeaderProcessor(new FrameDataDecompressor(cpuHeavyExecutor));
         this.inboundExceptionHandler = new InboundExceptionHandler();
     }
 
@@ -30,7 +31,7 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
     protected void initChannel(final SocketChannel channel) throws Exception {
         addFrameDecoder(channel);
         addFrameHeaderLogger(channel);
-        addHeaderProcessor(channel);
+        addFrameHeaderProcessor(channel);
 
         // Must be the latest inbound handler.
         addInboundExceptionHandler(channel);
@@ -46,8 +47,8 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
         }
     }
 
-    private void addHeaderProcessor(final SocketChannel channel) {
-        channel.pipeline().addLast(headerProcessor);
+    private void addFrameHeaderProcessor(final SocketChannel channel) {
+        channel.pipeline().addLast(frameHeaderProcessor.getClass().getName(), frameHeaderProcessor);
     }
 
     private void addInboundExceptionHandler(final SocketChannel channel) {

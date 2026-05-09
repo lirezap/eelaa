@@ -11,6 +11,8 @@ import io.netty.channel.kqueue.KQueueIoHandler;
 import io.netty.channel.kqueue.KQueueServerSocketChannel;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.concurrent.DefaultEventExecutorGroup;
+import io.netty.util.concurrent.EventExecutorGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,10 +26,12 @@ public final class TCPServer implements AutoCloseable {
 
     private final TCPServerConfig config;
     private final ServerBootstrap bootstrap;
+    private final EventExecutorGroup cpuHeavyExecutor;
 
     private TCPServer(final TCPServerConfig config) {
         this.config = config;
         this.bootstrap = new ServerBootstrap();
+        this.cpuHeavyExecutor = new DefaultEventExecutorGroup(config.getCpuHeavyExecutorThreads());
     }
 
     public static TCPServer newInstance(final TCPServerConfig config) {
@@ -38,7 +42,7 @@ public final class TCPServer implements AutoCloseable {
         // TODO: Check server channel options.
         bootstrap.group(group());
         bootstrap.channel(channel());
-        bootstrap.childHandler(new ClientSocketChannelInitializer(config));
+        bootstrap.childHandler(new ClientSocketChannelInitializer(config, cpuHeavyExecutor));
         bootstrap.bind(config.getHost(), config.getPort()).sync();
         logger.info("Started TCP server using configuration: {}", config);
     }
@@ -64,6 +68,8 @@ public final class TCPServer implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
+        // TODO: Set timeout for shutdown tasks.
+        cpuHeavyExecutor.shutdownGracefully().sync();
         bootstrap.config().group().shutdownGracefully().sync();
         logger.info("TCP server closed gracefully!");
     }

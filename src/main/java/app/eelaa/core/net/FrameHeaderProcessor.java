@@ -12,10 +12,12 @@ import io.netty.util.ReferenceCountUtil;
  * @author Alireza Pourtaghi
  */
 @Sharable
-final class HeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
+final class FrameHeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
+    private final FrameDataDecompressor frameDataDecompressor;
 
-    public HeaderProcessor() {
+    public FrameHeaderProcessor(final FrameDataDecompressor frameDataDecompressor) {
         super(false);
+        this.frameDataDecompressor = frameDataDecompressor;
     }
 
     @Override
@@ -29,12 +31,10 @@ final class HeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
                 return;
             }
 
-            // Should we decompress data section?
+            // Should we decompress the data section?
             if (isCompressed(buf)) {
-                // TODO: Complete implementation.
-                ctx.fireChannelRead(null);
-                ReferenceCountUtil.release(buf);
-                return;
+                ctx.pipeline().addAfter(
+                        this.getClass().getName(), frameDataDecompressor.getClass().getName(), frameDataDecompressor);
             }
 
             ctx.fireChannelRead(buf);
