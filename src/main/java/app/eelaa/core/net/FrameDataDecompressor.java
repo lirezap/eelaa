@@ -4,7 +4,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.EventExecutorGroup;
 
 /**
@@ -28,7 +27,6 @@ final class FrameDataDecompressor extends SimpleChannelInboundHandler<ByteBuf> {
         } finally {
             // Exception propagates into pipeline and reaches inbound exception handler.
             ctx.pipeline().remove(this);
-            ReferenceCountUtil.release(buf);
         }
     }
 }
