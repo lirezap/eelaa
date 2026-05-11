@@ -1,4 +1,4 @@
-package app.eelaa.core.util;
+package app.eelaa.core.os;
 
 /**
  * Operating system detector utility class.

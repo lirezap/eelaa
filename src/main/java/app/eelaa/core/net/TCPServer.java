@@ -1,6 +1,6 @@
 package app.eelaa.core.net;
 
-import app.eelaa.core.util.OSDetector;
+import app.eelaa.core.os.OSDetector;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
