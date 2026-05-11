@@ -20,10 +20,10 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
     private final FrameHeaderProcessor frameHeaderProcessor;
     private final InboundExceptionHandler inboundExceptionHandler;
 
-    public ClientSocketChannelInitializer(final TCPServerConfig config, final EventExecutorGroup cpuHeavyExecutor) {
+    public ClientSocketChannelInitializer(final TCPServerConfig config, final EventExecutorGroup cpuHeavyTaskExecutor) {
         this.config = config;
         this.frameHeaderLogger = new FrameHeaderLogger();
-        this.frameHeaderProcessor = new FrameHeaderProcessor(new FrameDataDecompressor(cpuHeavyExecutor));
+        this.frameHeaderProcessor = new FrameHeaderProcessor(new FrameDataDecompressor(cpuHeavyTaskExecutor));
         this.inboundExceptionHandler = new InboundExceptionHandler();
     }
 

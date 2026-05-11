@@ -13,10 +13,10 @@ import io.netty.util.concurrent.EventExecutorGroup;
  */
 @Sharable
 final class FrameDataDecompressor extends SimpleChannelInboundHandler<ByteBuf> {
-    private final EventExecutorGroup cpuHeavyExecutor;
+    private final EventExecutorGroup cpuHeavyTaskExecutor;
 
-    public FrameDataDecompressor(final EventExecutorGroup cpuHeavyExecutor) {
-        this.cpuHeavyExecutor = cpuHeavyExecutor;
+    public FrameDataDecompressor(final EventExecutorGroup cpuHeavyTaskExecutor) {
+        this.cpuHeavyTaskExecutor = cpuHeavyTaskExecutor;
     }
 
     @Override

@@ -28,12 +28,12 @@ public final class TCPServer implements AutoCloseable {
 
     private final TCPServerConfig config;
     private final ServerBootstrap bootstrap;
-    private final EventExecutorGroup cpuHeavyExecutor;
+    private final EventExecutorGroup cpuHeavyTaskExecutor;
 
     private TCPServer(final TCPServerConfig config) {
         this.config = config;
         this.bootstrap = new ServerBootstrap();
-        this.cpuHeavyExecutor = new DefaultEventExecutorGroup(config.getCpuHeavyExecutorThreads());
+        this.cpuHeavyTaskExecutor = new DefaultEventExecutorGroup(config.getCpuHeavyTaskExecutorThreads());
     }
 
     public static TCPServer newInstance(final TCPServerConfig config) {
@@ -44,7 +44,7 @@ public final class TCPServer implements AutoCloseable {
         // TODO: Check server channel options.
         bootstrap.group(group());
         bootstrap.channel(channel());
-        bootstrap.childHandler(new ClientSocketChannelInitializer(config, cpuHeavyExecutor));
+        bootstrap.childHandler(new ClientSocketChannelInitializer(config, cpuHeavyTaskExecutor));
         bootstrap.bind(config.getHost(), config.getPort()).sync();
         logger.info("Started TCP server using configuration: {}", config);
     }
@@ -70,7 +70,7 @@ public final class TCPServer implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        cpuHeavyExecutor.shutdownGracefully(
+        cpuHeavyTaskExecutor.shutdownGracefully(
                 config.getShutdownQuitePeriodSeconds(), config.getShutdownWaitTimeSeconds(), SECONDS).sync();
 
         bootstrap.config().group().shutdownGracefully(
