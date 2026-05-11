@@ -23,16 +23,16 @@ final class FrameHeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final ByteBuf buf) throws Exception {
         try {
-            // Only v1 frame format is supported currently.
-            if (!isV1FrameFormat(buf)) {
+            final var version = buf.readByte();
+            if (!isV1FrameFormat(version)) {
                 // TODO: Complete implementation.
                 ctx.writeAndFlush(null);
                 ReferenceCountUtil.release(buf);
                 return;
             }
 
-            // Should we decompress the data section?
-            if (isCompressed(buf)) {
+            final var flags = buf.readByte();
+            if (isCompressed(flags)) {
                 ctx.pipeline().addAfter(
                         this.getClass().getName(), frameDataDecompressor.getClass().getName(), frameDataDecompressor);
             }
@@ -44,11 +44,11 @@ final class FrameHeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
         }
     }
 
-    private boolean isV1FrameFormat(final ByteBuf buf) {
-        return buf.getByte(buf.readerIndex()) == 0b00000001;
+    private boolean isV1FrameFormat(final byte version) {
+        return version == 0b00000001;
     }
 
-    private boolean isCompressed(final ByteBuf buf) {
-        return (buf.getByte(buf.readerIndex() + 1) & 0b00000001) == 0b00000001;
+    private boolean isCompressed(final byte flags) {
+        return (flags & 0b00000001) == 0b00000001;
     }
 }

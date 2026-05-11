@@ -24,7 +24,7 @@ final class FrameHeaderLogger extends SimpleChannelInboundHandler<ByteBuf> {
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final ByteBuf buf) throws Exception {
         try {
-            var readerIndex = buf.readerIndex();
+            final var readerIndex = buf.readerIndex();
             logger.info("Frame received with size:{}, version:{}, flags:{}, length:{}",
                     buf.readableBytes(),
                     buf.getByte(readerIndex),
