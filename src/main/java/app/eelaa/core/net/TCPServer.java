@@ -16,6 +16,8 @@ import io.netty.util.concurrent.EventExecutorGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 /**
  * TCP server implementation based on netty.
  *
@@ -68,9 +70,12 @@ public final class TCPServer implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        // TODO: Set timeout for shutdown tasks.
-        cpuHeavyExecutor.shutdownGracefully().sync();
-        bootstrap.config().group().shutdownGracefully().sync();
+        cpuHeavyExecutor.shutdownGracefully(
+                config.getShutdownQuitePeriodSeconds(), config.getShutdownWaitTimeSeconds(), SECONDS).sync();
+
+        bootstrap.config().group().shutdownGracefully(
+                config.getShutdownQuitePeriodSeconds(), config.getShutdownWaitTimeSeconds(), SECONDS).sync();
+
         logger.info("TCP server closed gracefully!");
     }
 }

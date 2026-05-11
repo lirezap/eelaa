@@ -11,6 +11,8 @@ public final class TCPServerConfig {
     private final int maxFrameSize;
     private final boolean logFrameHeader;
     private final int cpuHeavyExecutorThreads;
+    private final int shutdownQuitePeriodSeconds;
+    private final int shutdownWaitTimeSeconds;
 
     private TCPServerConfig(final Builder builder) {
         this.host = builder.host;
@@ -18,6 +20,8 @@ public final class TCPServerConfig {
         this.maxFrameSize = builder.maxFrameSize;
         this.logFrameHeader = builder.logFrameHeader;
         this.cpuHeavyExecutorThreads = builder.cpuHeavyExecutorThreads;
+        this.shutdownQuitePeriodSeconds = builder.shutdownQuitePeriodSeconds;
+        this.shutdownWaitTimeSeconds = builder.shutdownWaitTimeSeconds;
     }
 
     public String getHost() {
@@ -40,6 +44,14 @@ public final class TCPServerConfig {
         return cpuHeavyExecutorThreads;
     }
 
+    public int getShutdownQuitePeriodSeconds() {
+        return shutdownQuitePeriodSeconds;
+    }
+
+    public int getShutdownWaitTimeSeconds() {
+        return shutdownWaitTimeSeconds;
+    }
+
     @Override
     public String toString() {
         return "TCPServerConfig{" +
@@ -48,6 +60,8 @@ public final class TCPServerConfig {
                 ", maxFrameSize=" + maxFrameSize +
                 ", logFrameHeader=" + logFrameHeader +
                 ", cpuHeavyExecutorThreads=" + cpuHeavyExecutorThreads +
+                ", shutdownQuitePeriodSeconds=" + shutdownQuitePeriodSeconds +
+                ", shutdownWaitTimeSeconds=" + shutdownWaitTimeSeconds +
                 '}';
     }
 
@@ -62,6 +76,8 @@ public final class TCPServerConfig {
         private int maxFrameSize = 5242880;
         private boolean logFrameHeader = false;
         private int cpuHeavyExecutorThreads = 4;
+        private int shutdownQuitePeriodSeconds = 1;
+        private int shutdownWaitTimeSeconds = 30;
 
         public Builder() {
         }
@@ -92,6 +108,18 @@ public final class TCPServerConfig {
         public Builder cpuHeavyExecutorThreads(final int cpuHeavyExecutorThreads) {
             // TODO: validate input.
             this.cpuHeavyExecutorThreads = cpuHeavyExecutorThreads;
+            return this;
+        }
+
+        public Builder shutdownQuitePeriodSeconds(final int shutdownQuitePeriodSeconds) {
+            // TODO: validate input.
+            this.shutdownQuitePeriodSeconds = shutdownQuitePeriodSeconds;
+            return this;
+        }
+
+        public Builder shutdownWaitTimeSeconds(final int shutdownWaitTimeSeconds) {
+            // TODO: validate input.
+            this.shutdownWaitTimeSeconds = shutdownWaitTimeSeconds;
             return this;
         }
 
