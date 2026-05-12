@@ -1,10 +1,10 @@
 package app.eelaa.core.net;
 
+import app.eelaa.core.lz4.LZ4;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
-import io.netty.util.concurrent.EventExecutorGroup;
 
 /**
  * Channel initializer to be able to initialize incoming client socket channels.
@@ -20,10 +20,12 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
     private final FrameHeaderProcessor frameHeaderProcessor;
     private final InboundExceptionHandler inboundExceptionHandler;
 
-    public ClientSocketChannelInitializer(final TCPServerConfig config, final EventExecutorGroup cpuHeavyTaskExecutor) {
+    public ClientSocketChannelInitializer(final TCPServerConfig config, final CPUHeavyTaskExecutor cpuHeavyTaskExecutor,
+                                          final LZ4 lz4) {
+
         this.config = config;
         this.frameHeaderLogger = new FrameHeaderLogger();
-        this.frameHeaderProcessor = new FrameHeaderProcessor(new FrameDataDecompressor(cpuHeavyTaskExecutor));
+        this.frameHeaderProcessor = new FrameHeaderProcessor(new FrameDataDecompressor(cpuHeavyTaskExecutor, lz4));
         this.inboundExceptionHandler = new InboundExceptionHandler();
     }
 

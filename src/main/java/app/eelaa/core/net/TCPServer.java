@@ -1,5 +1,6 @@
 package app.eelaa.core.net;
 
+import app.eelaa.core.lz4.LZ4;
 import app.eelaa.core.os.OSDetector;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.EventLoopGroup;
@@ -27,11 +28,13 @@ public final class TCPServer implements AutoCloseable {
     private final TCPServerConfig config;
     private final ServerBootstrap bootstrap;
     private final CPUHeavyTaskExecutor cpuHeavyTaskExecutor;
+    private final LZ4 lz4;
 
     private TCPServer(final TCPServerConfig config) {
         this.config = config;
         this.bootstrap = new ServerBootstrap();
         this.cpuHeavyTaskExecutor = new CPUHeavyTaskExecutor(config.getCpuHeavyTaskExecutorConfig());
+        this.lz4 = new LZ4(config.getLz4Config());
     }
 
     public static TCPServer newInstance(final TCPServerConfig config) {
@@ -42,7 +45,7 @@ public final class TCPServer implements AutoCloseable {
         // TODO: Check server channel options.
         bootstrap.group(group());
         bootstrap.channel(channel());
-        bootstrap.childHandler(new ClientSocketChannelInitializer(config, cpuHeavyTaskExecutor));
+        bootstrap.childHandler(new ClientSocketChannelInitializer(config, cpuHeavyTaskExecutor, lz4));
         bootstrap.bind(config.getHost(), config.getPort()).sync();
         logger.info("Started TCP server using configuration: {}", config);
     }
@@ -68,9 +71,11 @@ public final class TCPServer implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        cpuHeavyTaskExecutor.shutdownGracefully().sync();
         bootstrap.config().group().shutdownGracefully(
                 config.getShutdownQuitePeriodSeconds(), config.getShutdownWaitTimeSeconds(), SECONDS).sync();
+
+        cpuHeavyTaskExecutor.shutdownGracefully().sync();
+        lz4.close();
 
         logger.info("TCP server closed gracefully!");
     }

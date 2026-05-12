@@ -1,10 +1,10 @@
 package app.eelaa.core.net;
 
+import app.eelaa.core.lz4.LZ4;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.util.concurrent.EventExecutorGroup;
 
 /**
  * A handler that decompresses incoming frame's data section.
@@ -13,10 +13,12 @@ import io.netty.util.concurrent.EventExecutorGroup;
  */
 @Sharable
 final class FrameDataDecompressor extends SimpleChannelInboundHandler<ByteBuf> {
-    private final EventExecutorGroup cpuHeavyTaskExecutor;
+    private final CPUHeavyTaskExecutor cpuHeavyTaskExecutor;
+    private final LZ4 lz4;
 
-    public FrameDataDecompressor(final EventExecutorGroup cpuHeavyTaskExecutor) {
+    public FrameDataDecompressor(final CPUHeavyTaskExecutor cpuHeavyTaskExecutor, final LZ4 lz4) {
         this.cpuHeavyTaskExecutor = cpuHeavyTaskExecutor;
+        this.lz4 = lz4;
     }
 
     @Override

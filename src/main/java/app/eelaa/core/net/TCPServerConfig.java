@@ -1,5 +1,7 @@
 package app.eelaa.core.net;
 
+import app.eelaa.core.lz4.LZ4Config;
+
 /**
  * TCP server configuration fields.
  *
@@ -11,6 +13,7 @@ public final class TCPServerConfig {
     private final int maxFrameSize;
     private final boolean logFrameHeader;
     private final CPUHeavyTaskExecutorConfig cpuHeavyTaskExecutorConfig;
+    private final LZ4Config lz4Config;
     private final int shutdownQuitePeriodSeconds;
     private final int shutdownWaitTimeSeconds;
 
@@ -20,6 +23,7 @@ public final class TCPServerConfig {
         this.maxFrameSize = builder.maxFrameSize;
         this.logFrameHeader = builder.logFrameHeader;
         this.cpuHeavyTaskExecutorConfig = builder.cpuHeavyTaskExecutorConfig;
+        this.lz4Config = builder.lz4Config;
         this.shutdownQuitePeriodSeconds = builder.shutdownQuitePeriodSeconds;
         this.shutdownWaitTimeSeconds = builder.shutdownWaitTimeSeconds;
     }
@@ -44,6 +48,10 @@ public final class TCPServerConfig {
         return cpuHeavyTaskExecutorConfig;
     }
 
+    public LZ4Config getLz4Config() {
+        return lz4Config;
+    }
+
     public int getShutdownQuitePeriodSeconds() {
         return shutdownQuitePeriodSeconds;
     }
@@ -60,6 +68,7 @@ public final class TCPServerConfig {
                 ", maxFrameSize=" + maxFrameSize +
                 ", logFrameHeader=" + logFrameHeader +
                 ", cpuHeavyTaskExecutorConfig=" + cpuHeavyTaskExecutorConfig +
+                ", lz4Config=" + lz4Config +
                 ", shutdownQuitePeriodSeconds=" + shutdownQuitePeriodSeconds +
                 ", shutdownWaitTimeSeconds=" + shutdownWaitTimeSeconds +
                 '}';
@@ -76,10 +85,12 @@ public final class TCPServerConfig {
         private int maxFrameSize = 5242880;
         private boolean logFrameHeader = false;
         private CPUHeavyTaskExecutorConfig cpuHeavyTaskExecutorConfig = new CPUHeavyTaskExecutorConfig.Builder().build();
+        private LZ4Config lz4Config;
         private int shutdownQuitePeriodSeconds = 1;
         private int shutdownWaitTimeSeconds = 30;
 
-        public Builder() {
+        public Builder(final LZ4Config lz4Config) {
+            this.lz4Config = lz4Config;
         }
 
         public Builder host(final String host) {
@@ -107,6 +118,11 @@ public final class TCPServerConfig {
 
         public Builder cpuHeavyTaskExecutorConfig(final CPUHeavyTaskExecutorConfig cpuHeavyTaskExecutorConfig) {
             this.cpuHeavyTaskExecutorConfig = cpuHeavyTaskExecutorConfig;
+            return this;
+        }
+
+        public Builder lz4Config(final LZ4Config lz4Config) {
+            this.lz4Config = lz4Config;
             return this;
         }
 
