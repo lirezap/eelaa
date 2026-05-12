@@ -11,8 +11,6 @@ import io.netty.channel.kqueue.KQueueIoHandler;
 import io.netty.channel.kqueue.KQueueServerSocketChannel;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.util.concurrent.DefaultEventExecutorGroup;
-import io.netty.util.concurrent.EventExecutorGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,12 +26,12 @@ public final class TCPServer implements AutoCloseable {
 
     private final TCPServerConfig config;
     private final ServerBootstrap bootstrap;
-    private final EventExecutorGroup cpuHeavyTaskExecutor;
+    private final CPUHeavyTaskExecutor cpuHeavyTaskExecutor;
 
     private TCPServer(final TCPServerConfig config) {
         this.config = config;
         this.bootstrap = new ServerBootstrap();
-        this.cpuHeavyTaskExecutor = new DefaultEventExecutorGroup(config.getCpuHeavyTaskExecutorThreads());
+        this.cpuHeavyTaskExecutor = new CPUHeavyTaskExecutor(config.getCpuHeavyTaskExecutorConfig());
     }
 
     public static TCPServer newInstance(final TCPServerConfig config) {
@@ -70,9 +68,7 @@ public final class TCPServer implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        cpuHeavyTaskExecutor.shutdownGracefully(
-                config.getShutdownQuitePeriodSeconds(), config.getShutdownWaitTimeSeconds(), SECONDS).sync();
-
+        cpuHeavyTaskExecutor.shutdownGracefully().sync();
         bootstrap.config().group().shutdownGracefully(
                 config.getShutdownQuitePeriodSeconds(), config.getShutdownWaitTimeSeconds(), SECONDS).sync();
 

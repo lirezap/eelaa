@@ -10,7 +10,7 @@ public final class TCPServerConfig {
     private final int port;
     private final int maxFrameSize;
     private final boolean logFrameHeader;
-    private final int cpuHeavyTaskExecutorThreads;
+    private final CPUHeavyTaskExecutorConfig cpuHeavyTaskExecutorConfig;
     private final int shutdownQuitePeriodSeconds;
     private final int shutdownWaitTimeSeconds;
 
@@ -19,7 +19,7 @@ public final class TCPServerConfig {
         this.port = builder.port;
         this.maxFrameSize = builder.maxFrameSize;
         this.logFrameHeader = builder.logFrameHeader;
-        this.cpuHeavyTaskExecutorThreads = builder.cpuHeavyTaskExecutorThreads;
+        this.cpuHeavyTaskExecutorConfig = builder.cpuHeavyTaskExecutorConfig;
         this.shutdownQuitePeriodSeconds = builder.shutdownQuitePeriodSeconds;
         this.shutdownWaitTimeSeconds = builder.shutdownWaitTimeSeconds;
     }
@@ -40,8 +40,8 @@ public final class TCPServerConfig {
         return logFrameHeader;
     }
 
-    public int getCpuHeavyTaskExecutorThreads() {
-        return cpuHeavyTaskExecutorThreads;
+    public CPUHeavyTaskExecutorConfig getCpuHeavyTaskExecutorConfig() {
+        return cpuHeavyTaskExecutorConfig;
     }
 
     public int getShutdownQuitePeriodSeconds() {
@@ -59,7 +59,7 @@ public final class TCPServerConfig {
                 ", port=" + port +
                 ", maxFrameSize=" + maxFrameSize +
                 ", logFrameHeader=" + logFrameHeader +
-                ", cpuHeavyTaskExecutorThreads=" + cpuHeavyTaskExecutorThreads +
+                ", cpuHeavyTaskExecutorConfig=" + cpuHeavyTaskExecutorConfig +
                 ", shutdownQuitePeriodSeconds=" + shutdownQuitePeriodSeconds +
                 ", shutdownWaitTimeSeconds=" + shutdownWaitTimeSeconds +
                 '}';
@@ -75,7 +75,7 @@ public final class TCPServerConfig {
         private int port = 7178;
         private int maxFrameSize = 5242880;
         private boolean logFrameHeader = false;
-        private int cpuHeavyTaskExecutorThreads = 4;
+        private CPUHeavyTaskExecutorConfig cpuHeavyTaskExecutorConfig = new CPUHeavyTaskExecutorConfig.Builder().build();
         private int shutdownQuitePeriodSeconds = 1;
         private int shutdownWaitTimeSeconds = 30;
 
@@ -105,9 +105,8 @@ public final class TCPServerConfig {
             return this;
         }
 
-        public Builder cpuHeavyTaskExecutorThreads(final int cpuHeavyTaskExecutorThreads) {
-            // TODO: validate input.
-            this.cpuHeavyTaskExecutorThreads = cpuHeavyTaskExecutorThreads;
+        public Builder cpuHeavyTaskExecutorConfig(final CPUHeavyTaskExecutorConfig cpuHeavyTaskExecutorConfig) {
+            this.cpuHeavyTaskExecutorConfig = cpuHeavyTaskExecutorConfig;
             return this;
         }
 
