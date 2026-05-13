@@ -1,5 +1,6 @@
 package app.eelaa.core.net;
 
+import app.eelaa.core.net.exception.FrameVersionNotSupportedException;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -13,10 +14,12 @@ import io.netty.util.ReferenceCountUtil;
  */
 @Sharable
 final class FrameHeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
+    private final FrameVersionNotSupportedException frameVersionNotSupportedException;
     private final FrameDataDecompressor frameDataDecompressor;
 
     public FrameHeaderProcessor(final FrameDataDecompressor frameDataDecompressor) {
         super(false);
+        this.frameVersionNotSupportedException = new FrameVersionNotSupportedException();
         this.frameDataDecompressor = frameDataDecompressor;
     }
 
@@ -35,7 +38,7 @@ final class FrameHeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
     private void validateHeaderVersion(final ByteBuf buf) {
         final var version = buf.readByte();
         if (version != 0b00000001) {
-            throw new FrameVersionNotSupportedException();
+            throw frameVersionNotSupportedException;
         }
     }
 

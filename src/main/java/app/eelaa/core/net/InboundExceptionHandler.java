@@ -1,5 +1,7 @@
 package app.eelaa.core.net;
 
+import app.eelaa.core.net.exception.FrameVersionNotSupportedException;
+import app.eelaa.core.net.exception.InvalidLengthException;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -25,6 +27,8 @@ final class InboundExceptionHandler extends ChannelInboundHandlerAdapter {
     private void log(final Throwable cause) {
         if (cause instanceof FrameVersionNotSupportedException) {
             logger.error("frame version is not supported!");
+        } else if (cause instanceof InvalidLengthException) {
+            logger.error("invalid length value provided!");
         } else {
             logger.error("exception: {}", cause.getMessage(), cause);
         }
