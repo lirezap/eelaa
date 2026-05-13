@@ -1,5 +1,6 @@
 package app.eelaa.core.net;
 
+import app.eelaa.core.net.exception.FrameVersionNotSupportedException;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -17,8 +18,16 @@ final class InboundExceptionHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) throws Exception {
-        logger.error("Exception: {}", cause.getMessage(), cause);
-        // TODO: Complete implementation.
-        ctx.writeAndFlush(null);
+        // No need to respond, just close the client socket channel.
+        ctx.close();
+        log(cause);
+    }
+
+    private void log(final Throwable cause) {
+        if (cause instanceof FrameVersionNotSupportedException) {
+            logger.error("frame version is not supported!");
+        } else {
+            logger.error("exception: {}", cause.getMessage(), cause);
+        }
     }
 }
