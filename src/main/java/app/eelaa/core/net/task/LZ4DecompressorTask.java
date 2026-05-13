@@ -32,7 +32,7 @@ public final class LZ4DecompressorTask implements Runnable {
         try {
             final var readerIndex = buf.readerIndex();
             final var readableBytes = buf.readableBytes();
-            final var newBuf = ctx.alloc().directBuffer(actualSize);
+            final var newBuf = ctx.alloc().directBuffer(actualSize).writerIndex(actualSize);
 
             final var src = MemorySegment.ofBuffer(buf.internalNioBuffer(readerIndex, readableBytes));
             final var dst = MemorySegment.ofBuffer(newBuf.internalNioBuffer(0, actualSize));
@@ -41,7 +41,6 @@ public final class LZ4DecompressorTask implements Runnable {
                 throw new DecompressFailedException();
             }
 
-            newBuf.writeInt(actualSize);
             ctx.fireChannelRead(newBuf);
         } catch (final Throwable cause) {
             ctx.fireExceptionCaught(cause);

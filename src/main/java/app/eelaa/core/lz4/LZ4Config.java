@@ -40,7 +40,7 @@ public final class LZ4Config {
      */
     public static final class Builder {
         private Path libraryPath;
-        private Arena memory = Arena.global();
+        private Arena memory = Arena.ofShared();
 
         public Builder(final Path libraryPath) {
             this.libraryPath = libraryPath;
