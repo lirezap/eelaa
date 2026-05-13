@@ -24,17 +24,8 @@ final class FrameHeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final ByteBuf buf) throws Exception {
         try {
-            final var version = buf.readByte();
-            if (!isV1FrameFormat(version)) {
-                throw new FrameVersionNotSupportedException();
-            }
-
-            final var flags = buf.readByte();
-            if (isCompressed(flags)) {
-                ctx.pipeline().addAfter(
-                        this.getClass().getName(), frameDataDecompressor.getClass().getName(), frameDataDecompressor);
-            }
-
+            validateHeaderVersion(buf);
+            addFrameDataDecompressorIfNeeded(ctx, buf);
             ctx.fireChannelRead(buf);
         } catch (final Exception ex) {
             ReferenceCountUtil.release(buf);
@@ -42,11 +33,18 @@ final class FrameHeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
         }
     }
 
-    private boolean isV1FrameFormat(final byte version) {
-        return version == 0b00000001;
+    private void validateHeaderVersion(final ByteBuf buf) {
+        final var version = buf.readByte();
+        if (version != 0b00000001) {
+            throw new FrameVersionNotSupportedException();
+        }
     }
 
-    private boolean isCompressed(final byte flags) {
-        return (flags & 0b00000001) == 0b00000001;
+    private void addFrameDataDecompressorIfNeeded(final ChannelHandlerContext ctx, final ByteBuf buf) {
+        final var flags = buf.readByte();
+        if ((flags & 0b00000001) == 0b00000001) {
+            ctx.pipeline().addAfter(
+                    this.getClass().getName(), frameDataDecompressor.getClass().getName(), frameDataDecompressor);
+        }
     }
 }
