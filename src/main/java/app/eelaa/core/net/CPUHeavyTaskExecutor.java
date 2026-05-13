@@ -10,7 +10,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  *
  * @author Alireza Pourtaghi
  */
-public final class CPUHeavyTaskExecutor extends DefaultEventExecutorGroup {
+final class CPUHeavyTaskExecutor extends DefaultEventExecutorGroup {
     private final CPUHeavyTaskExecutorConfig config;
 
     public CPUHeavyTaskExecutor(final CPUHeavyTaskExecutorConfig config) {

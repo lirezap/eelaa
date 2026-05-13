@@ -1,6 +1,5 @@
 package app.eelaa.core.net;
 
-import app.eelaa.core.net.exception.FrameVersionNotSupportedException;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
