@@ -26,7 +26,7 @@ final class FrameHeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final ByteBuf buf) throws Exception {
         try {
-            validateHeaderVersion(buf);
+            validateFrameVersion(buf);
             addFrameDataDecompressorIfNeeded(ctx, buf);
             ctx.fireChannelRead(buf);
         } catch (final Exception ex) {
@@ -35,7 +35,7 @@ final class FrameHeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
         }
     }
 
-    private void validateHeaderVersion(final ByteBuf buf) {
+    private void validateFrameVersion(final ByteBuf buf) {
         final var version = buf.readByte();
         if (version != 0b00000001) {
             throw frameVersionNotSupportedException;

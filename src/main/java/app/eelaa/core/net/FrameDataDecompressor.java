@@ -1,7 +1,8 @@
 package app.eelaa.core.net;
 
 import app.eelaa.core.lz4.LZ4;
-import app.eelaa.core.net.exception.InvalidLengthException;
+import app.eelaa.core.net.exception.InvalidActualSizeException;
+import app.eelaa.core.net.exception.InvalidFrameLengthException;
 import app.eelaa.core.net.listener.ReleaseByteBufFutureListener;
 import app.eelaa.core.net.task.LZ4DecompressorTask;
 import io.netty.buffer.ByteBuf;
@@ -17,13 +18,15 @@ import io.netty.util.ReferenceCountUtil;
  */
 @Sharable
 final class FrameDataDecompressor extends SimpleChannelInboundHandler<ByteBuf> {
-    private final InvalidLengthException invalidLengthException;
+    private final InvalidFrameLengthException invalidFrameLengthException;
+    private final InvalidActualSizeException invalidActualSizeException;
     private final CPUHeavyTaskExecutor cpuHeavyTaskExecutor;
     private final LZ4 lz4;
 
     public FrameDataDecompressor(final CPUHeavyTaskExecutor cpuHeavyTaskExecutor, final LZ4 lz4) {
         super(false);
-        this.invalidLengthException = new InvalidLengthException();
+        this.invalidFrameLengthException = new InvalidFrameLengthException();
+        this.invalidActualSizeException = new InvalidActualSizeException();
         this.cpuHeavyTaskExecutor = cpuHeavyTaskExecutor;
         this.lz4 = lz4;
     }
@@ -31,8 +34,8 @@ final class FrameDataDecompressor extends SimpleChannelInboundHandler<ByteBuf> {
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final ByteBuf buf) throws Exception {
         try {
-            final var length = extractLength(buf);
-            submitDecompressorTask(ctx, buf, length);
+            validateFrameLength(buf);
+            submitDecompressorTask(ctx, buf, extractActualSize(buf));
         } catch (final Exception ex) {
             ReferenceCountUtil.release(buf);
             throw ex;
@@ -42,18 +45,25 @@ final class FrameDataDecompressor extends SimpleChannelInboundHandler<ByteBuf> {
         }
     }
 
-    private int extractLength(final ByteBuf buf) {
+    private void validateFrameLength(final ByteBuf buf) {
         final var length = buf.readInt();
         if (length < 1) {
-            throw invalidLengthException;
+            throw invalidFrameLengthException;
         }
-
-        return length;
     }
 
-    private void submitDecompressorTask(final ChannelHandlerContext ctx, final ByteBuf buf, final int length) {
+    private int extractActualSize(final ByteBuf buf) {
+        final var actualSize = buf.readInt();
+        if (actualSize < 1) {
+            throw invalidActualSizeException;
+        }
+
+        return actualSize;
+    }
+
+    private void submitDecompressorTask(final ChannelHandlerContext ctx, final ByteBuf buf, final int actualSize) {
         cpuHeavyTaskExecutor
-                .submit(new LZ4DecompressorTask(ctx, buf, lz4, length))
+                .submit(new LZ4DecompressorTask(ctx, buf, lz4, actualSize))
                 .addListener(new ReleaseByteBufFutureListener(buf));
     }
 }

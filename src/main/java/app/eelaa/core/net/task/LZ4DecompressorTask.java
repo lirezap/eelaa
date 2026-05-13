@@ -13,15 +13,15 @@ public final class LZ4DecompressorTask implements Runnable {
     private final ChannelHandlerContext ctx;
     private final ByteBuf buf;
     private final LZ4 lz4;
-    private final int compressedSize;
+    private final int actualSize;
 
     public LZ4DecompressorTask(final ChannelHandlerContext ctx, final ByteBuf buf, final LZ4 lz4,
-                               final int compressedSize) {
+                               final int actualSize) {
 
         this.ctx = ctx;
         this.buf = buf;
         this.lz4 = lz4;
-        this.compressedSize = compressedSize;
+        this.actualSize = actualSize;
     }
 
     @Override
