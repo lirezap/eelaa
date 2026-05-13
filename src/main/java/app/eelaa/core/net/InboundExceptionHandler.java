@@ -1,6 +1,6 @@
 package app.eelaa.core.net;
 
-import app.eelaa.core.net.exception.DecompressFailedException;
+import app.eelaa.core.net.exception.DecompressionFailedException;
 import app.eelaa.core.net.exception.FrameVersionNotSupportedException;
 import app.eelaa.core.net.exception.InvalidActualSizeException;
 import app.eelaa.core.net.exception.InvalidFrameLengthException;
@@ -33,7 +33,7 @@ final class InboundExceptionHandler extends ChannelInboundHandlerAdapter {
             logger.error("invalid length value provided!");
         } else if (cause instanceof InvalidActualSizeException) {
             logger.error("invalid actual size value provided!");
-        } else if (cause instanceof DecompressFailedException) {
+        } else if (cause instanceof DecompressionFailedException) {
             logger.error("could not decompress the data appropriately!");
         } else {
             logger.error("exception: {}", cause.getMessage(), cause);
