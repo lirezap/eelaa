@@ -2,7 +2,6 @@ package app.eelaa.core.net;
 
 import app.eelaa.core.lz4.LZ4;
 import app.eelaa.core.os.OSDetector;
-import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.ServerChannel;
@@ -26,13 +25,13 @@ public final class TCPServer implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(TCPServer.class);
 
     private final TCPServerConfig config;
-    private final ServerBootstrap bootstrap;
+    private final NativeServerBootstrap nativeServerBootstrap;
     private final CPUHeavyTaskExecutor cpuHeavyTaskExecutor;
     private final LZ4 lz4;
 
     private TCPServer(final TCPServerConfig config) {
         this.config = config;
-        this.bootstrap = NativeServerBootstrap.newInstance();
+        this.nativeServerBootstrap = NativeServerBootstrap.newInstance();
         this.cpuHeavyTaskExecutor = CPUHeavyTaskExecutor.newInstance(config.getCpuHeavyTaskExecutorConfig());
         this.lz4 = LZ4.newInstance(config.getLz4Config());
     }
@@ -43,10 +42,10 @@ public final class TCPServer implements AutoCloseable {
 
     public void start() throws Exception {
         // TODO: Check server channel options.
-        bootstrap.group(group());
-        bootstrap.channel(channel());
-        bootstrap.childHandler(new ClientSocketChannelInitializer(config, tlsContext(), cpuHeavyTaskExecutor, lz4));
-        bootstrap.bind(config.getHost(), config.getPort()).sync();
+        nativeServerBootstrap.group(group());
+        nativeServerBootstrap.channel(channel());
+        nativeServerBootstrap.childHandler(new ClientSocketChannelInitializer(config, tlsContext(), cpuHeavyTaskExecutor, lz4));
+        nativeServerBootstrap.bind(config.getHost(), config.getPort()).sync();
         logger.info("Started TCP server using configuration: {}", config);
     }
 
@@ -79,7 +78,7 @@ public final class TCPServer implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        bootstrap.config().group().shutdownGracefully(
+        nativeServerBootstrap.config().group().shutdownGracefully(
                 config.getShutdownQuitePeriodSeconds(), config.getShutdownWaitTimeSeconds(), SECONDS).sync();
 
         cpuHeavyTaskExecutor.shutdownGracefully().sync();
