@@ -1,7 +1,6 @@
-package app.eelaa.core.net.task;
+package app.eelaa.core.net;
 
 import app.eelaa.core.lz4.LZ4;
-import app.eelaa.core.net.exception.DecompressionFailedException;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
@@ -12,7 +11,7 @@ import java.lang.foreign.MemorySegment;
  *
  * @author Alireza Pourtaghi
  */
-public final class LZ4DecompressorTask implements Runnable {
+final class LZ4DecompressorTask implements Runnable {
     private static final DecompressionFailedException decompressionFailedException = new DecompressionFailedException();
 
     private final ChannelHandlerContext ctx;
