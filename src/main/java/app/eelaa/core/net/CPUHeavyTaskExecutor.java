@@ -13,9 +13,13 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 final class CPUHeavyTaskExecutor extends DefaultEventExecutorGroup {
     private final CPUHeavyTaskExecutorConfig config;
 
-    public CPUHeavyTaskExecutor(final CPUHeavyTaskExecutorConfig config) {
+    private CPUHeavyTaskExecutor(final CPUHeavyTaskExecutorConfig config) {
         super(config.getNThreads());
         this.config = config;
+    }
+
+    public static CPUHeavyTaskExecutor newInstance(final CPUHeavyTaskExecutorConfig config) {
+        return new CPUHeavyTaskExecutor(config);
     }
 
     @Override

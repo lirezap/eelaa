@@ -20,13 +20,7 @@ public final class LZ4 implements AutoCloseable {
     private final MethodHandle compressDefaultHandle;
     private final MethodHandle decompressSafeHandle;
 
-    /**
-     * Creates native linker and library lookup instance to load the shared object or dynamic LZ4 C library from
-     * provided path.
-     *
-     * @param lz4Config the configuration instance
-     */
-    public LZ4(final LZ4Config lz4Config) {
+    private LZ4(final LZ4Config lz4Config) {
         this.memory = lz4Config.getMemory();
         final var linker = Linker.nativeLinker();
         final var lib = SymbolLookup.libraryLookup(lz4Config.getLibraryPath(), memory);
@@ -45,6 +39,10 @@ public final class LZ4 implements AutoCloseable {
 
         this.decompressSafeHandle =
                 linker.downcallHandle(lib.find(FUNCTION.LZ4_decompress_safe.name()).orElseThrow(), FUNCTION.LZ4_decompress_safe.fd);
+    }
+
+    public static LZ4 newInstance(final LZ4Config lz4Config) {
+        return new LZ4(lz4Config);
     }
 
     public int versionNumber() throws Throwable {

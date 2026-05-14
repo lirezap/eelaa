@@ -15,7 +15,7 @@ import java.util.List;
 final class TLSContext extends SslContext {
     private final SslContext context;
 
-    public TLSContext(final TLSContextConfig config) throws Exception {
+    private TLSContext(final TLSContextConfig config) throws Exception {
         this.context = SslContextBuilder
                 .forServer(config.getServerCertPath().toFile(), config.getServerKeyPath().toFile())
                 .sslProvider(SslProvider.OPENSSL)
@@ -25,6 +25,10 @@ final class TLSContext extends SslContext {
                 .sessionCacheSize(config.getSessionCacheSize())
                 .sessionTimeout(config.getSessionTimeoutSeconds())
                 .build();
+    }
+
+    public static TLSContext newInstance(final TLSContextConfig config) throws Exception {
+        return new TLSContext(config);
     }
 
     @Override

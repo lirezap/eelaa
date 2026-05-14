@@ -32,9 +32,9 @@ public final class TCPServer implements AutoCloseable {
 
     private TCPServer(final TCPServerConfig config) {
         this.config = config;
-        this.bootstrap = new ServerBootstrap();
-        this.cpuHeavyTaskExecutor = new CPUHeavyTaskExecutor(config.getCpuHeavyTaskExecutorConfig());
-        this.lz4 = new LZ4(config.getLz4Config());
+        this.bootstrap = NativeServerBootstrap.newInstance();
+        this.cpuHeavyTaskExecutor = CPUHeavyTaskExecutor.newInstance(config.getCpuHeavyTaskExecutorConfig());
+        this.lz4 = LZ4.newInstance(config.getLz4Config());
     }
 
     public static TCPServer newInstance(final TCPServerConfig config) {
@@ -71,7 +71,7 @@ public final class TCPServer implements AutoCloseable {
 
     private TLSContext tlsContext() throws Exception {
         if (config.getTlsContextConfig().isUseTls()) {
-            return new TLSContext(config.getTlsContextConfig());
+            return TLSContext.newInstance(config.getTlsContextConfig());
         }
 
         return null;
