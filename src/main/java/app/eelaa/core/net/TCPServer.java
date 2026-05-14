@@ -2,15 +2,16 @@ package app.eelaa.core.net;
 
 import app.eelaa.core.lz4.LZ4;
 import app.eelaa.core.os.OSDetector;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.MultiThreadIoEventLoopGroup;
-import io.netty.channel.ServerChannel;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.*;
 import io.netty.channel.epoll.EpollIoHandler;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.kqueue.KQueueIoHandler;
 import io.netty.channel.kqueue.KQueueServerSocketChannel;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.ResourceLeakDetector;
+import io.netty.util.ResourceLeakDetector.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,9 +42,21 @@ public final class TCPServer implements AutoCloseable {
     }
 
     public void start() throws Exception {
-        // TODO: Check server channel options.
+        if (config.isDetectResourceLeak()) {
+            ResourceLeakDetector.setLevel(Level.ADVANCED);
+        } else {
+            ResourceLeakDetector.setLevel(Level.DISABLED);
+        }
+
         nativeServerBootstrap.group(group());
         nativeServerBootstrap.channel(channel());
+        nativeServerBootstrap.option(ChannelOption.SO_BACKLOG, config.getSoBacklog());
+        nativeServerBootstrap.option(ChannelOption.SO_REUSEADDR, true);
+        nativeServerBootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
+        nativeServerBootstrap.childOption(ChannelOption.TCP_NODELAY, true);
+        nativeServerBootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+        nativeServerBootstrap.childOption(ChannelOption.AUTO_READ, false);
+        nativeServerBootstrap.childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, writeBufferWaterMark());
         nativeServerBootstrap.childHandler(new ClientSocketChannelInitializer(config, tlsContext(), cpuHeavyTaskExecutor, lz4));
         nativeServerBootstrap.bind(config.getHost(), config.getPort()).sync();
         logger.info("Started TCP server using configuration: {}", config);
@@ -66,6 +79,10 @@ public final class TCPServer implements AutoCloseable {
             case MACOS -> KQueueServerSocketChannel.class;
             case OTHER -> NioServerSocketChannel.class;
         };
+    }
+
+    private WriteBufferWaterMark writeBufferWaterMark() {
+        return new WriteBufferWaterMark(config.getLowWriteBufferWaterMark(), config.getHighWriteBufferWaterMark());
     }
 
     private TLSContext tlsContext() throws Exception {
