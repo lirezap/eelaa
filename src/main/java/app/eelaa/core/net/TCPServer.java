@@ -45,7 +45,7 @@ public final class TCPServer implements AutoCloseable {
         // TODO: Check server channel options.
         bootstrap.group(group());
         bootstrap.channel(channel());
-        bootstrap.childHandler(new ClientSocketChannelInitializer(config, cpuHeavyTaskExecutor, lz4));
+        bootstrap.childHandler(new ClientSocketChannelInitializer(config, tlsContext(), cpuHeavyTaskExecutor, lz4));
         bootstrap.bind(config.getHost(), config.getPort()).sync();
         logger.info("Started TCP server using configuration: {}", config);
     }
@@ -67,6 +67,14 @@ public final class TCPServer implements AutoCloseable {
             case MACOS -> KQueueServerSocketChannel.class;
             case OTHER -> NioServerSocketChannel.class;
         };
+    }
+
+    private TLSContext tlsContext() throws Exception {
+        if (config.getTlsContextConfig().isUseTls()) {
+            return new TLSContext(config.getTlsContextConfig());
+        }
+
+        return null;
     }
 
     @Override

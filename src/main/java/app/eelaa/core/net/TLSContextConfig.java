@@ -1,0 +1,115 @@
+package app.eelaa.core.net;
+
+import java.nio.file.Path;
+
+/**
+ * TLS context configuration fields.
+ *
+ * @author Alireza Pourtaghi
+ */
+public final class TLSContextConfig {
+    private final boolean useTls;
+    private final Path serverCertPath;
+    private final Path serverKeyPath;
+    private final boolean useOcsp;
+    private final int sessionCacheSize;
+    private final int sessionTimeoutSeconds;
+
+    private TLSContextConfig(final Builder builder) {
+        this.useTls = builder.useTls;
+        this.serverCertPath = builder.serverCertPath;
+        this.serverKeyPath = builder.serverKeyPath;
+        this.useOcsp = builder.useOcsp;
+        this.sessionCacheSize = builder.sessionCacheSize;
+        this.sessionTimeoutSeconds = builder.sessionTimeoutSeconds;
+    }
+
+    public boolean isUseTls() {
+        return useTls;
+    }
+
+    public Path getServerCertPath() {
+        return serverCertPath;
+    }
+
+    public Path getServerKeyPath() {
+        return serverKeyPath;
+    }
+
+    public boolean isUseOcsp() {
+        return useOcsp;
+    }
+
+    public int getSessionCacheSize() {
+        return sessionCacheSize;
+    }
+
+    public int getSessionTimeoutSeconds() {
+        return sessionTimeoutSeconds;
+    }
+
+    @Override
+    public String toString() {
+        return "TLSContextConfig{" +
+                "useTls=" + useTls +
+                ", serverCertPath=" + serverCertPath +
+                ", serverKeyPath=" + serverKeyPath +
+                ", useOcsp=" + useOcsp +
+                ", sessionCacheSize=" + sessionCacheSize +
+                ", sessionTimeoutSeconds=" + sessionTimeoutSeconds +
+                '}';
+    }
+
+    /**
+     * TLS configuration's builder class.
+     *
+     * @author Alireza Pourtaghi
+     */
+    public static final class Builder {
+        private boolean useTls = false;
+        private Path serverCertPath = Path.of("");
+        private Path serverKeyPath = Path.of("");
+        private boolean useOcsp = false;
+        private int sessionCacheSize = 20000;
+        private int sessionTimeoutSeconds = 300;
+
+        public Builder() {
+        }
+
+        public Builder useTls(final boolean useTls) {
+            this.useTls = useTls;
+            return this;
+        }
+
+        public Builder serverCertPath(final Path serverCertPath) {
+            this.serverCertPath = serverCertPath;
+            return this;
+        }
+
+        public Builder serverKeyPath(final Path serverKeyPath) {
+            this.serverKeyPath = serverKeyPath;
+            return this;
+        }
+
+        public Builder useOcsp(final boolean useOcsp) {
+            this.useOcsp = useOcsp;
+            return this;
+        }
+
+        public Builder sessionCacheSize(final int sessionCacheSize) {
+            // TODO: validate input.
+            this.sessionCacheSize = sessionCacheSize;
+            return this;
+        }
+
+        public Builder sessionTimeoutSeconds(final int sessionTimeoutSeconds) {
+            // TODO: validate input.
+            this.sessionTimeoutSeconds = sessionTimeoutSeconds;
+            return this;
+        }
+
+        public TLSContextConfig build() {
+            return new TLSContextConfig(this);
+        }
+    }
+}

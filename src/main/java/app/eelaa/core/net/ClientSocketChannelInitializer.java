@@ -14,16 +14,18 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 @Sharable
 final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChannel> {
     private final TCPServerConfig config;
+    private final TLSContext tlsContext;
 
     // Sharable handlers.
     private final FrameHeaderLogger frameHeaderLogger;
     private final FrameHeaderProcessor frameHeaderProcessor;
     private final InboundExceptionHandler inboundExceptionHandler;
 
-    public ClientSocketChannelInitializer(final TCPServerConfig config, final CPUHeavyTaskExecutor cpuHeavyTaskExecutor,
-                                          final LZ4 lz4) {
+    public ClientSocketChannelInitializer(final TCPServerConfig config, final TLSContext tlsContext,
+                                          final CPUHeavyTaskExecutor cpuHeavyTaskExecutor, final LZ4 lz4) {
 
         this.config = config;
+        this.tlsContext = tlsContext;
         this.frameHeaderLogger = new FrameHeaderLogger();
         this.frameHeaderProcessor = new FrameHeaderProcessor(new FrameDataDecompressor(cpuHeavyTaskExecutor, lz4));
         this.inboundExceptionHandler = new InboundExceptionHandler();
@@ -31,12 +33,19 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
 
     @Override
     protected void initChannel(final SocketChannel channel) throws Exception {
+        addTLSHandler(channel);
         addFrameDecoder(channel);
         addFrameHeaderLogger(channel);
         addFrameHeaderProcessor(channel);
 
         // Must be the latest inbound handler.
         addInboundExceptionHandler(channel);
+    }
+
+    private void addTLSHandler(final SocketChannel channel) {
+        if (tlsContext != null) {
+            channel.pipeline().addLast(tlsContext.newHandler(channel.alloc()));
+        }
     }
 
     private void addFrameDecoder(final SocketChannel channel) {

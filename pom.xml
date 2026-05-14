@@ -17,7 +17,13 @@
     <version>0.0.1-SNAPSHOT</version>
 
     <properties>
+        <!-- Java Version -->
         <java.version>25</java.version>
+
+        <!-- Extensions Versioning -->
+        <os.maven.extension.version>1.7.1</os.maven.extension.version>
+
+        <!-- Dependencies Versioning -->
         <netty.version>4.2.13.Final</netty.version>
     </properties>
 
@@ -88,11 +94,22 @@
             <scope>compile</scope>
         </dependency>
 
+        <!-- Source: https://mvnrepository.com/artifact/io.netty/netty-tcnative-boringssl-static -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-tcnative-boringssl-static</artifactId>
+            <version>2.0.77.Final</version>
+            <classifier>${os.detected.classifier}</classifier>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
 
+        <!-- Source: https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -101,7 +118,17 @@
     </dependencies>
 
     <build>
+        <extensions>
+            <!-- Source: https://mvnrepository.com/artifact/kr.motd.maven/os-maven-plugin -->
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>${os.maven.extension.version}</version>
+            </extension>
+        </extensions>
+
         <plugins>
+            <!-- Source: https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-maven-plugin -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

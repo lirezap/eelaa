@@ -11,6 +11,7 @@ public final class TCPServerConfig {
     private final String host;
     private final int port;
     private final int maxFrameSize;
+    private final TLSContextConfig tlsContextConfig;
     private final boolean logFrameHeader;
     private final CPUHeavyTaskExecutorConfig cpuHeavyTaskExecutorConfig;
     private final LZ4Config lz4Config;
@@ -21,6 +22,7 @@ public final class TCPServerConfig {
         this.host = builder.host;
         this.port = builder.port;
         this.maxFrameSize = builder.maxFrameSize;
+        this.tlsContextConfig = builder.tlsContextConfig;
         this.logFrameHeader = builder.logFrameHeader;
         this.cpuHeavyTaskExecutorConfig = builder.cpuHeavyTaskExecutorConfig;
         this.lz4Config = builder.lz4Config;
@@ -38,6 +40,10 @@ public final class TCPServerConfig {
 
     public int getMaxFrameSize() {
         return maxFrameSize;
+    }
+
+    public TLSContextConfig getTlsContextConfig() {
+        return tlsContextConfig;
     }
 
     public boolean isLogFrameHeader() {
@@ -66,6 +72,7 @@ public final class TCPServerConfig {
                 "host='" + host + '\'' +
                 ", port=" + port +
                 ", maxFrameSize=" + maxFrameSize +
+                ", tlsContextConfig=" + tlsContextConfig +
                 ", logFrameHeader=" + logFrameHeader +
                 ", cpuHeavyTaskExecutorConfig=" + cpuHeavyTaskExecutorConfig +
                 ", lz4Config=" + lz4Config +
@@ -83,6 +90,7 @@ public final class TCPServerConfig {
         private String host = "localhost";
         private int port = 7178;
         private int maxFrameSize = 5242880;
+        private TLSContextConfig tlsContextConfig = new TLSContextConfig.Builder().build();
         private boolean logFrameHeader = false;
         private CPUHeavyTaskExecutorConfig cpuHeavyTaskExecutorConfig = new CPUHeavyTaskExecutorConfig.Builder().build();
         private LZ4Config lz4Config;
@@ -108,6 +116,11 @@ public final class TCPServerConfig {
         public Builder maxFrameSize(final int maxFrameSize) {
             // TODO: validate input.
             this.maxFrameSize = maxFrameSize;
+            return this;
+        }
+
+        public Builder tlsContextConfig(final TLSContextConfig tlsContextConfig) {
+            this.tlsContextConfig = tlsContextConfig;
             return this;
         }
 
