@@ -18,8 +18,8 @@ final class TLSContext extends SslContext {
     public TLSContext(final TLSContextConfig config) throws Exception {
         this.context = SslContextBuilder
                 .forServer(config.getServerCertPath().toFile(), config.getServerKeyPath().toFile())
-                .protocols("TLSv1.3")
                 .sslProvider(SslProvider.OPENSSL)
+                .protocols("TLSv1.3")
                 .enableOcsp(config.isUseOcsp())
                 .clientAuth(ClientAuth.NONE)
                 .sessionCacheSize(config.getSessionCacheSize())
