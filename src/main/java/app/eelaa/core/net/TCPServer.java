@@ -55,7 +55,6 @@ public final class TCPServer implements AutoCloseable {
         nativeServerBootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
         nativeServerBootstrap.childOption(ChannelOption.TCP_NODELAY, true);
         nativeServerBootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-        nativeServerBootstrap.childOption(ChannelOption.AUTO_READ, false);
         nativeServerBootstrap.childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, writeBufferWaterMark());
         nativeServerBootstrap.childHandler(new ClientSocketChannelInitializer(config, tlsContext(), cpuHeavyTaskExecutor, lz4));
         nativeServerBootstrap.bind(config.getHost(), config.getPort()).sync();
