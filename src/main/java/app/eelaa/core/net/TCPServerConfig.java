@@ -10,6 +10,7 @@ import app.eelaa.core.lz4.LZ4Config;
 public final class TCPServerConfig {
     private final String host;
     private final int port;
+    private final int eventLoopGroupNThreads;
     private final int soBacklog;
     private final int maxFrameSize;
     private final int lowWriteBufferWaterMark;
@@ -25,6 +26,7 @@ public final class TCPServerConfig {
     private TCPServerConfig(final Builder builder) {
         this.host = builder.host;
         this.port = builder.port;
+        this.eventLoopGroupNThreads = builder.eventLoopGroupNThreads;
         this.soBacklog = builder.soBacklog;
         this.maxFrameSize = builder.maxFrameSize;
         this.lowWriteBufferWaterMark = builder.lowWriteBufferWaterMark;
@@ -44,6 +46,10 @@ public final class TCPServerConfig {
 
     public int getPort() {
         return port;
+    }
+
+    public int getEventLoopGroupNThreads() {
+        return eventLoopGroupNThreads;
     }
 
     public int getSoBacklog() {
@@ -95,6 +101,7 @@ public final class TCPServerConfig {
         return "TCPServerConfig{" +
                 "host='" + host + '\'' +
                 ", port=" + port +
+                ", eventLoopGroupNThreads=" + eventLoopGroupNThreads +
                 ", soBacklog=" + soBacklog +
                 ", maxFrameSize=" + maxFrameSize +
                 ", lowWriteBufferWaterMark=" + lowWriteBufferWaterMark +
@@ -117,6 +124,7 @@ public final class TCPServerConfig {
     public static final class Builder {
         private String host = "localhost";
         private int port = 7178;
+        private int eventLoopGroupNThreads = Runtime.getRuntime().availableProcessors();
         private int soBacklog = 8192;
         private int maxFrameSize = 5242880;
         private int lowWriteBufferWaterMark = 32 * 1024;
@@ -140,6 +148,11 @@ public final class TCPServerConfig {
 
         public Builder port(final int port) {
             this.port = port;
+            return this;
+        }
+
+        public Builder eventLoopGroupNThreads(final int eventLoopGroupNThreads) {
+            this.eventLoopGroupNThreads = Math.max(1, eventLoopGroupNThreads);
             return this;
         }
 

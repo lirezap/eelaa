@@ -56,12 +56,13 @@ final class NativeServerBootstrap extends ServerBootstrap {
     }
 
     private EventLoopGroup selectGroup() {
-        final var os = OSDetector.os();
-
-        return switch (os) {
-            case LINUX -> new MultiThreadIoEventLoopGroup(EpollIoHandler.newFactory());
-            case MACOS -> new MultiThreadIoEventLoopGroup(KQueueIoHandler.newFactory());
-            case OTHER -> new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+        return switch (OSDetector.os()) {
+            case LINUX ->
+                    new MultiThreadIoEventLoopGroup(config.getEventLoopGroupNThreads(), EpollIoHandler.newFactory());
+            case MACOS ->
+                    new MultiThreadIoEventLoopGroup(config.getEventLoopGroupNThreads(), KQueueIoHandler.newFactory());
+            case OTHER ->
+                    new MultiThreadIoEventLoopGroup(config.getEventLoopGroupNThreads(), NioIoHandler.newFactory());
         };
     }
 
