@@ -51,20 +51,17 @@ public final class CPUHeavyTaskExecutorConfig {
         }
 
         public Builder nThreads(final int nThreads) {
-            // TODO: validate input.
-            this.nThreads = nThreads;
+            this.nThreads = Math.max(1, nThreads);
             return this;
         }
 
         public Builder shutdownQuitePeriodSeconds(final int shutdownQuitePeriodSeconds) {
-            // TODO: validate input.
-            this.shutdownQuitePeriodSeconds = shutdownQuitePeriodSeconds;
+            this.shutdownQuitePeriodSeconds = Math.max(1, shutdownQuitePeriodSeconds);
             return this;
         }
 
         public Builder shutdownWaitTimeSeconds(final int shutdownWaitTimeSeconds) {
-            // TODO: validate input.
-            this.shutdownWaitTimeSeconds = shutdownWaitTimeSeconds;
+            this.shutdownWaitTimeSeconds = Math.max(1, shutdownWaitTimeSeconds);
             return this;
         }
 

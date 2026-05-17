@@ -97,14 +97,12 @@ public final class TLSContextConfig {
         }
 
         public Builder sessionCacheSize(final int sessionCacheSize) {
-            // TODO: validate input.
-            this.sessionCacheSize = sessionCacheSize;
+            this.sessionCacheSize = Math.max(1024, sessionCacheSize);
             return this;
         }
 
         public Builder sessionTimeoutSeconds(final int sessionTimeoutSeconds) {
-            // TODO: validate input.
-            this.sessionTimeoutSeconds = sessionTimeoutSeconds;
+            this.sessionTimeoutSeconds = Math.max(1, sessionTimeoutSeconds);
             return this;
         }
 

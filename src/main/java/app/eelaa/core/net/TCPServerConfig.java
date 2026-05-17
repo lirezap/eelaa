@@ -134,38 +134,32 @@ public final class TCPServerConfig {
         }
 
         public Builder host(final String host) {
-            // TODO: validate input.
             this.host = host;
             return this;
         }
 
         public Builder port(final int port) {
-            // TODO: validate input.
             this.port = port;
             return this;
         }
 
         public Builder soBacklog(final int soBacklog) {
-            // TODO: validate input.
-            this.soBacklog = soBacklog;
+            this.soBacklog = Math.max(0, soBacklog);
             return this;
         }
 
         public Builder maxFrameSize(final int maxFrameSize) {
-            // TODO: validate input.
-            this.maxFrameSize = maxFrameSize;
+            this.maxFrameSize = Math.max(16, maxFrameSize);
             return this;
         }
 
         public Builder lowWriteBufferWaterMark(final int lowWriteBufferWaterMark) {
-            // TODO: validate input.
-            this.lowWriteBufferWaterMark = lowWriteBufferWaterMark;
+            this.lowWriteBufferWaterMark = Math.max(1024, lowWriteBufferWaterMark);
             return this;
         }
 
         public Builder highWriteBufferWaterMark(final int highWriteBufferWaterMark) {
-            // TODO: validate input.
-            this.highWriteBufferWaterMark = highWriteBufferWaterMark;
+            this.highWriteBufferWaterMark = Math.max(2 * 1024, highWriteBufferWaterMark);
             return this;
         }
 
@@ -190,14 +184,12 @@ public final class TCPServerConfig {
         }
 
         public Builder shutdownQuitePeriodSeconds(final int shutdownQuitePeriodSeconds) {
-            // TODO: validate input.
-            this.shutdownQuitePeriodSeconds = shutdownQuitePeriodSeconds;
+            this.shutdownQuitePeriodSeconds = Math.max(1, shutdownQuitePeriodSeconds);
             return this;
         }
 
         public Builder shutdownWaitTimeSeconds(final int shutdownWaitTimeSeconds) {
-            // TODO: validate input.
-            this.shutdownWaitTimeSeconds = shutdownWaitTimeSeconds;
+            this.shutdownWaitTimeSeconds = Math.max(1, shutdownWaitTimeSeconds);
             return this;
         }
 
