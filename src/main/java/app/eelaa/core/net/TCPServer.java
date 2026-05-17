@@ -1,15 +1,6 @@
 package app.eelaa.core.net;
 
 import app.eelaa.core.lz4.LZ4;
-import app.eelaa.core.os.OSDetector;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.channel.*;
-import io.netty.channel.epoll.EpollIoHandler;
-import io.netty.channel.epoll.EpollServerSocketChannel;
-import io.netty.channel.kqueue.KQueueIoHandler;
-import io.netty.channel.kqueue.KQueueServerSocketChannel;
-import io.netty.channel.nio.NioIoHandler;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.ResourceLeakDetector.Level;
 import org.slf4j.Logger;
@@ -32,7 +23,7 @@ public final class TCPServer implements AutoCloseable {
 
     private TCPServer(final TCPServerConfig config) {
         this.config = config;
-        this.nativeServerBootstrap = NativeServerBootstrap.newInstance();
+        this.nativeServerBootstrap = NativeServerBootstrap.newInstance(config);
         this.cpuHeavyTaskExecutor = CPUHeavyTaskExecutor.newInstance(config.getCpuHeavyTaskExecutorConfig());
         this.lz4 = LZ4.newInstance(config.getLz4Config());
     }
@@ -48,40 +39,10 @@ public final class TCPServer implements AutoCloseable {
             ResourceLeakDetector.setLevel(Level.DISABLED);
         }
 
-        nativeServerBootstrap.group(group());
-        nativeServerBootstrap.channel(channel());
-        nativeServerBootstrap.option(ChannelOption.SO_BACKLOG, config.getSoBacklog());
-        nativeServerBootstrap.option(ChannelOption.SO_REUSEADDR, true);
-        nativeServerBootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
-        nativeServerBootstrap.childOption(ChannelOption.TCP_NODELAY, true);
-        nativeServerBootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-        nativeServerBootstrap.childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, writeBufferWaterMark());
+        nativeServerBootstrap.configure();
         nativeServerBootstrap.childHandler(new ClientSocketChannelInitializer(config, tlsContext(), cpuHeavyTaskExecutor, lz4));
         nativeServerBootstrap.bind(config.getHost(), config.getPort()).sync();
         logger.info("Started TCP server using configuration: {}", config);
-    }
-
-    private EventLoopGroup group() {
-        final var os = OSDetector.os();
-        logger.info("Detected {} as operating system", os);
-
-        return switch (os) {
-            case LINUX -> new MultiThreadIoEventLoopGroup(EpollIoHandler.newFactory());
-            case MACOS -> new MultiThreadIoEventLoopGroup(KQueueIoHandler.newFactory());
-            case OTHER -> new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-        };
-    }
-
-    private Class<? extends ServerChannel> channel() {
-        return switch (OSDetector.os()) {
-            case LINUX -> EpollServerSocketChannel.class;
-            case MACOS -> KQueueServerSocketChannel.class;
-            case OTHER -> NioServerSocketChannel.class;
-        };
-    }
-
-    private WriteBufferWaterMark writeBufferWaterMark() {
-        return new WriteBufferWaterMark(config.getLowWriteBufferWaterMark(), config.getHighWriteBufferWaterMark());
     }
 
     private TLSContext tlsContext() throws Exception {

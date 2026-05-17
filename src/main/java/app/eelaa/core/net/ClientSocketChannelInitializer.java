@@ -33,7 +33,9 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
 
     @Override
     protected void initChannel(final SocketChannel channel) throws Exception {
+        // Must be the first inbound handler.
         addTLSHandler(channel);
+
         addFrameDecoder(channel);
         addFrameHeaderLogger(channel);
         addFrameHeaderProcessor(channel);
