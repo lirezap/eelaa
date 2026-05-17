@@ -32,6 +32,7 @@ final class NativeServerBootstrap extends ServerBootstrap {
     }
 
     public void configure() {
+        // TODO: Use all appropriate server/client side channel options.
         this.group(selectGroup());
         this.channel(selectChannel());
 
@@ -39,12 +40,13 @@ final class NativeServerBootstrap extends ServerBootstrap {
             this.option(EpollChannelOption.SO_BACKLOG, config.getSoBacklog());
             this.option(EpollChannelOption.SO_REUSEADDR, true);
             this.option(EpollChannelOption.SO_REUSEPORT, true);
-        }
-
-        if (KQueue.isAvailable()) {
+        } else if (KQueue.isAvailable()) {
             this.option(KQueueChannelOption.SO_BACKLOG, config.getSoBacklog());
             this.option(KQueueChannelOption.SO_REUSEADDR, true);
             this.option(KQueueChannelOption.SO_REUSEPORT, true);
+        } else {
+            this.option(ChannelOption.SO_BACKLOG, config.getSoBacklog());
+            this.option(ChannelOption.SO_REUSEADDR, true);
         }
 
         this.childOption(ChannelOption.TCP_NODELAY, true);
