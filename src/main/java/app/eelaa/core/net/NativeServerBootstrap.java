@@ -33,8 +33,8 @@ final class NativeServerBootstrap extends ServerBootstrap {
 
     public void configure() {
         // TODO: Use all appropriate server/client side channel options.
-        this.group(selectGroup());
-        this.channel(selectChannel());
+        this.group(bossGroup(), workerGroup());
+        this.channel(serverSocketChannel());
 
         if (Epoll.isAvailable()) {
             this.option(EpollChannelOption.SO_BACKLOG, config.getSoBacklog());
@@ -55,7 +55,15 @@ final class NativeServerBootstrap extends ServerBootstrap {
         this.childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, writeBufferWaterMark());
     }
 
-    private EventLoopGroup selectGroup() {
+    private EventLoopGroup bossGroup() {
+        return switch (OSDetector.os()) {
+            case LINUX -> new MultiThreadIoEventLoopGroup(1, EpollIoHandler.newFactory());
+            case MACOS -> new MultiThreadIoEventLoopGroup(1, KQueueIoHandler.newFactory());
+            case OTHER -> new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
+        };
+    }
+
+    private EventLoopGroup workerGroup() {
         return switch (OSDetector.os()) {
             case LINUX ->
                     new MultiThreadIoEventLoopGroup(config.getEventLoopGroupNThreads(), EpollIoHandler.newFactory());
@@ -66,7 +74,7 @@ final class NativeServerBootstrap extends ServerBootstrap {
         };
     }
 
-    private Class<? extends ServerChannel> selectChannel() {
+    private Class<? extends ServerChannel> serverSocketChannel() {
         return switch (OSDetector.os()) {
             case LINUX -> EpollServerSocketChannel.class;
             case MACOS -> KQueueServerSocketChannel.class;

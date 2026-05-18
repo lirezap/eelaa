@@ -58,6 +58,9 @@ public final class TCPServer implements AutoCloseable {
         nativeServerBootstrap.config().group().shutdownGracefully(
                 config.getShutdownQuitePeriodSeconds(), config.getShutdownWaitTimeSeconds(), SECONDS).sync();
 
+        nativeServerBootstrap.config().childGroup().shutdownGracefully(
+                config.getShutdownQuitePeriodSeconds(), config.getShutdownWaitTimeSeconds(), SECONDS).sync();
+
         cpuHeavyTaskExecutor.shutdownGracefully().sync();
         lz4.close();
 
