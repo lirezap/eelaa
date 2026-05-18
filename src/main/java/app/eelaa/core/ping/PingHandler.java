@@ -1,6 +1,6 @@
-package app.eelaa.core.handler.ping;
+package app.eelaa.core.ping;
 
-import app.eelaa.core.handler.Handler;
+import app.eelaa.core.net.Handler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
