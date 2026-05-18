@@ -19,6 +19,7 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
     // Sharable handlers.
     private final FrameHeaderLogger frameHeaderLogger;
     private final FrameHeaderProcessor frameHeaderProcessor;
+    private final Dispatcher dispatcher;
     private final InboundExceptionHandler inboundExceptionHandler;
 
     public ClientSocketChannelInitializer(final TCPServerConfig config, final TLSContext tlsContext,
@@ -28,6 +29,7 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
         this.tlsContext = tlsContext;
         this.frameHeaderLogger = new FrameHeaderLogger();
         this.frameHeaderProcessor = new FrameHeaderProcessor(new FrameDataDecompressor(cpuHeavyTaskExecutor, lz4));
+        this.dispatcher = new Dispatcher(cpuHeavyTaskExecutor);
         this.inboundExceptionHandler = new InboundExceptionHandler();
     }
 
@@ -39,8 +41,9 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
         addFrameDecoder(channel);
         addFrameHeaderLogger(channel);
         addFrameHeaderProcessor(channel);
+        addDispatcher(channel);
 
-        // Must be the latest inbound handler.
+        // Must be the last inbound handler.
         addInboundExceptionHandler(channel);
     }
 
@@ -62,6 +65,10 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
 
     private void addFrameHeaderProcessor(final SocketChannel channel) {
         channel.pipeline().addLast(frameHeaderProcessor.getClass().getName(), frameHeaderProcessor);
+    }
+
+    private void addDispatcher(final SocketChannel channel) {
+        channel.pipeline().addLast(dispatcher);
     }
 
     private void addInboundExceptionHandler(final SocketChannel channel) {

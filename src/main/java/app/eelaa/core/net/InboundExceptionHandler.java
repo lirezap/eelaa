@@ -23,16 +23,15 @@ final class InboundExceptionHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void log(final Throwable cause) {
-        if (cause instanceof FrameVersionNotSupportedException) {
-            logger.error("frame version is not supported!");
-        } else if (cause instanceof InvalidFrameLengthException) {
-            logger.error("invalid length value provided!");
-        } else if (cause instanceof InvalidActualSizeException) {
-            logger.error("invalid actual size value provided!");
-        } else if (cause instanceof DecompressionFailedException) {
-            logger.error("could not decompress the data appropriately!");
-        } else {
-            logger.error("exception: {}", cause.getMessage(), cause);
+        // TODO: Add remote address data in log.
+        switch (cause) {
+            case FrameVersionNotSupportedException _ -> logger.error("frame version is not supported!");
+            case InvalidFrameLengthException _ -> logger.error("invalid length value provided!");
+            case InvalidActualSizeException _ -> logger.error("invalid actual size value provided!");
+            case DecompressionFailedException _ -> logger.error("could not decompress the data appropriately!");
+            case InvalidHandlerException _ -> logger.error("assigned handler can't be called for this frame!");
+            case HandlerNotFoundException _ -> logger.error("could not find any handler to handle incoming frame!");
+            default -> logger.error("exception: {}", cause.getMessage(), cause);
         }
     }
 }

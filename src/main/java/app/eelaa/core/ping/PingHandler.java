@@ -33,6 +33,7 @@ public final class PingHandler extends Handler {
             response.writeInt(101);
             response.writeInt(getSequenceId());
             writeAndFlushThenClose(response);
+            releaseFrameBuffer();
         } else {
             close();
         }

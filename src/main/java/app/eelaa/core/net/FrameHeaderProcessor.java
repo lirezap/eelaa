@@ -14,11 +14,13 @@ import io.netty.util.ReferenceCountUtil;
 @Sharable
 final class FrameHeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
     private final FrameVersionNotSupportedException frameVersionNotSupportedException;
+    private final InvalidFrameLengthException invalidFrameLengthException;
     private final FrameDataDecompressor frameDataDecompressor;
 
     public FrameHeaderProcessor(final FrameDataDecompressor frameDataDecompressor) {
         super(false);
         this.frameVersionNotSupportedException = new FrameVersionNotSupportedException();
+        this.invalidFrameLengthException = new InvalidFrameLengthException();
         this.frameDataDecompressor = frameDataDecompressor;
     }
 
@@ -46,6 +48,17 @@ final class FrameHeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
         if ((flags & 0b00000001) == 0b00000001) {
             ctx.pipeline().addAfter(
                     this.getClass().getName(), frameDataDecompressor.getClass().getName(), frameDataDecompressor);
+        } else {
+            validateFrameLength(buf);
+        }
+    }
+
+    private void validateFrameLength(final ByteBuf buf) {
+        final var length = buf.readInt();
+
+        // At least frame numeric type and sequence id as int values are required.
+        if (length < 8) {
+            throw invalidFrameLengthException;
         }
     }
 }

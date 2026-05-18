@@ -3,6 +3,7 @@ package app.eelaa.core.net;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.util.ReferenceCountUtil;
 
 /**
  * Basic required handling functionalities that every handler must implement.
@@ -112,6 +113,13 @@ public abstract class Handler {
         buf.writeInt(length);
 
         return buf;
+    }
+
+    /**
+     * Releases the incoming frame's buffer.
+     */
+    protected final void releaseFrameBuffer() {
+        ReferenceCountUtil.release(buf);
     }
 
     protected final ByteBuf getBuf() {
