@@ -12,6 +12,7 @@ public enum FrameNumericType {
     PING(1),
     PONG(1001);
 
+    private static final FrameNumericType[] frameNumericTypes = FrameNumericType.values();
     private final int value;
 
     FrameNumericType(final int value) {
@@ -19,7 +20,7 @@ public enum FrameNumericType {
     }
 
     public static FrameNumericType of(final int value) {
-        for (var fnt : FrameNumericType.values()) {
+        for (var fnt : frameNumericTypes) {
             if (fnt.value == value) return fnt;
         }
 
