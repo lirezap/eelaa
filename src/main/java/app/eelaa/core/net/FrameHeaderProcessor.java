@@ -14,12 +14,14 @@ import io.netty.util.ReferenceCountUtil;
 @Sharable
 final class FrameHeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
     private final FrameVersionNotSupportedException frameVersionNotSupportedException;
+    private final FrameFlagsNotSupportedException frameFlagsNotSupportedException;
     private final InvalidFrameLengthException invalidFrameLengthException;
     private final FrameDataDecompressor frameDataDecompressor;
 
     public FrameHeaderProcessor(final FrameDataDecompressor frameDataDecompressor) {
         super(false);
         this.frameVersionNotSupportedException = new FrameVersionNotSupportedException();
+        this.frameFlagsNotSupportedException = new FrameFlagsNotSupportedException();
         this.invalidFrameLengthException = new InvalidFrameLengthException();
         this.frameDataDecompressor = frameDataDecompressor;
     }
@@ -27,8 +29,8 @@ final class FrameHeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final ByteBuf buf) throws Exception {
         try {
-            validateFrameVersion(buf);
-            addFrameDataDecompressorIfNeeded(ctx, buf);
+            processFrameVersion(buf);
+            processFrameFlags(ctx, buf);
             ctx.fireChannelRead(buf);
         } catch (final Exception ex) {
             ReferenceCountUtil.release(buf);
@@ -36,24 +38,28 @@ final class FrameHeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
         }
     }
 
-    private void validateFrameVersion(final ByteBuf buf) {
+    private void processFrameVersion(final ByteBuf buf) {
         final var version = buf.readByte();
         if (version != 0b00000001) {
             throw frameVersionNotSupportedException;
         }
     }
 
-    private void addFrameDataDecompressorIfNeeded(final ChannelHandlerContext ctx, final ByteBuf buf) {
+    private void processFrameFlags(final ChannelHandlerContext ctx, final ByteBuf buf) {
         final var flags = buf.readByte();
+        if ((flags & 0b11111110) != 0) {
+            throw frameFlagsNotSupportedException;
+        }
+
         if ((flags & 0b00000001) == 0b00000001) {
             ctx.pipeline().addAfter(
                     this.getClass().getName(), frameDataDecompressor.getClass().getName(), frameDataDecompressor);
         } else {
-            validateFrameLength(buf);
+            processFrameLength(buf);
         }
     }
 
-    private void validateFrameLength(final ByteBuf buf) {
+    private void processFrameLength(final ByteBuf buf) {
         final var length = buf.readInt();
 
         // At least frame numeric type and sequence id as int values are required.

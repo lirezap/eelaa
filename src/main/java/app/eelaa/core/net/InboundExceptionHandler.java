@@ -26,6 +26,7 @@ final class InboundExceptionHandler extends ChannelInboundHandlerAdapter {
         // TODO: Add remote address data in log.
         switch (cause) {
             case FrameVersionNotSupportedException _ -> logger.error("frame version is not supported!");
+            case FrameFlagsNotSupportedException _ -> logger.error("frame flags is not supported!");
             case InvalidFrameLengthException _ -> logger.error("invalid length value provided!");
             case InvalidActualSizeException _ -> logger.error("invalid actual size value provided!");
             case DecompressionFailedException _ -> logger.error("could not decompress the data appropriately!");
