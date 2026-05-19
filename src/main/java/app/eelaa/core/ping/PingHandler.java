@@ -4,6 +4,9 @@ import app.eelaa.core.net.Handler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
+import static app.eelaa.core.net.FrameNumericType.PING;
+import static app.eelaa.core.net.FrameNumericType.PONG;
+
 /**
  * @author Alireza Pourtaghi
  */
@@ -17,7 +20,7 @@ public final class PingHandler extends Handler {
 
     @Override
     protected int frameNumericType() {
-        return 100;
+        return PING.value();
     }
 
     @Override
@@ -30,7 +33,7 @@ public final class PingHandler extends Handler {
     public void handle() {
         if (isValid()) {
             var response = newV1Buf(8);
-            response.writeInt(101);
+            response.writeInt(PONG.value());
             response.writeInt(getSequenceId());
             writeAndFlushThenClose(response);
             releaseFrameBuffer();

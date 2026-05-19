@@ -32,9 +32,9 @@ final class Dispatcher extends SimpleChannelInboundHandler<ByteBuf> {
         final var sequenceId = buf.readInt();
 
         try {
-            switch (frameNumericType) {
-                case 100 -> new PingHandler(ctx, buf, frameNumericType, sequenceId).handle();
-                default -> throw handlerNotFoundException;
+            switch (FrameNumericType.of(frameNumericType)) {
+                case PING -> new PingHandler(ctx, buf, frameNumericType, sequenceId).handle();
+                case null, default -> throw handlerNotFoundException;
             }
         } catch (final Exception ex) {
             ReferenceCountUtil.release(buf);
