@@ -72,7 +72,11 @@ public final class LZ4 implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        memory.close();
+        try {
+            memory.close();
+        } catch (final UnsupportedOperationException _) {
+            // Just ignore close operation failure.
+        }
     }
 
     /**

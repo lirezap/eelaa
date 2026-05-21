@@ -20,7 +20,7 @@ public enum FrameNumericType {
     }
 
     public static FrameNumericType of(final int value) {
-        for (var fnt : frameNumericTypes) {
+        for (final var fnt : frameNumericTypes) {
             if (fnt.value == value) return fnt;
         }
 
