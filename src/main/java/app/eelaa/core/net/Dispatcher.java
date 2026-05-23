@@ -33,7 +33,7 @@ final class Dispatcher extends SimpleChannelInboundHandler<ByteBuf> {
 
         try {
             switch (FrameNumericType.of(frameNumericType)) {
-                case PING -> new PingHandler(ctx, buf, frameNumericType, sequenceId).handle();
+                case PING -> cpuHeavyTaskExecutor.submit(new PingHandler(ctx, buf, frameNumericType, sequenceId));
                 case null, default -> throw handlerNotFoundException;
             }
         } catch (final Exception ex) {

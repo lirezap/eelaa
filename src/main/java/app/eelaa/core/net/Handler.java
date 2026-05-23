@@ -10,7 +10,7 @@ import io.netty.util.ReferenceCountUtil;
  *
  * @author Alireza Pourtaghi
  */
-public abstract class Handler {
+public abstract class Handler implements Runnable {
     private static final InvalidHandlerException invalidHandlerException = new InvalidHandlerException();
 
     private final ChannelHandlerContext ctx;
@@ -27,6 +27,16 @@ public abstract class Handler {
         this.sequenceId = sequenceId;
 
         if (!canHandle()) throw invalidHandlerException;
+    }
+
+    @Override
+    public final void run() {
+        try {
+            handle();
+        } catch (final Exception ex) {
+            releaseFrameBuffer();
+            fireException(ex);
+        }
     }
 
     /**
@@ -55,7 +65,7 @@ public abstract class Handler {
     /**
      * Main handling functionality implementation.
      */
-    public abstract void handle();
+    protected abstract void handle();
 
     /**
      * Writes buf into channel.
@@ -110,6 +120,21 @@ public abstract class Handler {
         var buf = ctx.alloc().buffer(6 + length);
         buf.writeByte(0b00000001);
         buf.writeByte(0b00000000);
+        buf.writeInt(length);
+
+        return buf;
+    }
+
+    /**
+     * Creates a new buffer based on version one message format and compressed flag enabled.
+     *
+     * @param length data section length
+     * @return newly created buffer
+     */
+    protected final ByteBuf newV1BufCompressed(final int length) {
+        var buf = ctx.alloc().buffer(6 + length);
+        buf.writeByte(0b00000001);
+        buf.writeByte(0b00000001);
         buf.writeInt(length);
 
         return buf;

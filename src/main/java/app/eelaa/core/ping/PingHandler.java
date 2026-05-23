@@ -30,7 +30,7 @@ public final class PingHandler extends Handler {
     }
 
     @Override
-    public void handle() {
+    protected void handle() {
         if (isValid()) {
             var response = newV1Buf(8);
             response.writeInt(PONG.value());
