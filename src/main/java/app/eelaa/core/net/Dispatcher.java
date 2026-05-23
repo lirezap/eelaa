@@ -25,7 +25,7 @@ final class Dispatcher extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final ByteBuf buf) throws Exception {
-        // We here will receive two kinds of buffers:
+        // Here, we will receive two kinds of buffers:
         // 1- Raw incoming buffer (6 bytes previously read)
         // 2- Decompressed data section
         final var frameNumericType = buf.readInt();

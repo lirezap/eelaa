@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 public final class CoreApplication {
     private static final Logger logger = LoggerFactory.getLogger(CoreApplication.class);
 
-    public static void main(String... args) {
+    public static void main(final String... args) {
         logger.info("Starting core version: {}", CoreApplication.class.getPackage().getImplementationVersion());
     }
 }
