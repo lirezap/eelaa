@@ -18,16 +18,18 @@ final class SequenceIdsHolder {
     }
 
     public boolean addSequenceId(final int sequenceId) {
+        // Provided sequence id must be greater than zero.
         if (sequenceId <= 0) return false;
 
-        var minimumStoredSequenceId = Integer.MAX_VALUE;
+        // Provided sequence id must not be duplicate in the last N provided sequence ids.
         for (int i = 1; i < sequenceIds.length; i++) {
             final var fetchedSequenceId = sequenceIds[Math.abs(indexToAdd - i)];
             if (fetchedSequenceId == sequenceId) return false;
-
-            minimumStoredSequenceId = Math.min(minimumStoredSequenceId, fetchedSequenceId);
         }
 
+        // Provided sequence id must not be less than or equal to the minimum value of the last N provided sequence ids.
+        var minimumStoredSequenceId = Integer.MAX_VALUE;
+        for (final int id : sequenceIds) minimumStoredSequenceId = Math.min(minimumStoredSequenceId, id);
         if (sequenceId <= minimumStoredSequenceId) return false;
 
         sequenceIds[indexToAdd++] = sequenceId;
