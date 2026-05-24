@@ -30,6 +30,7 @@ final class InboundExceptionHandler extends ChannelInboundHandlerAdapter {
             case InvalidFrameLengthException _ -> logger.error("invalid length value provided!");
             case InvalidActualSizeException _ -> logger.error("invalid actual size value provided!");
             case DecompressionFailedException _ -> logger.error("could not decompress the data appropriately!");
+            case BadSequenceIdException _ -> logger.error("provided sequence id is not valid!");
             case InvalidHandlerException _ -> logger.error("assigned handler can't be called for this frame!");
             case HandlerNotFoundException _ -> logger.error("could not find any handler to handle incoming frame!");
             default -> logger.error("exception: {}", cause.getMessage(), cause);
