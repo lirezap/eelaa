@@ -5,6 +5,7 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.timeout.IdleStateHandler;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -19,6 +20,7 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
     private final TLSContext tlsContext;
 
     // Sharable handlers.
+    private final HeartbeatHandler heartbeatHandler;
     private final FrameHeaderLogger frameHeaderLogger;
     private final FrameHeaderProcessor frameHeaderProcessor;
     private final Dispatcher dispatcher;
@@ -29,6 +31,7 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
 
         this.config = config;
         this.tlsContext = tlsContext;
+        this.heartbeatHandler = new HeartbeatHandler();
         this.frameHeaderLogger = new FrameHeaderLogger();
         this.frameHeaderProcessor = new FrameHeaderProcessor(new FrameDataDecompressor(cpuHeavyTaskExecutor, lz4));
         this.dispatcher = new Dispatcher(cpuHeavyTaskExecutor);
@@ -40,6 +43,8 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
         // Must be the first inbound handler.
         addTLSHandler(channel);
 
+        addIdleStateHandler(channel);
+        addHeartbeatHandler(channel);
         addFrameDecoder(channel);
         addFrameHeaderLogger(channel);
         addFrameHeaderProcessor(channel);
@@ -55,6 +60,14 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
             handler.setHandshakeTimeout(tlsContext.config().getHandshakeTimeoutSeconds(), SECONDS);
             channel.pipeline().addLast(handler);
         }
+    }
+
+    private void addIdleStateHandler(final SocketChannel channel) {
+        channel.pipeline().addLast(new IdleStateHandler(0, 0, config.getAllIdleTimeoutSeconds()));
+    }
+
+    private void addHeartbeatHandler(final SocketChannel channel) {
+        channel.pipeline().addLast(heartbeatHandler);
     }
 
     private void addFrameDecoder(final SocketChannel channel) {

@@ -16,6 +16,7 @@ public final class TCPServerConfig {
     private final int lowWriteBufferWaterMark;
     private final int highWriteBufferWaterMark;
     private final TLSContextConfig tlsContextConfig;
+    private final int allIdleTimeoutSeconds;
     private final boolean logFrameHeader;
     private final CPUHeavyTaskExecutorConfig cpuHeavyTaskExecutorConfig;
     private final LZ4Config lz4Config;
@@ -32,6 +33,7 @@ public final class TCPServerConfig {
         this.lowWriteBufferWaterMark = builder.lowWriteBufferWaterMark;
         this.highWriteBufferWaterMark = builder.highWriteBufferWaterMark;
         this.tlsContextConfig = builder.tlsContextConfig;
+        this.allIdleTimeoutSeconds = builder.allIdleTimeoutSeconds;
         this.logFrameHeader = builder.logFrameHeader;
         this.cpuHeavyTaskExecutorConfig = builder.cpuHeavyTaskExecutorConfig;
         this.lz4Config = builder.lz4Config;
@@ -72,6 +74,10 @@ public final class TCPServerConfig {
         return tlsContextConfig;
     }
 
+    public int getAllIdleTimeoutSeconds() {
+        return allIdleTimeoutSeconds;
+    }
+
     public boolean isLogFrameHeader() {
         return logFrameHeader;
     }
@@ -107,6 +113,7 @@ public final class TCPServerConfig {
                 ", lowWriteBufferWaterMark=" + lowWriteBufferWaterMark +
                 ", highWriteBufferWaterMark=" + highWriteBufferWaterMark +
                 ", tlsContextConfig=" + tlsContextConfig +
+                ", allIdleTimeoutSeconds=" + allIdleTimeoutSeconds +
                 ", logFrameHeader=" + logFrameHeader +
                 ", cpuHeavyTaskExecutorConfig=" + cpuHeavyTaskExecutorConfig +
                 ", lz4Config=" + lz4Config +
@@ -130,6 +137,7 @@ public final class TCPServerConfig {
         private int lowWriteBufferWaterMark = 32 * 1024;
         private int highWriteBufferWaterMark = 128 * 1024;
         private TLSContextConfig tlsContextConfig = new TLSContextConfig.Builder().build();
+        private int allIdleTimeoutSeconds = 120;
         private boolean logFrameHeader = false;
         private CPUHeavyTaskExecutorConfig cpuHeavyTaskExecutorConfig = new CPUHeavyTaskExecutorConfig.Builder().build();
         private LZ4Config lz4Config;
@@ -178,6 +186,11 @@ public final class TCPServerConfig {
 
         public Builder tlsContextConfig(final TLSContextConfig tlsContextConfig) {
             this.tlsContextConfig = tlsContextConfig;
+            return this;
+        }
+
+        public Builder allIdleTimeoutSeconds(final int allIdleTimeoutSeconds) {
+            this.allIdleTimeoutSeconds = Math.max(10, allIdleTimeoutSeconds);
             return this;
         }
 
