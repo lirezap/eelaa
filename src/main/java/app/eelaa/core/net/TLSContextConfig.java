@@ -14,6 +14,7 @@ public final class TLSContextConfig {
     private final boolean useOcsp;
     private final int sessionCacheSize;
     private final int sessionTimeoutSeconds;
+    private final int handshakeTimeoutSeconds;
 
     private TLSContextConfig(final Builder builder) {
         this.useTls = builder.useTls;
@@ -22,6 +23,7 @@ public final class TLSContextConfig {
         this.useOcsp = builder.useOcsp;
         this.sessionCacheSize = builder.sessionCacheSize;
         this.sessionTimeoutSeconds = builder.sessionTimeoutSeconds;
+        this.handshakeTimeoutSeconds = builder.handshakeTimeoutSeconds;
     }
 
     public boolean isUseTls() {
@@ -48,6 +50,10 @@ public final class TLSContextConfig {
         return sessionTimeoutSeconds;
     }
 
+    public int getHandshakeTimeoutSeconds() {
+        return handshakeTimeoutSeconds;
+    }
+
     @Override
     public String toString() {
         return "TLSContextConfig{" +
@@ -57,6 +63,7 @@ public final class TLSContextConfig {
                 ", useOcsp=" + useOcsp +
                 ", sessionCacheSize=" + sessionCacheSize +
                 ", sessionTimeoutSeconds=" + sessionTimeoutSeconds +
+                ", handshakeTimeoutSeconds=" + handshakeTimeoutSeconds +
                 '}';
     }
 
@@ -72,6 +79,7 @@ public final class TLSContextConfig {
         private boolean useOcsp = false;
         private int sessionCacheSize = 20000;
         private int sessionTimeoutSeconds = 300;
+        private int handshakeTimeoutSeconds = 5;
 
         public Builder() {
         }
@@ -103,6 +111,11 @@ public final class TLSContextConfig {
 
         public Builder sessionTimeoutSeconds(final int sessionTimeoutSeconds) {
             this.sessionTimeoutSeconds = Math.max(1, sessionTimeoutSeconds);
+            return this;
+        }
+
+        public Builder handshakeTimeoutSeconds(final int handshakeTimeoutSeconds) {
+            this.handshakeTimeoutSeconds = Math.max(1, handshakeTimeoutSeconds);
             return this;
         }
 

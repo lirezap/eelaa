@@ -13,9 +13,11 @@ import java.util.List;
  * @author Alireza Pourtaghi
  */
 final class TLSContext extends SslContext {
+    private final TLSContextConfig config;
     private final SslContext context;
 
     private TLSContext(final TLSContextConfig config) throws Exception {
+        this.config = config;
         this.context = SslContextBuilder
                 .forServer(config.getServerCertPath().toFile(), config.getServerKeyPath().toFile())
                 .sslProvider(SslProvider.OPENSSL_REFCNT)
@@ -59,5 +61,9 @@ final class TLSContext extends SslContext {
     @Override
     public SSLSessionContext sessionContext() {
         return context.sessionContext();
+    }
+
+    public TLSContextConfig config() {
+        return config;
     }
 }

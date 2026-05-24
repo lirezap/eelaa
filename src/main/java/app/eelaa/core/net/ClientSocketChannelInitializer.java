@@ -6,6 +6,8 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 /**
  * Channel initializer to be able to initialize incoming client socket channels.
  *
@@ -49,7 +51,9 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
 
     private void addTLSHandler(final SocketChannel channel) {
         if (tlsContext != null) {
-            channel.pipeline().addLast(tlsContext.newHandler(channel.alloc()));
+            final var handler = tlsContext.newHandler(channel.alloc());
+            handler.setHandshakeTimeout(tlsContext.config().getHandshakeTimeoutSeconds(), SECONDS);
+            channel.pipeline().addLast(handler);
         }
     }
 
