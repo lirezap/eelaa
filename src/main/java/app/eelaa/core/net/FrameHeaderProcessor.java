@@ -62,8 +62,8 @@ final class FrameHeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
     private void processFrameLength(final ByteBuf buf) {
         final var length = buf.readInt();
 
-        // At least frame numeric type and sequence id as int values are required.
-        if (length < 8) {
+        // At least frame numeric type, sequence id and timestamp are required.
+        if (length < 16) {
             throw invalidFrameLengthException;
         }
     }

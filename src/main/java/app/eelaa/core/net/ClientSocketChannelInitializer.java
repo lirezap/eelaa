@@ -40,18 +40,14 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
 
     @Override
     protected void initChannel(final SocketChannel channel) throws Exception {
-        // Must be the first inbound handler.
-        addTLSHandler(channel);
-
+        addTLSHandler(channel);              // Must be the first inbound handler.
         addIdleStateHandler(channel);
         addHeartbeatHandler(channel);
         addFrameDecoder(channel);
         addFrameHeaderLogger(channel);
         addFrameHeaderProcessor(channel);
         addDispatcher(channel);
-
-        // Must be the last inbound handler.
-        addInboundExceptionHandler(channel);
+        addInboundExceptionHandler(channel); // Must be the last inbound handler.
     }
 
     private void addTLSHandler(final SocketChannel channel) {

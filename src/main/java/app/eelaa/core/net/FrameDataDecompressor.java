@@ -53,8 +53,9 @@ final class FrameDataDecompressor extends SimpleChannelInboundHandler<ByteBuf> {
     private int extractActualSize(final ByteBuf buf) {
         final var actualSize = buf.readInt();
 
-        // This is the actual size (real size); At least frame numeric type and sequence id as int values are required.
-        if (actualSize < 8) {
+        // This is the actual size (real size).
+        // At least frame numeric type, sequence id and timestamp are required.
+        if (actualSize < 16) {
             throw invalidActualSizeException;
         }
 

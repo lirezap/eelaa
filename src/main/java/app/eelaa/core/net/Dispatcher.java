@@ -16,6 +16,7 @@ import io.netty.util.ReferenceCountUtil;
 @Sharable
 final class Dispatcher extends SimpleChannelInboundHandler<ByteBuf> {
     private final BadSequenceIdException badSequenceIdException;
+    private final BadTimestampException badTimestampException;
     private final HandlerNotFoundException handlerNotFoundException;
     private final CPUHeavyTaskExecutor cpuHeavyTaskExecutor;
     private final AttributeKey<SequenceIdsHolder> sequenceIdsHolderKey;
@@ -23,6 +24,7 @@ final class Dispatcher extends SimpleChannelInboundHandler<ByteBuf> {
     public Dispatcher(final CPUHeavyTaskExecutor cpuHeavyTaskExecutor) {
         super(false);
         this.badSequenceIdException = new BadSequenceIdException();
+        this.badTimestampException = new BadTimestampException();
         this.handlerNotFoundException = new HandlerNotFoundException();
         this.cpuHeavyTaskExecutor = cpuHeavyTaskExecutor;
         this.sequenceIdsHolderKey = AttributeKey.newInstance("sequenceIdsHolderKey");
@@ -35,10 +37,15 @@ final class Dispatcher extends SimpleChannelInboundHandler<ByteBuf> {
         // 2- Decompressed data section
         final var frameNumericType = buf.readInt();
         final var sequenceId = buf.readInt();
+        final var ts = buf.readLong();
 
         try {
             if (!addSequenceId(ctx, sequenceId)) {
                 throw badSequenceIdException;
+            }
+
+            if (!isValidTimestamp(ts)) {
+                throw badTimestampException;
             }
 
             switch (FrameNumericType.of(frameNumericType)) {
@@ -58,5 +65,10 @@ final class Dispatcher extends SimpleChannelInboundHandler<ByteBuf> {
         }
 
         return sequenceIdsHolderValue.get().addSequenceId(sequenceId);
+    }
+
+    private boolean isValidTimestamp(final long ts) {
+        final var now = System.currentTimeMillis();
+        return (now - 5000) < ts && ts < (now + 5000);
     }
 }
