@@ -1,6 +1,5 @@
 package app.eelaa.core.net;
 
-import app.eelaa.core.os.OSDetector;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
@@ -14,6 +13,7 @@ import io.netty.channel.kqueue.KQueueIoHandler;
 import io.netty.channel.kqueue.KQueueServerSocketChannel;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import org.agrona.SystemUtil;
 
 /**
  * Native configured server bootstrap.
@@ -56,30 +56,33 @@ final class NativeServerBootstrap extends ServerBootstrap {
     }
 
     private EventLoopGroup bossGroup() {
-        return switch (OSDetector.os()) {
-            case LINUX -> new MultiThreadIoEventLoopGroup(1, EpollIoHandler.newFactory());
-            case MACOS -> new MultiThreadIoEventLoopGroup(1, KQueueIoHandler.newFactory());
-            case OTHER -> new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
-        };
+        if (SystemUtil.isLinux()) {
+            return new MultiThreadIoEventLoopGroup(1, EpollIoHandler.newFactory());
+        } else if (SystemUtil.isMac()) {
+            return new MultiThreadIoEventLoopGroup(1, KQueueIoHandler.newFactory());
+        } else {
+            return new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
+        }
     }
 
     private EventLoopGroup workerGroup() {
-        return switch (OSDetector.os()) {
-            case LINUX ->
-                    new MultiThreadIoEventLoopGroup(config.getEventLoopGroupNThreads(), EpollIoHandler.newFactory());
-            case MACOS ->
-                    new MultiThreadIoEventLoopGroup(config.getEventLoopGroupNThreads(), KQueueIoHandler.newFactory());
-            case OTHER ->
-                    new MultiThreadIoEventLoopGroup(config.getEventLoopGroupNThreads(), NioIoHandler.newFactory());
-        };
+        if (SystemUtil.isLinux()) {
+            return new MultiThreadIoEventLoopGroup(config.getEventLoopGroupNThreads(), EpollIoHandler.newFactory());
+        } else if (SystemUtil.isMac()) {
+            return new MultiThreadIoEventLoopGroup(config.getEventLoopGroupNThreads(), KQueueIoHandler.newFactory());
+        } else {
+            return new MultiThreadIoEventLoopGroup(config.getEventLoopGroupNThreads(), NioIoHandler.newFactory());
+        }
     }
 
     private Class<? extends ServerChannel> serverSocketChannel() {
-        return switch (OSDetector.os()) {
-            case LINUX -> EpollServerSocketChannel.class;
-            case MACOS -> KQueueServerSocketChannel.class;
-            case OTHER -> NioServerSocketChannel.class;
-        };
+        if (SystemUtil.isLinux()) {
+            return EpollServerSocketChannel.class;
+        } else if (SystemUtil.isMac()) {
+            return KQueueServerSocketChannel.class;
+        } else {
+            return NioServerSocketChannel.class;
+        }
     }
 
     private WriteBufferWaterMark writeBufferWaterMark() {
