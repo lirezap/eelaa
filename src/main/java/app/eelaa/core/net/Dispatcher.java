@@ -15,17 +15,11 @@ import io.netty.util.ReferenceCountUtil;
  */
 @Sharable
 final class Dispatcher extends SimpleChannelInboundHandler<ByteBuf> {
-    private final BadSequenceIdException badSequenceIdException;
-    private final BadTimestampException badTimestampException;
-    private final HandlerNotFoundException handlerNotFoundException;
     private final CPUHeavyTaskExecutor cpuHeavyTaskExecutor;
     private final AttributeKey<SequenceIdsHolder> sequenceIdsHolderKey;
 
     public Dispatcher(final CPUHeavyTaskExecutor cpuHeavyTaskExecutor) {
         super(false);
-        this.badSequenceIdException = new BadSequenceIdException();
-        this.badTimestampException = new BadTimestampException();
-        this.handlerNotFoundException = new HandlerNotFoundException();
         this.cpuHeavyTaskExecutor = cpuHeavyTaskExecutor;
         this.sequenceIdsHolderKey = AttributeKey.newInstance("sequenceIdsHolderKey");
     }
@@ -41,16 +35,16 @@ final class Dispatcher extends SimpleChannelInboundHandler<ByteBuf> {
 
         try {
             if (!addSequenceId(ctx, sequenceId)) {
-                throw badSequenceIdException;
+                throw BadSequenceIdException.INSTANCE;
             }
 
             if (!isValidTimestamp(ts)) {
-                throw badTimestampException;
+                throw BadTimestampException.INSTANCE;
             }
 
             switch (FrameNumericType.of(frameNumericType)) {
                 case PING -> cpuHeavyTaskExecutor.submit(new PingHandler(ctx, buf, frameNumericType, sequenceId));
-                case null, default -> throw handlerNotFoundException;
+                case null, default -> throw HandlerNotFoundException.INSTANCE;
             }
         } catch (final Exception ex) {
             ReferenceCountUtil.release(buf);

@@ -11,8 +11,6 @@ import io.netty.util.ReferenceCountUtil;
  * @author Alireza Pourtaghi
  */
 public abstract class Handler implements Runnable {
-    private static final InvalidHandlerException invalidHandlerException = new InvalidHandlerException();
-
     private final ChannelHandlerContext ctx;
     private final ByteBuf buf;
     private final int frameNumericType;
@@ -26,7 +24,7 @@ public abstract class Handler implements Runnable {
         this.frameNumericType = frameNumericType;
         this.sequenceId = sequenceId;
 
-        if (!canHandle()) throw invalidHandlerException;
+        if (!canHandle()) throw InvalidHandlerException.INSTANCE;
     }
 
     @Override

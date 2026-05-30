@@ -13,16 +13,10 @@ import io.netty.util.ReferenceCountUtil;
  */
 @Sharable
 final class FrameHeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
-    private final FrameVersionNotSupportedException frameVersionNotSupportedException;
-    private final FrameFlagsNotSupportedException frameFlagsNotSupportedException;
-    private final InvalidFrameLengthException invalidFrameLengthException;
     private final FrameDataDecompressor frameDataDecompressor;
 
     public FrameHeaderProcessor(final FrameDataDecompressor frameDataDecompressor) {
         super(false);
-        this.frameVersionNotSupportedException = new FrameVersionNotSupportedException();
-        this.frameFlagsNotSupportedException = new FrameFlagsNotSupportedException();
-        this.invalidFrameLengthException = new InvalidFrameLengthException();
         this.frameDataDecompressor = frameDataDecompressor;
     }
 
@@ -41,14 +35,14 @@ final class FrameHeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
     private void processFrameVersion(final ByteBuf buf) {
         final var version = buf.readByte();
         if (version != 0b00000001) {
-            throw frameVersionNotSupportedException;
+            throw FrameVersionNotSupportedException.INSTANCE;
         }
     }
 
     private void processFrameFlags(final ChannelHandlerContext ctx, final ByteBuf buf) {
         final var flags = buf.readByte();
         if ((flags & 0b11111110) != 0) {
-            throw frameFlagsNotSupportedException;
+            throw FrameFlagsNotSupportedException.INSTANCE;
         }
 
         if ((flags & 0b00000001) == 0b00000001) {
@@ -64,7 +58,7 @@ final class FrameHeaderProcessor extends SimpleChannelInboundHandler<ByteBuf> {
 
         // At least frame numeric type, sequence id and timestamp are required.
         if (length < 16) {
-            throw invalidFrameLengthException;
+            throw InvalidFrameLengthException.INSTANCE;
         }
     }
 }

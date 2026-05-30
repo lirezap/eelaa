@@ -12,8 +12,6 @@ import java.lang.foreign.MemorySegment;
  * @author Alireza Pourtaghi
  */
 final class LZ4DecompressorTask implements Runnable {
-    private static final DecompressionFailedException decompressionFailedException = new DecompressionFailedException();
-
     private final ChannelHandlerContext ctx;
     private final ByteBuf buf;
     private final LZ4 lz4;
@@ -39,7 +37,7 @@ final class LZ4DecompressorTask implements Runnable {
             final var dst = MemorySegment.ofBuffer(newBuf.internalNioBuffer(0, actualSize));
 
             if (lz4.decompressSafe(src, dst, readableBytes, actualSize) < 0) {
-                throw decompressionFailedException;
+                throw DecompressionFailedException.INSTANCE;
             }
 
             ctx.fireChannelRead(newBuf);

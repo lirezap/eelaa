@@ -14,15 +14,11 @@ import io.netty.util.ReferenceCountUtil;
  */
 @Sharable
 final class FrameDataDecompressor extends SimpleChannelInboundHandler<ByteBuf> {
-    private final InvalidFrameLengthException invalidFrameLengthException;
-    private final InvalidActualSizeException invalidActualSizeException;
     private final CPUHeavyTaskExecutor cpuHeavyTaskExecutor;
     private final LZ4 lz4;
 
     public FrameDataDecompressor(final CPUHeavyTaskExecutor cpuHeavyTaskExecutor, final LZ4 lz4) {
         super(false);
-        this.invalidFrameLengthException = new InvalidFrameLengthException();
-        this.invalidActualSizeException = new InvalidActualSizeException();
         this.cpuHeavyTaskExecutor = cpuHeavyTaskExecutor;
         this.lz4 = lz4;
     }
@@ -46,7 +42,7 @@ final class FrameDataDecompressor extends SimpleChannelInboundHandler<ByteBuf> {
 
         // At least actual size as int value is required.
         if (length < 4) {
-            throw invalidFrameLengthException;
+            throw InvalidFrameLengthException.INSTANCE;
         }
     }
 
@@ -56,7 +52,7 @@ final class FrameDataDecompressor extends SimpleChannelInboundHandler<ByteBuf> {
         // This is the actual size (real size).
         // At least frame numeric type, sequence id and timestamp are required.
         if (actualSize < 16) {
-            throw invalidActualSizeException;
+            throw InvalidActualSizeException.INSTANCE;
         }
 
         return actualSize;
