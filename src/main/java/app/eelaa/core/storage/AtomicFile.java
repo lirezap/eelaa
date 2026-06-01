@@ -47,7 +47,7 @@ final class AtomicFile implements AutoCloseable {
             try (final var _ = file.lock()) {
                 try (final var arena = Arena.ofConfined()) {
                     final var header = arena.allocate(256);
-                    header.set(JAVA_LONG, 0, 256);
+                    header.set(JAVA_LONG, 0, header.byteSize());
                     writeAllBytes(0, header.asByteBuffer());
                 }
             }
