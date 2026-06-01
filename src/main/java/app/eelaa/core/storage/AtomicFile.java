@@ -32,7 +32,7 @@ final class AtomicFile implements AutoCloseable {
         requireNonDirectory(filePath);
         recoverIfNeeded(filePath);
 
-        final var instance = new AtomicFile(FileChannel.open(filePath, CREATE, READ, WRITE, SYNC));
+        final var instance = new AtomicFile(FileChannel.open(filePath, CREATE, READ, WRITE));
         instance.writeFileHeaderIfNeeded();
         instance.adjustPosition();
 
@@ -63,9 +63,11 @@ final class AtomicFile implements AutoCloseable {
 
     private void writeAllBytes(final long position, final ByteBuffer buffer) throws IOException {
         var bytesWritten = 0;
-        while (buffer.remaining() > 0) {
+        while (buffer.hasRemaining()) {
             bytesWritten += file.write(buffer, position + bytesWritten);
         }
+
+        file.force(true);
     }
 
     private void adjustPosition() throws IOException {
