@@ -14,7 +14,7 @@ import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 import static java.nio.file.StandardOpenOption.*;
 
 /**
- * An atomic file implementation based on {@link FileChannel}. The implementation also holds the position value itself.
+ * An atomic file implementation based on {@link FileChannel}. The implementation holds the position value itself.
  *
  * @author Alireza Pourtaghi
  */
@@ -93,10 +93,14 @@ final class AtomicFile implements AutoCloseable {
                 try (final var _ = movedFile.lock()) {
                     try (final var arena = Arena.ofConfined()) {
                         // 256 bytes file header.
-                        final var fileHeader = arena.allocate(256);
-                        movedFile.read(fileHeader.asByteBuffer(), 0);
-                        movedFile.truncate(fileHeader.get(JAVA_LONG, 0));
-                        Files.move(movedPath, filePath, ATOMIC_MOVE);
+                        final var header = arena.allocate(256);
+                        final var readBytes = movedFile.read(header.asByteBuffer().clear(), 0);
+                        if (readBytes > 0) {
+                            movedFile.truncate(header.get(JAVA_LONG, 0));
+                            Files.move(movedPath, filePath, ATOMIC_MOVE);
+                        } else {
+                            throw new IOException("file corrupted!");
+                        }
                     }
                 }
             }
