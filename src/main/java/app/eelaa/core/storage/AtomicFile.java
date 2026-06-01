@@ -2,6 +2,7 @@ package app.eelaa.core.storage;
 
 import java.io.IOException;
 import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
@@ -36,6 +37,12 @@ final class AtomicFile implements AutoCloseable {
         instance.adjustPosition();
 
         return instance;
+    }
+
+    public MemorySegment read(final Arena arena, final long position, final long size) throws IOException {
+        final var segment = arena.allocate(size);
+        file.read(segment.asByteBuffer().clear(), position);
+        return segment;
     }
 
     public long size() throws IOException {

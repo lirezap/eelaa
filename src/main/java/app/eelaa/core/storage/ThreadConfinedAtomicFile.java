@@ -1,5 +1,8 @@
 package app.eelaa.core.storage;
 
+import java.io.IOException;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -15,11 +18,13 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public final class ThreadConfinedAtomicFile implements AutoCloseable {
     private final ExecutorService executor;
+    private final AtomicFile file;
     private final Supplier<Long> sizeMethodSupplier;
     private final Runnable closeMethodRunnable;
 
     private ThreadConfinedAtomicFile(final ExecutorService executor, final AtomicFile file) {
         this.executor = executor;
+        this.file = file;
         this.sizeMethodSupplier = sizeMethodSupplier(file);
         this.closeMethodRunnable = closeMethodRunnable(file);
     }
@@ -30,6 +35,18 @@ public final class ThreadConfinedAtomicFile implements AutoCloseable {
             try {
                 final var file = AtomicFile.newInstance(filePath);
                 return new ThreadConfinedAtomicFile(executor, file);
+            } catch (final Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        }, executor);
+    }
+
+    public CompletableFuture<MemorySegment> read(final Arena arena, final long position, final long size)
+            throws IOException {
+
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return file.read(arena, position, size);
             } catch (final Exception ex) {
                 throw new RuntimeException(ex);
             }
