@@ -96,12 +96,11 @@ final class AtomicFile implements AutoCloseable {
                     try (final var arena = Arena.ofConfined()) {
                         // 256 bytes file header.
                         final var header = arena.allocate(256);
-                        final var readBytes = movedFile.read(header.asByteBuffer().clear(), 0);
-                        if (readBytes > 0) {
+                        if (header.byteSize() == movedFile.read(header.asByteBuffer().clear(), 0)) {
                             movedFile.truncate(header.get(JAVA_LONG, 0));
                             Files.move(movedPath, filePath, ATOMIC_MOVE);
                         } else {
-                            throw new IOException("file corrupted!");
+                            throw new IOException("incomplete read or file corrupted!");
                         }
                     }
                 }
