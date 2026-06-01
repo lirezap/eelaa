@@ -1,6 +1,5 @@
 package app.eelaa.core.storage;
 
-import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.file.Path;
@@ -41,9 +40,7 @@ public final class ThreadConfinedAtomicFile implements AutoCloseable {
         }, executor);
     }
 
-    public CompletableFuture<MemorySegment> read(final Arena arena, final long position, final long size)
-            throws IOException {
-
+    public CompletableFuture<MemorySegment> read(final Arena arena, final long position, final long size) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return file.read(arena, position, size);
