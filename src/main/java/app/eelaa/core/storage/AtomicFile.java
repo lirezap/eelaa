@@ -1,10 +1,15 @@
 package app.eelaa.core.storage;
 
 import java.io.IOException;
+import java.lang.foreign.Arena;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 import static java.nio.file.StandardOpenOption.*;
 
 /**
@@ -22,11 +27,12 @@ final class AtomicFile implements AutoCloseable {
     }
 
     public static AtomicFile newInstance(final Path filePath) throws IOException {
-        if (!Files.isRegularFile(filePath)) {
-            throw new IOException("provided path is not a regular file!");
-        }
+        requireNonNull(filePath);
+        requireNonDirectory(filePath);
+        recoverIfNeeded(filePath);
 
         final var instance = new AtomicFile(FileChannel.open(filePath, CREATE, READ, WRITE, SYNC));
+        instance.writeFileHeaderIfNeeded();
         instance.adjustPosition();
 
         return instance;
@@ -36,9 +42,57 @@ final class AtomicFile implements AutoCloseable {
         return file.size();
     }
 
+    private void writeFileHeaderIfNeeded() throws IOException {
+        if (file.size() == 0) {
+            try (final var _ = file.lock()) {
+                try (final var arena = Arena.ofConfined()) {
+                    final var header = arena.allocate(256);
+                    header.set(JAVA_LONG, 0, 256);
+                    writeAllBytes(0, header.asByteBuffer());
+                }
+            }
+        }
+    }
+
+    private void writeAllBytes(final long position, final ByteBuffer buffer) throws IOException {
+        var bytesWritten = 0;
+        while (buffer.remaining() > 0) {
+            bytesWritten += file.write(buffer, position + bytesWritten);
+        }
+    }
+
     private void adjustPosition() throws IOException {
         try (final var _ = file.lock()) {
             position = file.size();
+        }
+    }
+
+    private static void requireNonNull(final Path filePath) {
+        Objects.requireNonNull(filePath);
+    }
+
+    private static void requireNonDirectory(final Path filePath) throws IOException {
+        if (Files.isDirectory(filePath)) {
+            throw new IOException("provided path is not a file, it is a directory!");
+        }
+    }
+
+    private static void recoverIfNeeded(final Path filePath) throws IOException {
+        final var movedPath = filePath.resolveSibling(filePath.getFileName() + ".mv");
+
+        if (!Files.exists(filePath) && Files.exists(movedPath)) {
+            // System crash or non-graceful shutdown?!
+            try (final var movedFile = FileChannel.open(movedPath, READ, WRITE, SYNC)) {
+                try (final var _ = movedFile.lock()) {
+                    try (final var arena = Arena.ofConfined()) {
+                        // 256 bytes file header.
+                        final var fileHeader = arena.allocate(256);
+                        movedFile.read(fileHeader.asByteBuffer(), 0);
+                        movedFile.truncate(fileHeader.get(JAVA_LONG, 0));
+                        Files.move(movedPath, filePath, ATOMIC_MOVE);
+                    }
+                }
+            }
         }
     }
 
