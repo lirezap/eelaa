@@ -3,6 +3,7 @@ package app.eelaa.core.storage;
 import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -35,6 +36,46 @@ public final class ThreadConfinedAtomicFile implements AutoCloseable {
             try {
                 final var file = AtomicFile.newInstance(filePath);
                 return new ThreadConfinedAtomicFile(executor, file);
+            } catch (final Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        }, executor);
+    }
+
+    public CompletableFuture<Void> write(final ByteBuffer buffer, final long position) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                file.write(buffer, position);
+            } catch (final Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        }, executor);
+    }
+
+    public CompletableFuture<Void> write(final MemorySegment segment, final long position) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                file.write(segment, position);
+            } catch (final Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        }, executor);
+    }
+
+    public CompletableFuture<Void> append(final ByteBuffer buffer) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                file.append(buffer);
+            } catch (final Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        }, executor);
+    }
+
+    public CompletableFuture<Void> append(final MemorySegment segment) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                file.append(segment);
             } catch (final Exception ex) {
                 throw new RuntimeException(ex);
             }

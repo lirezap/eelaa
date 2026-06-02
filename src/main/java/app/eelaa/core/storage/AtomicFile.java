@@ -88,6 +88,35 @@ final class AtomicFile implements AutoCloseable {
         write(segment.asByteBuffer(), position);
     }
 
+    public void append(final ByteBuffer buffer) throws IOException {
+        Files.move(filePath, movePath, ATOMIC_MOVE);
+        try (final var movedFile = FileChannel.open(movePath, READ, WRITE)) {
+            var bufferBytesWritten = 0;
+            while (buffer.hasRemaining()) {
+                bufferBytesWritten += movedFile.write(buffer, position + bufferBytesWritten);
+            }
+            movedFile.force(true);
+
+            incrementDurabilitySize(bufferBytesWritten);
+            final var fileHeaderAsBuffer = fileHeaderMemory.asByteBuffer();
+            var headerBytesWritten = 0;
+            while (fileHeaderAsBuffer.hasRemaining()) {
+                headerBytesWritten += movedFile.write(fileHeaderAsBuffer, headerBytesWritten);
+            }
+            movedFile.force(true);
+            position += bufferBytesWritten;
+        } finally {
+            try {
+                Files.move(movePath, filePath, ATOMIC_MOVE);
+            } catch (final Exception _) {
+            }
+        }
+    }
+
+    public void append(final MemorySegment segment) throws IOException {
+        append(segment.asByteBuffer());
+    }
+
     public MemorySegment read(final Arena arena, final long position, final long size) throws IOException {
         final var segment = arena.allocate(size);
         file.read(segment.asByteBuffer().clear(), position);
