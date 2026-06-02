@@ -86,6 +86,10 @@ public final class ThreadConfinedAtomicFile implements AutoCloseable {
         return file.read(arena, position, size);
     }
 
+    public void read(final MemorySegment segment, final long position) throws IOException {
+        file.read(segment, position);
+    }
+
     public CompletableFuture<Long> size() {
         return CompletableFuture.supplyAsync(sizeMethodSupplier, executor);
     }
