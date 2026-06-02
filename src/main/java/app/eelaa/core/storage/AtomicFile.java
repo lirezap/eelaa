@@ -9,7 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.lang.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 import static java.nio.file.StandardOpenOption.*;
 
@@ -60,6 +60,34 @@ final class AtomicFile implements AutoCloseable {
         return instance;
     }
 
+    public void write(final ByteBuffer buffer, final long position) throws IOException {
+        Files.move(filePath, movePath, ATOMIC_MOVE);
+        try (final var movedFile = FileChannel.open(movePath, READ, WRITE)) {
+            var bytesWritten = 0;
+            while (buffer.hasRemaining()) {
+                bytesWritten += movedFile.write(buffer, position + bytesWritten);
+            }
+            movedFile.force(true);
+
+            incrementDurabilitySize(bytesWritten);
+            final var fileHeaderAsBuffer = fileHeaderMemory.asByteBuffer();
+            bytesWritten = 0;
+            while (fileHeaderAsBuffer.hasRemaining()) {
+                bytesWritten += movedFile.write(fileHeaderAsBuffer, bytesWritten);
+            }
+            movedFile.force(true);
+        } finally {
+            try {
+                Files.move(movePath, filePath, ATOMIC_MOVE);
+            } catch (final Exception _) {
+            }
+        }
+    }
+
+    public void write(final MemorySegment segment, final long position) throws IOException {
+        write(segment.asByteBuffer(), position);
+    }
+
     public MemorySegment read(final Arena arena, final long position, final long size) throws IOException {
         final var segment = arena.allocate(size);
         file.read(segment.asByteBuffer().clear(), position);
@@ -87,10 +115,15 @@ final class AtomicFile implements AutoCloseable {
         file.force(true);
     }
 
+    private void incrementDurabilitySize(final long incrementValue) {
+        final var newValue = Math.addExact(fileHeaderMemory.get(JAVA_LONG_UNALIGNED, 0), incrementValue);
+        fileHeaderMemory.set(JAVA_LONG_UNALIGNED, 0, newValue);
+    }
+
     private void prepareFileHeader() throws IOException {
         try (final var _ = file.lock()) {
             if (file.size() == 0) {
-                fileHeaderMemory.set(JAVA_LONG, 0, fileHeaderMemory.byteSize());
+                fileHeaderMemory.set(JAVA_LONG_UNALIGNED, 0, fileHeaderMemory.byteSize());
                 writeAllBytes(fileHeaderMemory, 0);
             } else {
                 read(fileHeaderMemory, 0);
@@ -123,7 +156,7 @@ final class AtomicFile implements AutoCloseable {
                         // 256 bytes file header.
                         final var header = arena.allocate(256);
                         if (header.byteSize() == movedFile.read(header.asByteBuffer().clear(), 0)) {
-                            movedFile.truncate(header.get(JAVA_LONG, 0));
+                            movedFile.truncate(header.get(JAVA_LONG_UNALIGNED, 0));
                             Files.move(movePath, filePath, ATOMIC_MOVE);
                         } else {
                             throw new IOException("incomplete read or file corrupted!");
