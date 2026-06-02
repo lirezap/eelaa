@@ -74,15 +74,8 @@ final class AtomicFile implements AutoCloseable {
         return file.size();
     }
 
-    private void prepareFileHeader() throws IOException {
-        try (final var _ = file.lock()) {
-            if (file.size() == 0) {
-                fileHeaderMemory.set(JAVA_LONG, 0, fileHeaderMemory.byteSize());
-                writeAllBytes(fileHeaderMemory.asByteBuffer(), 0);
-            } else {
-                read(fileHeaderMemory, 0);
-            }
-        }
+    private void writeAllBytes(final MemorySegment segment, final long position) throws IOException {
+        writeAllBytes(segment.asByteBuffer(), position);
     }
 
     private void writeAllBytes(final ByteBuffer buffer, final long position) throws IOException {
@@ -92,6 +85,17 @@ final class AtomicFile implements AutoCloseable {
         }
 
         file.force(true);
+    }
+
+    private void prepareFileHeader() throws IOException {
+        try (final var _ = file.lock()) {
+            if (file.size() == 0) {
+                fileHeaderMemory.set(JAVA_LONG, 0, fileHeaderMemory.byteSize());
+                writeAllBytes(fileHeaderMemory, 0);
+            } else {
+                read(fileHeaderMemory, 0);
+            }
+        }
     }
 
     private void adjustPosition() throws IOException {
