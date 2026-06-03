@@ -67,7 +67,6 @@ final class AtomicFile implements AutoCloseable {
             while (buffer.hasRemaining()) {
                 bytesWritten += movedFile.write(buffer, position + bytesWritten);
             }
-            movedFile.force(true);
 
             incrementDurabilitySize(bytesWritten);
             final var fileHeaderAsBuffer = fileHeaderMemory.asByteBuffer();
@@ -75,7 +74,7 @@ final class AtomicFile implements AutoCloseable {
             while (fileHeaderAsBuffer.hasRemaining()) {
                 bytesWritten += movedFile.write(fileHeaderAsBuffer, bytesWritten);
             }
-            movedFile.force(true);
+            movedFile.force(false);
         } finally {
             try {
                 Files.move(movePath, filePath, ATOMIC_MOVE);
@@ -95,7 +94,6 @@ final class AtomicFile implements AutoCloseable {
             while (buffer.hasRemaining()) {
                 bufferBytesWritten += movedFile.write(buffer, position + bufferBytesWritten);
             }
-            movedFile.force(true);
 
             incrementDurabilitySize(bufferBytesWritten);
             final var fileHeaderAsBuffer = fileHeaderMemory.asByteBuffer();
@@ -103,7 +101,7 @@ final class AtomicFile implements AutoCloseable {
             while (fileHeaderAsBuffer.hasRemaining()) {
                 headerBytesWritten += movedFile.write(fileHeaderAsBuffer, headerBytesWritten);
             }
-            movedFile.force(true);
+            movedFile.force(false);
             position += bufferBytesWritten;
         } finally {
             try {
@@ -141,7 +139,7 @@ final class AtomicFile implements AutoCloseable {
             bytesWritten += file.write(buffer, position + bytesWritten);
         }
 
-        file.force(true);
+        file.force(false);
     }
 
     private void incrementDurabilitySize(final long incrementValue) {
