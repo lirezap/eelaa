@@ -65,14 +65,16 @@ final class AtomicFile implements AutoCloseable {
         try (final var movedFile = FileChannel.open(movePath, READ, WRITE)) {
             var bytesWritten = 0;
             while (buffer.hasRemaining()) {
-                bytesWritten += movedFile.write(buffer, position + bytesWritten);
+                bytesWritten =
+                        Math.addExact(bytesWritten, movedFile.write(buffer, Math.addExact(position, bytesWritten)));
             }
 
             incrementDurabilitySize(bytesWritten);
             final var fileHeaderAsBuffer = fileHeaderMemory.asByteBuffer();
             bytesWritten = 0;
             while (fileHeaderAsBuffer.hasRemaining()) {
-                bytesWritten += movedFile.write(fileHeaderAsBuffer, bytesWritten);
+                bytesWritten =
+                        Math.addExact(bytesWritten, movedFile.write(fileHeaderAsBuffer, bytesWritten));
             }
             movedFile.force(false);
         } finally {
@@ -92,17 +94,25 @@ final class AtomicFile implements AutoCloseable {
         try (final var movedFile = FileChannel.open(movePath, READ, WRITE)) {
             var bufferBytesWritten = 0;
             while (buffer.hasRemaining()) {
-                bufferBytesWritten += movedFile.write(buffer, position + bufferBytesWritten);
+                bufferBytesWritten =
+                        Math.addExact(bufferBytesWritten, movedFile.write(buffer, Math.addExact(position, bufferBytesWritten)));
             }
 
             incrementDurabilitySize(bufferBytesWritten);
             final var fileHeaderAsBuffer = fileHeaderMemory.asByteBuffer();
             var headerBytesWritten = 0;
             while (fileHeaderAsBuffer.hasRemaining()) {
-                headerBytesWritten += movedFile.write(fileHeaderAsBuffer, headerBytesWritten);
+                headerBytesWritten =
+                        Math.addExact(headerBytesWritten, movedFile.write(fileHeaderAsBuffer, headerBytesWritten));
             }
             movedFile.force(false);
-            position += bufferBytesWritten;
+
+            try {
+                position = Math.addExact(position, bufferBytesWritten);
+            } catch (final ArithmeticException _) {
+                // Noop! Next write operation will fail because of previous Math.addExact(position, bufferBytesWritten).
+                // Let current write to be success.
+            }
         } finally {
             try {
                 Files.move(movePath, filePath, ATOMIC_MOVE);
@@ -136,7 +146,7 @@ final class AtomicFile implements AutoCloseable {
     private void writeAllBytes(final ByteBuffer buffer, final long position) throws IOException {
         var bytesWritten = 0;
         while (buffer.hasRemaining()) {
-            bytesWritten += file.write(buffer, position + bytesWritten);
+            bytesWritten = Math.addExact(bytesWritten, file.write(buffer, Math.addExact(position, bytesWritten)));
         }
 
         file.force(false);
