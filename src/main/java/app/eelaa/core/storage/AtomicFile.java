@@ -9,7 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
-import static java.lang.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
+import static app.eelaa.core.storage.ValueLayouts.LONG;
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 import static java.nio.file.StandardOpenOption.*;
 
@@ -153,14 +153,14 @@ final class AtomicFile implements AutoCloseable {
     }
 
     private void incrementDurabilitySize(final long incrementValue) {
-        final var newValue = Math.addExact(fileHeaderMemory.get(JAVA_LONG_UNALIGNED, 0), incrementValue);
-        fileHeaderMemory.set(JAVA_LONG_UNALIGNED, 0, newValue);
+        final var newValue = Math.addExact(fileHeaderMemory.get(LONG, 0), incrementValue);
+        fileHeaderMemory.set(LONG, 0, newValue);
     }
 
     private void prepareFileHeader() throws IOException {
         try (final var _ = file.lock()) {
             if (file.size() == 0) {
-                fileHeaderMemory.set(JAVA_LONG_UNALIGNED, 0, fileHeaderMemory.byteSize());
+                fileHeaderMemory.set(LONG, 0, fileHeaderMemory.byteSize());
                 writeAllBytes(fileHeaderMemory, 0);
             } else {
                 read(fileHeaderMemory, 0);
@@ -193,7 +193,7 @@ final class AtomicFile implements AutoCloseable {
                         // 256 bytes file header.
                         final var header = arena.allocate(256);
                         if (header.byteSize() == movedFile.read(header.asByteBuffer().clear(), 0)) {
-                            movedFile.truncate(header.get(JAVA_LONG_UNALIGNED, 0));
+                            movedFile.truncate(header.get(LONG, 0));
                             Files.move(movePath, filePath, ATOMIC_MOVE);
                         } else {
                             throw new IOException("incomplete read or file corrupted!");
