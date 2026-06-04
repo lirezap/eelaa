@@ -23,11 +23,13 @@ public final class ThreadConfinedAtomicFile implements AutoCloseable {
     private final Supplier<Long> sizeMethodSupplier;
     private final Runnable closeMethodRunnable;
 
-    private ThreadConfinedAtomicFile(final ExecutorService executor, final AtomicFile file) {
+    private ThreadConfinedAtomicFile(final ExecutorService executor, final AtomicFile file,
+                                     final Supplier<Long> sizeMethodSupplier, final Runnable closeMethodRunnable) {
+
         this.executor = executor;
         this.file = file;
-        this.sizeMethodSupplier = sizeMethodSupplier(file);
-        this.closeMethodRunnable = closeMethodRunnable(file);
+        this.sizeMethodSupplier = sizeMethodSupplier;
+        this.closeMethodRunnable = closeMethodRunnable;
     }
 
     public static CompletableFuture<ThreadConfinedAtomicFile> newInstance(final Path filePath) {
@@ -35,7 +37,10 @@ public final class ThreadConfinedAtomicFile implements AutoCloseable {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 final var file = AtomicFile.newInstance(filePath);
-                return new ThreadConfinedAtomicFile(executor, file);
+                final var sizeMethodSupplier = sizeMethodSupplier(file);
+                final var closeMethodRunnable = closeMethodRunnable(file);
+
+                return new ThreadConfinedAtomicFile(executor, file, sizeMethodSupplier, closeMethodRunnable);
             } catch (final Exception ex) {
                 throw new RuntimeException(ex);
             }

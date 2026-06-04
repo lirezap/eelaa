@@ -21,15 +21,21 @@ public final class TCPServer implements AutoCloseable {
     private final CPUHeavyTaskExecutor cpuHeavyTaskExecutor;
     private final LZ4 lz4;
 
-    private TCPServer(final TCPServerConfig config) {
+    private TCPServer(final TCPServerConfig config, final NativeServerBootstrap nativeServerBootstrap,
+                      final CPUHeavyTaskExecutor cpuHeavyTaskExecutor, final LZ4 lz4) {
+
         this.config = config;
-        this.nativeServerBootstrap = NativeServerBootstrap.newInstance(config);
-        this.cpuHeavyTaskExecutor = CPUHeavyTaskExecutor.newInstance(config.getCpuHeavyTaskExecutorConfig());
-        this.lz4 = LZ4.newInstance(config.getLz4Config());
+        this.nativeServerBootstrap = nativeServerBootstrap;
+        this.cpuHeavyTaskExecutor = cpuHeavyTaskExecutor;
+        this.lz4 = lz4;
     }
 
     public static TCPServer newInstance(final TCPServerConfig config) {
-        return new TCPServer(config);
+        final var nativeServerBootstrap = NativeServerBootstrap.newInstance(config);
+        final var cpuHeavyTaskExecutor = CPUHeavyTaskExecutor.newInstance(config.getCpuHeavyTaskExecutorConfig());
+        final var lz4 = LZ4.newInstance(config.getLz4Config());
+
+        return new TCPServer(config, nativeServerBootstrap, cpuHeavyTaskExecutor, lz4);
     }
 
     public void start() throws Exception {

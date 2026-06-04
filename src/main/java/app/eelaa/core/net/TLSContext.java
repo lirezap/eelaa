@@ -16,9 +16,13 @@ final class TLSContext extends SslContext {
     private final TLSContextConfig config;
     private final SslContext context;
 
-    private TLSContext(final TLSContextConfig config) throws Exception {
+    public TLSContext(final TLSContextConfig config, final SslContext context) {
         this.config = config;
-        this.context = SslContextBuilder
+        this.context = context;
+    }
+
+    public static TLSContext newInstance(final TLSContextConfig config) throws Exception {
+        final var sslContext = SslContextBuilder
                 .forServer(config.getServerCertPath().toFile(), config.getServerKeyPath().toFile())
                 .sslProvider(SslProvider.OPENSSL_REFCNT)
                 .protocols("TLSv1.3")
@@ -27,10 +31,8 @@ final class TLSContext extends SslContext {
                 .sessionCacheSize(config.getSessionCacheSize())
                 .sessionTimeout(config.getSessionTimeoutSeconds())
                 .build();
-    }
 
-    public static TLSContext newInstance(final TLSContextConfig config) throws Exception {
-        return new TLSContext(config);
+        return new TLSContext(config, sslContext);
     }
 
     @Override
