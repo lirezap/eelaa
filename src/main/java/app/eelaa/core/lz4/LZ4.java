@@ -20,29 +20,39 @@ public final class LZ4 implements AutoCloseable {
     private final MethodHandle compressDefaultHandle;
     private final MethodHandle decompressSafeHandle;
 
-    private LZ4(final LZ4Config lz4Config) {
-        this.memory = lz4Config.getMemory();
-        final var linker = Linker.nativeLinker();
-        final var lib = SymbolLookup.libraryLookup(lz4Config.getLibraryPath(), memory);
+    private LZ4(final Arena memory, final MethodHandle versionNumberHandle, final MethodHandle versionStringHandle,
+                final MethodHandle compressBoundHandle, final MethodHandle compressDefaultHandle,
+                final MethodHandle decompressSafeHandle) {
 
-        this.versionNumberHandle =
-                linker.downcallHandle(lib.find(FUNCTION.LZ4_versionNumber.name()).orElseThrow(), FUNCTION.LZ4_versionNumber.fd);
-
-        this.versionStringHandle =
-                linker.downcallHandle(lib.find(FUNCTION.LZ4_versionString.name()).orElseThrow(), FUNCTION.LZ4_versionString.fd);
-
-        this.compressBoundHandle =
-                linker.downcallHandle(lib.find(FUNCTION.LZ4_compressBound.name()).orElseThrow(), FUNCTION.LZ4_compressBound.fd);
-
-        this.compressDefaultHandle =
-                linker.downcallHandle(lib.find(FUNCTION.LZ4_compress_default.name()).orElseThrow(), FUNCTION.LZ4_compress_default.fd);
-
-        this.decompressSafeHandle =
-                linker.downcallHandle(lib.find(FUNCTION.LZ4_decompress_safe.name()).orElseThrow(), FUNCTION.LZ4_decompress_safe.fd);
+        this.memory = memory;
+        this.versionNumberHandle = versionNumberHandle;
+        this.versionStringHandle = versionStringHandle;
+        this.compressBoundHandle = compressBoundHandle;
+        this.compressDefaultHandle = compressDefaultHandle;
+        this.decompressSafeHandle = decompressSafeHandle;
     }
 
     public static LZ4 newInstance(final LZ4Config lz4Config) {
-        return new LZ4(lz4Config);
+        final var memory = lz4Config.getMemory();
+        final var linker = Linker.nativeLinker();
+        final var lib = SymbolLookup.libraryLookup(lz4Config.getLibraryPath(), memory);
+
+        final var versionNumberHandle =
+                linker.downcallHandle(lib.find(FUNCTION.LZ4_versionNumber.name()).orElseThrow(), FUNCTION.LZ4_versionNumber.fd);
+
+        final var versionStringHandle =
+                linker.downcallHandle(lib.find(FUNCTION.LZ4_versionString.name()).orElseThrow(), FUNCTION.LZ4_versionString.fd);
+
+        final var compressBoundHandle =
+                linker.downcallHandle(lib.find(FUNCTION.LZ4_compressBound.name()).orElseThrow(), FUNCTION.LZ4_compressBound.fd);
+
+        final var compressDefaultHandle =
+                linker.downcallHandle(lib.find(FUNCTION.LZ4_compress_default.name()).orElseThrow(), FUNCTION.LZ4_compress_default.fd);
+
+        final var decompressSafeHandle =
+                linker.downcallHandle(lib.find(FUNCTION.LZ4_decompress_safe.name()).orElseThrow(), FUNCTION.LZ4_decompress_safe.fd);
+
+        return new LZ4(memory, versionNumberHandle, versionStringHandle, compressBoundHandle, compressDefaultHandle, decompressSafeHandle);
     }
 
     public int versionNumber() throws Throwable {
