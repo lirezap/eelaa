@@ -12,8 +12,8 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
-    <groupId>app.eelaa</groupId>
-    <artifactId>core</artifactId>
+    <groupId>software.openx</groupId>
+    <artifactId>eelaa</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
     <properties>
