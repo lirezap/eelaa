@@ -35,7 +35,7 @@ public final class PingHandler extends Handler {
             var response = newV1Buf(8);
             response.writeInt(PONG.value());
             response.writeInt(getSequenceId());
-            writeAndFlushThenClose(response);
+            writeAndFlush(response);
             releaseFrameBuffer();
         } else {
             close();
