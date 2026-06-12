@@ -78,10 +78,11 @@ final class Processor {
                 final var destinationWallet = putAndGetDestinationAccountWallet(destinationAccountWallets, transaction);
 
                 if (isAllowedTransaction(sourceWallet, destinationWallet, transaction)) {
-                    if (isSafeToAdd(sourceWallet.get_thisTurnAccumulatedOverdraft(), transaction.getAmount())) {
+                    final var addition = sourceWallet.get_thisTurnAccumulatedOverdraft() + transaction.getAmount();
+                    if (isSafeToAdd(sourceWallet.get_thisTurnAccumulatedOverdraft(), transaction.getAmount(), addition)) {
                         // Update cache here, because we will do the transaction in later time.
                         succeededTransactionsCache.put(transaction, transaction);
-                        sourceWallet.set_thisTurnAccumulatedOverdraft(sourceWallet.get_thisTurnAccumulatedOverdraft() + transaction.getAmount());
+                        sourceWallet.set_thisTurnAccumulatedOverdraft(addition);
                         transaction.set_sourceWallet(sourceWallet);
                         transaction.set_destinationWallet(destinationWallet);
                     } else {
@@ -194,19 +195,19 @@ final class Processor {
             return false;
         }
 
-        if (!isSafeToSubtract(sourceWallet.getBalance(), sourceWallet.get_thisTurnAccumulatedOverdraft())) {
+        final var currentBalance = sourceWallet.getBalance() - sourceWallet.get_thisTurnAccumulatedOverdraft();
+        if (!isSafeToSubtract(sourceWallet.getBalance(), sourceWallet.get_thisTurnAccumulatedOverdraft(), currentBalance)) {
             transaction.set_failed(true);
             transaction.set_failReason("source_wallet_current_balance.underflow");
             return false;
         }
-        final var currentBalance = (sourceWallet.getBalance() - sourceWallet.get_thisTurnAccumulatedOverdraft());
 
-        if (!isSafeToSubtract(currentBalance, transaction.getAmount())) {
+        final var finalBalance = currentBalance - transaction.getAmount();
+        if (!isSafeToSubtract(currentBalance, transaction.getAmount(), finalBalance)) {
             transaction.set_failed(true);
             transaction.set_failReason("source_wallet_final_balance.underflow");
             return false;
         }
-        final var finalBalance = currentBalance - transaction.getAmount();
 
         if (finalBalance < 0 && -finalBalance > transaction.getMaxOverdraftAmount()) {
             transaction.set_failed(true);
@@ -317,8 +318,16 @@ final class Processor {
         return ((first ^ r) & (second ^ r)) >= 0;
     }
 
+    private boolean isSafeToAdd(final long first, final long second, final long addition) {
+        return ((first ^ addition) & (second ^ addition)) >= 0;
+    }
+
     private boolean isSafeToSubtract(final long first, final long second) {
         final var r = first - second;
         return ((first ^ second) & (first ^ r)) >= 0;
+    }
+
+    private boolean isSafeToSubtract(final long first, final long second, final long subtraction) {
+        return ((first ^ second) & (first ^ subtraction)) >= 0;
     }
 }
