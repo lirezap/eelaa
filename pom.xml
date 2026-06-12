@@ -26,6 +26,8 @@
         <!-- Dependencies Versioning -->
         <netty.version>4.2.15.Final</netty.version>
         <agrona.version>2.4.1</agrona.version>
+        <fastutil.version>8.5.18</fastutil.version>
+        <caffeine.version>3.2.4</caffeine.version>
     </properties>
 
     <dependencies>
@@ -109,6 +111,22 @@
             <groupId>org.agrona</groupId>
             <artifactId>agrona</artifactId>
             <version>${agrona.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/it.unimi.dsi/fastutil -->
+        <dependency>
+            <groupId>it.unimi.dsi</groupId>
+            <artifactId>fastutil</artifactId>
+            <version>${fastutil.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>${caffeine.version}</version>
             <scope>compile</scope>
         </dependency>
 
