@@ -569,10 +569,10 @@ public class ProcessorTest {
                 10,
                 "");
         processor.process(t1);
-        assertTrue(processor.fetchTransaction(t1.getLedger(), t1.getId()).isPresent());
+        assertNotNull(processor.fetchTransaction(t1.getLedger(), t1.getId()));
 
-        var w1 = processor.fetchWallet(1, 1, 1).get();
-        var w2 = processor.fetchWallet(1, 1, 2).get();
+        var w1 = processor.fetchWallet(1, 1, 1);
+        var w2 = processor.fetchWallet(1, 1, 2);
         assertEquals(-1, w1.getBalance());
         assertEquals(1, w2.getBalance());
     }
@@ -613,14 +613,14 @@ public class ProcessorTest {
                 10,
                 "");
         processor.process(t1, t2, t3);
-        assertTrue(processor.fetchTransaction(t1.getLedger(), t1.getId()).isPresent());
-        assertTrue(processor.fetchTransaction(t2.getLedger(), t2.getId()).isPresent());
-        assertTrue(processor.fetchTransaction(t3.getLedger(), t3.getId()).isPresent());
+        assertNotNull(processor.fetchTransaction(t1.getLedger(), t1.getId()));
+        assertNotNull(processor.fetchTransaction(t2.getLedger(), t2.getId()));
+        assertNotNull(processor.fetchTransaction(t3.getLedger(), t3.getId()));
 
-        var w1 = processor.fetchWallet(1, 1, 1).get();
-        var w2 = processor.fetchWallet(1, 1, 2).get();
-        var w3 = processor.fetchWallet(1, 1, 3).get();
-        var w4 = processor.fetchWallet(1, 1, 4).get();
+        var w1 = processor.fetchWallet(1, 1, 1);
+        var w2 = processor.fetchWallet(1, 1, 2);
+        var w3 = processor.fetchWallet(1, 1, 3);
+        var w4 = processor.fetchWallet(1, 1, 4);
         assertEquals(-1, w1.getBalance());
         assertEquals(0, w2.getBalance());
         assertEquals(0, w3.getBalance());
@@ -663,14 +663,14 @@ public class ProcessorTest {
                 1,
                 "");
         processor.process(t1, t2, t3);
-        assertTrue(processor.fetchTransaction(t1.getLedger(), t1.getId()).isEmpty());
-        assertTrue(processor.fetchTransaction(t2.getLedger(), t2.getId()).isPresent());
-        assertTrue(processor.fetchTransaction(t3.getLedger(), t3.getId()).isPresent());
+        assertNull(processor.fetchTransaction(t1.getLedger(), t1.getId()));
+        assertNotNull(processor.fetchTransaction(t2.getLedger(), t2.getId()));
+        assertNotNull(processor.fetchTransaction(t3.getLedger(), t3.getId()));
 
-        var w1 = processor.fetchWallet(1, 1, 1).get();
-        var w2 = processor.fetchWallet(1, 1, 2).get();
-        var w3 = processor.fetchWallet(1, 1, 3).get();
-        var w4 = processor.fetchWallet(1, 1, 4).get();
+        var w1 = processor.fetchWallet(1, 1, 1);
+        var w2 = processor.fetchWallet(1, 1, 2);
+        var w3 = processor.fetchWallet(1, 1, 3);
+        var w4 = processor.fetchWallet(1, 1, 4);
         assertEquals(0, w1.getBalance());
         assertEquals(-1, w2.getBalance());
         assertEquals(0, w3.getBalance());
@@ -713,14 +713,14 @@ public class ProcessorTest {
                 1,
                 "");
         processor.process(t1, t2, t3);
-        assertTrue(processor.fetchTransaction(t1.getLedger(), t1.getId()).isEmpty());
-        assertTrue(processor.fetchTransaction(t2.getLedger(), t2.getId()).isEmpty());
-        assertTrue(processor.fetchTransaction(t3.getLedger(), t3.getId()).isPresent());
+        assertNull(processor.fetchTransaction(t1.getLedger(), t1.getId()));
+        assertNull(processor.fetchTransaction(t2.getLedger(), t2.getId()));
+        assertNotNull(processor.fetchTransaction(t3.getLedger(), t3.getId()));
 
-        var w1 = processor.fetchWallet(1, 1, 1).get();
-        var w2 = processor.fetchWallet(1, 1, 2).get();
-        var w3 = processor.fetchWallet(1, 1, 3).get();
-        var w4 = processor.fetchWallet(1, 1, 4).get();
+        var w1 = processor.fetchWallet(1, 1, 1);
+        var w2 = processor.fetchWallet(1, 1, 2);
+        var w3 = processor.fetchWallet(1, 1, 3);
+        var w4 = processor.fetchWallet(1, 1, 4);
         assertEquals(0, w1.getBalance());
         assertEquals(0, w2.getBalance());
         assertEquals(-1, w3.getBalance());
@@ -745,10 +745,10 @@ public class ProcessorTest {
                 10,
                 "");
         assertTrue(processor.processAtomically(t1));
-        assertTrue(processor.fetchTransaction(t1.getLedger(), t1.getId()).isPresent());
+        assertNotNull(processor.fetchTransaction(t1.getLedger(), t1.getId()));
 
-        var w1 = processor.fetchWallet(1, 1, 1).get();
-        var w2 = processor.fetchWallet(1, 1, 2).get();
+        var w1 = processor.fetchWallet(1, 1, 1);
+        var w2 = processor.fetchWallet(1, 1, 2);
         assertEquals(-1, w1.getBalance());
         assertEquals(1, w2.getBalance());
     }
@@ -789,14 +789,14 @@ public class ProcessorTest {
                 10,
                 "");
         assertTrue(processor.processAtomically(t1, t2, t3));
-        assertTrue(processor.fetchTransaction(t1.getLedger(), t1.getId()).isPresent());
-        assertTrue(processor.fetchTransaction(t2.getLedger(), t2.getId()).isPresent());
-        assertTrue(processor.fetchTransaction(t3.getLedger(), t3.getId()).isPresent());
+        assertNotNull(processor.fetchTransaction(t1.getLedger(), t1.getId()));
+        assertNotNull(processor.fetchTransaction(t2.getLedger(), t2.getId()));
+        assertNotNull(processor.fetchTransaction(t3.getLedger(), t3.getId()));
 
-        var w1 = processor.fetchWallet(1, 1, 1).get();
-        var w2 = processor.fetchWallet(1, 1, 2).get();
-        var w3 = processor.fetchWallet(1, 1, 3).get();
-        var w4 = processor.fetchWallet(1, 1, 4).get();
+        var w1 = processor.fetchWallet(1, 1, 1);
+        var w2 = processor.fetchWallet(1, 1, 2);
+        var w3 = processor.fetchWallet(1, 1, 3);
+        var w4 = processor.fetchWallet(1, 1, 4);
         assertEquals(-1, w1.getBalance());
         assertEquals(0, w2.getBalance());
         assertEquals(0, w3.getBalance());
@@ -839,13 +839,13 @@ public class ProcessorTest {
                 1,
                 "");
         assertFalse(processor.processAtomically(t1, t2, t3));
-        assertTrue(processor.fetchTransaction(t1.getLedger(), t1.getId()).isEmpty());
-        assertTrue(processor.fetchTransaction(t2.getLedger(), t2.getId()).isEmpty());
-        assertTrue(processor.fetchTransaction(t3.getLedger(), t3.getId()).isEmpty());
+        assertNull(processor.fetchTransaction(t1.getLedger(), t1.getId()));
+        assertNull(processor.fetchTransaction(t2.getLedger(), t2.getId()));
+        assertNull(processor.fetchTransaction(t3.getLedger(), t3.getId()));
 
-        var w1 = processor.fetchWallet(1, 1, 1).get();
-        var w2 = processor.fetchWallet(1, 1, 2).get();
-        var w3 = processor.fetchWallet(1, 1, 3).get();
+        var w1 = processor.fetchWallet(1, 1, 1);
+        var w2 = processor.fetchWallet(1, 1, 2);
+        var w3 = processor.fetchWallet(1, 1, 3);
         assertEquals(0, w1.getBalance());
         assertEquals(0, w2.getBalance());
         assertEquals(0, w3.getBalance());
@@ -887,13 +887,13 @@ public class ProcessorTest {
                 1,
                 "");
         assertFalse(processor.processAtomically(t1, t2, t3));
-        assertTrue(processor.fetchTransaction(t1.getLedger(), t1.getId()).isEmpty());
-        assertTrue(processor.fetchTransaction(t2.getLedger(), t2.getId()).isEmpty());
-        assertTrue(processor.fetchTransaction(t3.getLedger(), t3.getId()).isEmpty());
+        assertNull(processor.fetchTransaction(t1.getLedger(), t1.getId()));
+        assertNull(processor.fetchTransaction(t2.getLedger(), t2.getId()));
+        assertNull(processor.fetchTransaction(t3.getLedger(), t3.getId()));
 
-        var w1 = processor.fetchWallet(1, 1, 1).get();
-        var w2 = processor.fetchWallet(1, 1, 2).get();
-        var w3 = processor.fetchWallet(1, 1, 3).get();
+        var w1 = processor.fetchWallet(1, 1, 1);
+        var w2 = processor.fetchWallet(1, 1, 2);
+        var w3 = processor.fetchWallet(1, 1, 3);
         assertEquals(0, w1.getBalance());
         assertEquals(0, w2.getBalance());
         assertEquals(0, w3.getBalance());
@@ -1096,23 +1096,23 @@ public class ProcessorTest {
         });
         latch.await();
 
-        assertTrue(processor.fetchTransaction(t1.getLedger(), t1.getId()).isPresent());
-        assertTrue(processor.fetchTransaction(t2.getLedger(), t2.getId()).isPresent());
-        assertTrue(processor.fetchTransaction(t3.getLedger(), t3.getId()).isPresent());
-        assertTrue(processor.fetchTransaction(t4.getLedger(), t4.getId()).isPresent());
-        assertTrue(processor.fetchTransaction(t5.getLedger(), t5.getId()).isPresent());
-        assertTrue(processor.fetchTransaction(t6.getLedger(), t6.getId()).isPresent());
-        assertTrue(processor.fetchTransaction(t7.getLedger(), t7.getId()).isPresent());
-        assertTrue(processor.fetchTransaction(t8.getLedger(), t8.getId()).isPresent());
-        assertTrue(processor.fetchTransaction(t9.getLedger(), t9.getId()).isPresent());
-        assertTrue(processor.fetchTransaction(t10.getLedger(), t10.getId()).isPresent());
-        assertTrue(processor.fetchTransaction(t11.getLedger(), t11.getId()).isPresent());
-        assertTrue(processor.fetchTransaction(t12.getLedger(), t12.getId()).isPresent());
-        assertTrue(processor.fetchTransaction(t13.getLedger(), t13.getId()).isPresent());
-        assertTrue(processor.fetchTransaction(t17.getLedger(), t17.getId()).isPresent());
+        assertNotNull(processor.fetchTransaction(t1.getLedger(), t1.getId()));
+        assertNotNull(processor.fetchTransaction(t2.getLedger(), t2.getId()));
+        assertNotNull(processor.fetchTransaction(t3.getLedger(), t3.getId()));
+        assertNotNull(processor.fetchTransaction(t4.getLedger(), t4.getId()));
+        assertNotNull(processor.fetchTransaction(t5.getLedger(), t5.getId()));
+        assertNotNull(processor.fetchTransaction(t6.getLedger(), t6.getId()));
+        assertNotNull(processor.fetchTransaction(t7.getLedger(), t7.getId()));
+        assertNotNull(processor.fetchTransaction(t8.getLedger(), t8.getId()));
+        assertNotNull(processor.fetchTransaction(t9.getLedger(), t9.getId()));
+        assertNotNull(processor.fetchTransaction(t10.getLedger(), t10.getId()));
+        assertNotNull(processor.fetchTransaction(t11.getLedger(), t11.getId()));
+        assertNotNull(processor.fetchTransaction(t12.getLedger(), t12.getId()));
+        assertNotNull(processor.fetchTransaction(t13.getLedger(), t13.getId()));
+        assertNotNull(processor.fetchTransaction(t17.getLedger(), t17.getId()));
 
-        var w1 = processor.fetchWallet(1, 1, 1).get();
-        var w2 = processor.fetchWallet(1, 2, 1).get();
+        var w1 = processor.fetchWallet(1, 1, 1);
+        var w2 = processor.fetchWallet(1, 2, 1);
         assertEquals(-14, w1.getBalance());
         assertEquals(14, w2.getBalance());
     }
@@ -1137,7 +1137,7 @@ public class ProcessorTest {
                     "");
 
             processor.process(t);
-            assertTrue(processor.fetchTransaction(t.getLedger(), t.getId()).isPresent());
+            assertNotNull(processor.fetchTransaction(t.getLedger(), t.getId()));
         }
 
         for (int i = 1; i <= 10_000_000; i++) {
@@ -1152,7 +1152,7 @@ public class ProcessorTest {
                     "");
 
             processor.process(t);
-            assertTrue(processor.fetchTransaction(t.getLedger(), t.getId()).isPresent());
+            assertNotNull(processor.fetchTransaction(t.getLedger(), t.getId()));
         }
     }
 
@@ -1178,13 +1178,13 @@ public class ProcessorTest {
 
         var source = processor.fetchAccount(t1.getLedger(), t1.getSourceAccount());
         var destination = processor.fetchAccount(t1.getLedger(), t1.getDestinationAccount());
-        assertTrue(source.isPresent());
-        assertTrue(destination.isPresent());
-        assertEquals(1, source.get().size());
-        assertEquals(1, destination.get().size());
+        assertNotNull(source);
+        assertNotNull(destination);
+        assertEquals(1, source.size());
+        assertEquals(1, destination.size());
 
-        var sourceWallet = source.get().stream().findAny().get();
-        var destinationWallet = destination.get().stream().findAny().get();
+        var sourceWallet = source.stream().findAny().get();
+        var destinationWallet = destination.stream().findAny().get();
 
         assertEquals(1, sourceWallet.getLedger());
         assertEquals(1, sourceWallet.getAccount());
@@ -1221,21 +1221,21 @@ public class ProcessorTest {
 
         var sourceWallet = processor.fetchWallet(t1.getLedger(), t1.getSourceAccount(), t1.getSourceWallet());
         var destinationWallet = processor.fetchWallet(t1.getLedger(), t1.getDestinationAccount(), t1.getDestinationWallet());
-        assertTrue(sourceWallet.isPresent());
-        assertTrue(destinationWallet.isPresent());
+        assertNotNull(sourceWallet);
+        assertNotNull(destinationWallet);
 
-        assertEquals(1, sourceWallet.get().getLedger());
-        assertEquals(1, sourceWallet.get().getAccount());
-        assertEquals(1, sourceWallet.get().getWallet());
-        assertEquals("IRR", sourceWallet.get().getCurrency());
-        assertEquals(-1, sourceWallet.get().getBalance());
-        assertEquals(0, sourceWallet.get().get_thisTurnAccumulatedOverdraft());
+        assertEquals(1, sourceWallet.getLedger());
+        assertEquals(1, sourceWallet.getAccount());
+        assertEquals(1, sourceWallet.getWallet());
+        assertEquals("IRR", sourceWallet.getCurrency());
+        assertEquals(-1, sourceWallet.getBalance());
+        assertEquals(0, sourceWallet.get_thisTurnAccumulatedOverdraft());
 
-        assertEquals(1, destinationWallet.get().getLedger());
-        assertEquals(2, destinationWallet.get().getAccount());
-        assertEquals(1, destinationWallet.get().getWallet());
-        assertEquals("IRR", destinationWallet.get().getCurrency());
-        assertEquals(0, destinationWallet.get().get_thisTurnAccumulatedOverdraft());
+        assertEquals(1, destinationWallet.getLedger());
+        assertEquals(2, destinationWallet.getAccount());
+        assertEquals(1, destinationWallet.getWallet());
+        assertEquals("IRR", destinationWallet.getCurrency());
+        assertEquals(0, destinationWallet.get_thisTurnAccumulatedOverdraft());
     }
 
     @Test
@@ -1259,24 +1259,24 @@ public class ProcessorTest {
         processor.process(t1);
 
         var transaction = processor.fetchTransaction(t1.getLedger(), t1.getId());
-        assertTrue(transaction.isPresent());
+        assertNotNull(transaction);
 
-        assertEquals(1, transaction.get().getLedger());
-        assertEquals(1, transaction.get().getSourceAccount());
-        assertEquals(1, transaction.get().getSourceWallet());
-        assertEquals(2, transaction.get().getDestinationAccount());
-        assertEquals(1, transaction.get().getDestinationWallet());
-        assertEquals(t1.getId(), transaction.get().getId());
-        assertEquals("IRR", transaction.get().getCurrency());
-        assertEquals(1, transaction.get().getAmount());
-        assertEquals(100, transaction.get().getMaxOverdraftAmount());
-        assertEquals(-1, transaction.get().getSourceWalletNewBalance());
-        assertEquals(1, transaction.get().getDestinationWalletNewBalance());
-        assertTrue(System.currentTimeMillis() >= transaction.get().getTs());
-        assertFalse(transaction.get().is_failed());
-        assertNull(transaction.get().get_failReason());
-        assertNull(transaction.get().get_sourceWallet());
-        assertNull(transaction.get().get_destinationWallet());
+        assertEquals(1, transaction.getLedger());
+        assertEquals(1, transaction.getSourceAccount());
+        assertEquals(1, transaction.getSourceWallet());
+        assertEquals(2, transaction.getDestinationAccount());
+        assertEquals(1, transaction.getDestinationWallet());
+        assertEquals(t1.getId(), transaction.getId());
+        assertEquals("IRR", transaction.getCurrency());
+        assertEquals(1, transaction.getAmount());
+        assertEquals(100, transaction.getMaxOverdraftAmount());
+        assertEquals(-1, transaction.getSourceWalletNewBalance());
+        assertEquals(1, transaction.getDestinationWalletNewBalance());
+        assertTrue(System.currentTimeMillis() >= transaction.getTs());
+        assertFalse(transaction.is_failed());
+        assertNull(transaction.get_failReason());
+        assertNull(transaction.get_sourceWallet());
+        assertNull(transaction.get_destinationWallet());
     }
 
     @Test
@@ -1300,24 +1300,24 @@ public class ProcessorTest {
         processor.processAtomically(t1);
 
         var transaction = processor.fetchTransaction(t1.getLedger(), t1.getId());
-        assertTrue(transaction.isPresent());
+        assertNotNull(transaction);
 
-        assertEquals(1, transaction.get().getLedger());
-        assertEquals(1, transaction.get().getSourceAccount());
-        assertEquals(1, transaction.get().getSourceWallet());
-        assertEquals(2, transaction.get().getDestinationAccount());
-        assertEquals(1, transaction.get().getDestinationWallet());
-        assertEquals(t1.getId(), transaction.get().getId());
-        assertEquals("IRR", transaction.get().getCurrency());
-        assertEquals(1, transaction.get().getAmount());
-        assertEquals(100, transaction.get().getMaxOverdraftAmount());
-        assertEquals(-1, transaction.get().getSourceWalletNewBalance());
-        assertEquals(1, transaction.get().getDestinationWalletNewBalance());
-        assertTrue(System.currentTimeMillis() >= transaction.get().getTs());
-        assertFalse(transaction.get().is_failed());
-        assertNull(transaction.get().get_failReason());
-        assertNotNull(transaction.get().get_sourceWallet());
-        assertNotNull(transaction.get().get_destinationWallet());
+        assertEquals(1, transaction.getLedger());
+        assertEquals(1, transaction.getSourceAccount());
+        assertEquals(1, transaction.getSourceWallet());
+        assertEquals(2, transaction.getDestinationAccount());
+        assertEquals(1, transaction.getDestinationWallet());
+        assertEquals(t1.getId(), transaction.getId());
+        assertEquals("IRR", transaction.getCurrency());
+        assertEquals(1, transaction.getAmount());
+        assertEquals(100, transaction.getMaxOverdraftAmount());
+        assertEquals(-1, transaction.getSourceWalletNewBalance());
+        assertEquals(1, transaction.getDestinationWalletNewBalance());
+        assertTrue(System.currentTimeMillis() >= transaction.getTs());
+        assertFalse(transaction.is_failed());
+        assertNull(transaction.get_failReason());
+        assertNotNull(transaction.get_sourceWallet());
+        assertNotNull(transaction.get_destinationWallet());
     }
 
     @Test
@@ -1358,14 +1358,14 @@ public class ProcessorTest {
         assertTrue(processor.processAtomically(t1, t2, t3));
         processor.reverseBalancesOfSucceededTransactions(t1, t2, t3);
 
-        assertFalse(processor.fetchTransaction(t1.getLedger(), t1.getId()).isPresent());
-        assertFalse(processor.fetchTransaction(t2.getLedger(), t2.getId()).isPresent());
-        assertFalse(processor.fetchTransaction(t3.getLedger(), t3.getId()).isPresent());
+        assertNull(processor.fetchTransaction(t1.getLedger(), t1.getId()));
+        assertNull(processor.fetchTransaction(t2.getLedger(), t2.getId()));
+        assertNull(processor.fetchTransaction(t3.getLedger(), t3.getId()));
 
-        var w1 = processor.fetchWallet(1, 1, 1).get();
-        var w2 = processor.fetchWallet(1, 1, 2).get();
-        var w3 = processor.fetchWallet(1, 1, 3).get();
-        var w4 = processor.fetchWallet(1, 1, 4).get();
+        var w1 = processor.fetchWallet(1, 1, 1);
+        var w2 = processor.fetchWallet(1, 1, 2);
+        var w3 = processor.fetchWallet(1, 1, 3);
+        var w4 = processor.fetchWallet(1, 1, 4);
         assertEquals(0, w1.getBalance());
         assertEquals(0, w2.getBalance());
         assertEquals(0, w3.getBalance());

@@ -1,5 +1,7 @@
 package software.openx.eelaa.ledger;
 
+import java.nio.file.Path;
+
 /**
  * Ledger configuration fields.
  *
@@ -8,14 +10,20 @@ package software.openx.eelaa.ledger;
 public final class LedgerConfig {
     static final long TRANSACTION_ID_REQUIRED_BACKOFF_MS = 5000;
 
+    private final Path dataDirectoryPath;
     private final int succeededTransactionsCacheTTLSeconds;
     private final int initialAccountsCap;
     private final int initialWalletsPerAccountCap;
 
     private LedgerConfig(final Builder builder) {
+        this.dataDirectoryPath = builder.dataDirectoryPath;
         this.succeededTransactionsCacheTTLSeconds = builder.succeededTransactionsCacheTTLSeconds;
         this.initialAccountsCap = builder.initialAccountsCap;
         this.initialWalletsPerAccountCap = builder.initialWalletsPerAccountCap;
+    }
+
+    public Path getDataDirectoryPath() {
+        return dataDirectoryPath;
     }
 
     public int getSucceededTransactionsCacheTTLSeconds() {
@@ -33,7 +41,8 @@ public final class LedgerConfig {
     @Override
     public String toString() {
         return "LedgerConfig{" +
-                "succeededTransactionsCacheTTLSeconds=" + succeededTransactionsCacheTTLSeconds +
+                "dataDirectoryPath=" + dataDirectoryPath +
+                ", succeededTransactionsCacheTTLSeconds=" + succeededTransactionsCacheTTLSeconds +
                 ", initialAccountsCap=" + initialAccountsCap +
                 ", initialWalletsPerAccountCap=" + initialWalletsPerAccountCap +
                 '}';
@@ -45,11 +54,17 @@ public final class LedgerConfig {
      * @author Alireza Pourtaghi
      */
     public static final class Builder {
+        private Path dataDirectoryPath = Path.of("./");
         private int succeededTransactionsCacheTTLSeconds = (int) (TRANSACTION_ID_REQUIRED_BACKOFF_MS / 1000 * 2);
         private int initialAccountsCap = 64000;
         private int initialWalletsPerAccountCap = 4;
 
         public Builder() {
+        }
+
+        public Builder dataDirectoryPath(final Path dataDirectoryPath) {
+            this.dataDirectoryPath = dataDirectoryPath;
+            return this;
         }
 
         public Builder succeededTransactionsCacheTTLSeconds(final int succeededTransactionsCacheTTLSeconds) {

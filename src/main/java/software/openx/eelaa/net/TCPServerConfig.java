@@ -1,7 +1,5 @@
 package software.openx.eelaa.net;
 
-import software.openx.eelaa.lz4.LZ4Config;
-
 /**
  * TCP server configuration fields.
  *
@@ -19,7 +17,6 @@ public final class TCPServerConfig {
     private final int allIdleTimeoutSeconds;
     private final boolean logFrameHeader;
     private final CPUHeavyTaskExecutorConfig cpuHeavyTaskExecutorConfig;
-    private final LZ4Config lz4Config;
     private final int shutdownQuitePeriodSeconds;
     private final int shutdownWaitTimeSeconds;
     private final boolean detectResourceLeak;
@@ -36,7 +33,6 @@ public final class TCPServerConfig {
         this.allIdleTimeoutSeconds = builder.allIdleTimeoutSeconds;
         this.logFrameHeader = builder.logFrameHeader;
         this.cpuHeavyTaskExecutorConfig = builder.cpuHeavyTaskExecutorConfig;
-        this.lz4Config = builder.lz4Config;
         this.shutdownQuitePeriodSeconds = builder.shutdownQuitePeriodSeconds;
         this.shutdownWaitTimeSeconds = builder.shutdownWaitTimeSeconds;
         this.detectResourceLeak = builder.detectResourceLeak;
@@ -86,10 +82,6 @@ public final class TCPServerConfig {
         return cpuHeavyTaskExecutorConfig;
     }
 
-    public LZ4Config getLz4Config() {
-        return lz4Config;
-    }
-
     public int getShutdownQuitePeriodSeconds() {
         return shutdownQuitePeriodSeconds;
     }
@@ -116,7 +108,6 @@ public final class TCPServerConfig {
                 ", allIdleTimeoutSeconds=" + allIdleTimeoutSeconds +
                 ", logFrameHeader=" + logFrameHeader +
                 ", cpuHeavyTaskExecutorConfig=" + cpuHeavyTaskExecutorConfig +
-                ", lz4Config=" + lz4Config +
                 ", shutdownQuitePeriodSeconds=" + shutdownQuitePeriodSeconds +
                 ", shutdownWaitTimeSeconds=" + shutdownWaitTimeSeconds +
                 ", detectResourceLeak=" + detectResourceLeak +
@@ -140,13 +131,11 @@ public final class TCPServerConfig {
         private int allIdleTimeoutSeconds = 120;
         private boolean logFrameHeader = false;
         private CPUHeavyTaskExecutorConfig cpuHeavyTaskExecutorConfig = new CPUHeavyTaskExecutorConfig.Builder().build();
-        private LZ4Config lz4Config;
         private int shutdownQuitePeriodSeconds = 1;
         private int shutdownWaitTimeSeconds = 30;
         private boolean detectResourceLeak = false;
 
-        public Builder(final LZ4Config lz4Config) {
-            this.lz4Config = lz4Config;
+        public Builder() {
         }
 
         public Builder host(final String host) {
@@ -201,11 +190,6 @@ public final class TCPServerConfig {
 
         public Builder cpuHeavyTaskExecutorConfig(final CPUHeavyTaskExecutorConfig cpuHeavyTaskExecutorConfig) {
             this.cpuHeavyTaskExecutorConfig = cpuHeavyTaskExecutorConfig;
-            return this;
-        }
-
-        public Builder lz4Config(final LZ4Config lz4Config) {
-            this.lz4Config = lz4Config;
             return this;
         }
 

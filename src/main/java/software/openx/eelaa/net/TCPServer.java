@@ -30,10 +30,9 @@ public final class TCPServer implements AutoCloseable {
         this.lz4 = lz4;
     }
 
-    public static TCPServer newInstance(final TCPServerConfig config) {
+    public static TCPServer newInstance(final TCPServerConfig config, final LZ4 lz4) {
         final var nativeServerBootstrap = NativeServerBootstrap.newInstance(config);
         final var cpuHeavyTaskExecutor = CPUHeavyTaskExecutor.newInstance(config.getCpuHeavyTaskExecutorConfig());
-        final var lz4 = LZ4.newInstance(config.getLz4Config());
 
         return new TCPServer(config, nativeServerBootstrap, cpuHeavyTaskExecutor, lz4);
     }
@@ -68,8 +67,6 @@ public final class TCPServer implements AutoCloseable {
                 config.getShutdownQuitePeriodSeconds(), config.getShutdownWaitTimeSeconds(), SECONDS).sync();
 
         cpuHeavyTaskExecutor.shutdownGracefully().sync();
-        lz4.close();
-
         logger.info("TCP server closed gracefully!");
     }
 }

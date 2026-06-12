@@ -7,7 +7,6 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 import java.util.List;
-import java.util.Optional;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -106,36 +105,31 @@ final class Processor {
         return true;
     }
 
-    public synchronized Optional<ObjectOpenHashSet<Wallet>> fetchAccount(final int ledger, final long account) {
+    public synchronized ObjectOpenHashSet<Wallet> fetchAccount(final int ledger, final long account) {
         final var accounts = ledgers.get(ledger);
-        if (accounts == null) {
-            return Optional.empty();
+        if (accounts != null) {
+            return accounts.get(account);
         }
 
-        final var wallets = accounts.get(account);
-        if (wallets == null) {
-            return Optional.empty();
-        }
-
-        return Optional.of(wallets);
+        return null;
     }
 
-    public synchronized Optional<Wallet> fetchWallet(final int ledger, final long account, final int wallet) {
+    public synchronized Wallet fetchWallet(final int ledger, final long account, final int wallet) {
         final var wallets = fetchAccount(ledger, account);
-        if (wallets.isPresent()) {
+        if (wallets != null) {
             final var builtForEqualityCheck = new Wallet(ledger, account, wallet);
-            for (final var element : wallets.get()) {
+            for (final var element : wallets) {
                 if (element.equals(builtForEqualityCheck)) {
-                    return Optional.of(element);
+                    return element;
                 }
             }
         }
 
-        return Optional.empty();
+        return null;
     }
 
-    public synchronized Optional<Transaction> fetchTransaction(final int ledger, final String id) {
-        return Optional.ofNullable(succeededTransactionsCache.getIfPresent(new Transaction(ledger, id)));
+    public synchronized Transaction fetchTransaction(final int ledger, final String id) {
+        return succeededTransactionsCache.getIfPresent(new Transaction(ledger, id));
     }
 
     public synchronized void reverseBalancesOfSucceededTransactions(final Transaction... transactions) {
