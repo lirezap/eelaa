@@ -1,5 +1,7 @@
 package software.openx.eelaa.storage;
 
+import org.agrona.SystemUtil;
+
 import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -19,6 +21,8 @@ import static software.openx.eelaa.storage.ValueLayouts.LONG;
  * @author Alireza Pourtaghi
  */
 final class AtomicFile implements AutoCloseable {
+    private static final boolean IS_MAC = SystemUtil.isMac();
+
     private final Path filePath;
     private final Path movePath;
     private final Arena fileHeaderMemoryAllocator;
@@ -51,7 +55,7 @@ final class AtomicFile implements AutoCloseable {
                 movePath,
                 fileHeaderMemoryAllocator,
                 fileHeaderMemory,
-                FileChannel.open(filePath, CREATE, READ, WRITE),
+                openCreateReadWrite(filePath),
                 -1);
 
         instance.prepareFileHeader();
@@ -62,7 +66,7 @@ final class AtomicFile implements AutoCloseable {
 
     public void write(final ByteBuffer buffer, final long position) throws IOException {
         Files.move(filePath, movePath, ATOMIC_MOVE);
-        try (final var movedFile = FileChannel.open(movePath, READ, WRITE)) {
+        try (final var movedFile = openReadWrite(movePath)) {
             var bytesWritten = 0;
             while (buffer.hasRemaining()) {
                 bytesWritten =
@@ -76,7 +80,7 @@ final class AtomicFile implements AutoCloseable {
                 bytesWritten =
                         Math.addExact(bytesWritten, movedFile.write(fileHeaderAsBuffer, bytesWritten));
             }
-            movedFile.force(false);
+            if (!IS_MAC) movedFile.force(false);
         } finally {
             try {
                 Files.move(movePath, filePath, ATOMIC_MOVE);
@@ -91,7 +95,7 @@ final class AtomicFile implements AutoCloseable {
 
     public void append(final ByteBuffer buffer) throws IOException {
         Files.move(filePath, movePath, ATOMIC_MOVE);
-        try (final var movedFile = FileChannel.open(movePath, READ, WRITE)) {
+        try (final var movedFile = openReadWrite(movePath)) {
             var bufferBytesWritten = 0;
             while (buffer.hasRemaining()) {
                 bufferBytesWritten =
@@ -105,7 +109,7 @@ final class AtomicFile implements AutoCloseable {
                 headerBytesWritten =
                         Math.addExact(headerBytesWritten, movedFile.write(fileHeaderAsBuffer, headerBytesWritten));
             }
-            movedFile.force(false);
+            if (!IS_MAC) movedFile.force(false);
 
             try {
                 position = Math.addExact(position, bufferBytesWritten);
@@ -149,7 +153,7 @@ final class AtomicFile implements AutoCloseable {
             bytesWritten = Math.addExact(bytesWritten, file.write(buffer, Math.addExact(position, bytesWritten)));
         }
 
-        file.force(false);
+        if (!IS_MAC) file.force(false);
     }
 
     private void incrementDurabilitySize(final long incrementValue) {
@@ -187,7 +191,7 @@ final class AtomicFile implements AutoCloseable {
     private static void recoverIfNeeded(final Path filePath, final Path movePath) throws IOException {
         if (!Files.exists(filePath) && Files.exists(movePath)) {
             // System crash or non-graceful shutdown?!
-            try (final var movedFile = FileChannel.open(movePath, READ, WRITE, SYNC)) {
+            try (final var movedFile = openReadWriteSync(movePath)) {
                 try (final var _ = movedFile.lock()) {
                     try (final var arena = Arena.ofConfined()) {
                         // 256 bytes file header.
@@ -202,6 +206,26 @@ final class AtomicFile implements AutoCloseable {
                 }
             }
         }
+    }
+
+    private static FileChannel openCreateReadWrite(final Path path) throws IOException {
+        if (IS_MAC) {
+            return FileChannel.open(path, CREATE, READ, WRITE, SYNC);
+        }
+
+        return FileChannel.open(path, CREATE, READ, WRITE);
+    }
+
+    private static FileChannel openReadWrite(final Path path) throws IOException {
+        if (IS_MAC) {
+            return FileChannel.open(path, READ, WRITE, SYNC);
+        }
+
+        return FileChannel.open(path, READ, WRITE);
+    }
+
+    private static FileChannel openReadWriteSync(final Path path) throws IOException {
+        return FileChannel.open(path, READ, WRITE, SYNC);
     }
 
     @Override

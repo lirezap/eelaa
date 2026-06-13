@@ -5,9 +5,10 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Supplier;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -32,8 +33,12 @@ public final class ThreadConfinedAtomicFile implements AutoCloseable {
         this.closeMethodRunnable = closeMethodRunnable;
     }
 
-    public static CompletableFuture<ThreadConfinedAtomicFile> newInstance(final Path filePath) {
-        final var executor = Executors.newSingleThreadExecutor();
+    public static CompletableFuture<ThreadConfinedAtomicFile> newInstance(final Path filePath,
+                                                                          final int maxWaitQueueSize) {
+
+        // Bounded queue executor with abort policy.
+        final var executor = new ThreadPoolExecutor(1, 1, 0L, SECONDS, new ArrayBlockingQueue<>(maxWaitQueueSize));
+
         return CompletableFuture.supplyAsync(() -> {
             try {
                 final var file = AtomicFile.newInstance(filePath);
