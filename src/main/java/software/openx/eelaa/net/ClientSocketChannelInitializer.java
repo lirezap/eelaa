@@ -18,12 +18,12 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChannel> {
     private final TCPServerConfig config;
     private final TLSContext tlsContext;
+    private final CPUHeavyTaskExecutor cpuHeavyTaskExecutor;
 
     // Sharable handlers.
     private final HeartbeatHandler heartbeatHandler;
     private final FrameHeaderLogger frameHeaderLogger;
     private final FrameHeaderProcessor frameHeaderProcessor;
-    private final Dispatcher dispatcher;
     private final InboundExceptionHandler inboundExceptionHandler;
 
     public ClientSocketChannelInitializer(final TCPServerConfig config, final TLSContext tlsContext,
@@ -31,10 +31,10 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
 
         this.config = config;
         this.tlsContext = tlsContext;
+        this.cpuHeavyTaskExecutor = cpuHeavyTaskExecutor;
         this.heartbeatHandler = new HeartbeatHandler();
         this.frameHeaderLogger = new FrameHeaderLogger();
         this.frameHeaderProcessor = new FrameHeaderProcessor(new FrameDataDecompressor(cpuHeavyTaskExecutor, lz4));
-        this.dispatcher = new Dispatcher(cpuHeavyTaskExecutor);
         this.inboundExceptionHandler = new InboundExceptionHandler();
     }
 
@@ -81,7 +81,7 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
     }
 
     private void addDispatcher(final SocketChannel channel) {
-        channel.pipeline().addLast(dispatcher);
+        channel.pipeline().addLast(new Dispatcher(cpuHeavyTaskExecutor));
     }
 
     private void addInboundExceptionHandler(final SocketChannel channel) {

@@ -11,12 +11,14 @@ public final class LedgerConfig {
     static final long TRANSACTION_ID_REQUIRED_BACKOFF_MS = 5000;
 
     private final Path dataDirectoryPath;
+    private final int glFileMaxWaitQueueSize;
     private final int succeededTransactionsCacheTTLSeconds;
     private final int initialAccountsCap;
     private final int initialWalletsPerAccountCap;
 
     private LedgerConfig(final Builder builder) {
         this.dataDirectoryPath = builder.dataDirectoryPath;
+        this.glFileMaxWaitQueueSize = builder.glFileMaxWaitQueueSize;
         this.succeededTransactionsCacheTTLSeconds = builder.succeededTransactionsCacheTTLSeconds;
         this.initialAccountsCap = builder.initialAccountsCap;
         this.initialWalletsPerAccountCap = builder.initialWalletsPerAccountCap;
@@ -24,6 +26,10 @@ public final class LedgerConfig {
 
     public Path getDataDirectoryPath() {
         return dataDirectoryPath;
+    }
+
+    public int getGlFileMaxWaitQueueSize() {
+        return glFileMaxWaitQueueSize;
     }
 
     public int getSucceededTransactionsCacheTTLSeconds() {
@@ -42,6 +48,7 @@ public final class LedgerConfig {
     public String toString() {
         return "LedgerConfig{" +
                 "dataDirectoryPath=" + dataDirectoryPath +
+                ", glFileMaxWaitQueueSize=" + glFileMaxWaitQueueSize +
                 ", succeededTransactionsCacheTTLSeconds=" + succeededTransactionsCacheTTLSeconds +
                 ", initialAccountsCap=" + initialAccountsCap +
                 ", initialWalletsPerAccountCap=" + initialWalletsPerAccountCap +
@@ -55,6 +62,7 @@ public final class LedgerConfig {
      */
     public static final class Builder {
         private Path dataDirectoryPath = Path.of("./");
+        private int glFileMaxWaitQueueSize = 64000;
         private int succeededTransactionsCacheTTLSeconds = (int) (TRANSACTION_ID_REQUIRED_BACKOFF_MS / 1000 * 2);
         private int initialAccountsCap = 64000;
         private int initialWalletsPerAccountCap = 4;
@@ -64,6 +72,11 @@ public final class LedgerConfig {
 
         public Builder dataDirectoryPath(final Path dataDirectoryPath) {
             this.dataDirectoryPath = dataDirectoryPath;
+            return this;
+        }
+
+        public Builder glFileMaxWaitQueueSize(final int glFileMaxWaitQueueSize) {
+            this.glFileMaxWaitQueueSize = Math.max(256, glFileMaxWaitQueueSize);
             return this;
         }
 

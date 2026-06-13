@@ -1,10 +1,8 @@
 package software.openx.eelaa.net;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import software.openx.eelaa.ping.PingHandler;
 
@@ -13,15 +11,14 @@ import software.openx.eelaa.ping.PingHandler;
  *
  * @author Alireza Pourtaghi
  */
-@Sharable
 final class Dispatcher extends SimpleChannelInboundHandler<ByteBuf> {
     private final CPUHeavyTaskExecutor cpuHeavyTaskExecutor;
-    private final AttributeKey<SequenceIdsHolder> sequenceIdsHolderKey;
+    private final SequenceIdsHolder sequenceIdsHolder;
 
     public Dispatcher(final CPUHeavyTaskExecutor cpuHeavyTaskExecutor) {
         super(false);
         this.cpuHeavyTaskExecutor = cpuHeavyTaskExecutor;
-        this.sequenceIdsHolderKey = AttributeKey.newInstance("sequenceIdsHolderKey");
+        this.sequenceIdsHolder = new SequenceIdsHolder();
     }
 
     @Override
@@ -34,7 +31,7 @@ final class Dispatcher extends SimpleChannelInboundHandler<ByteBuf> {
         final var ts = buf.readLong();
 
         try {
-            if (!addSequenceId(ctx, sequenceId)) {
+            if (!addSequenceId(sequenceId)) {
                 throw BadSequenceIdException.INSTANCE;
             }
 
@@ -52,13 +49,8 @@ final class Dispatcher extends SimpleChannelInboundHandler<ByteBuf> {
         }
     }
 
-    private boolean addSequenceId(final ChannelHandlerContext ctx, final int sequenceId) {
-        final var sequenceIdsHolderValue = ctx.channel().attr(sequenceIdsHolderKey);
-        if (sequenceIdsHolderValue.get() == null) {
-            sequenceIdsHolderValue.set(new SequenceIdsHolder());
-        }
-
-        return sequenceIdsHolderValue.get().addSequenceId(sequenceId);
+    private boolean addSequenceId(final int sequenceId) {
+        return sequenceIdsHolder.addSequenceId(sequenceId);
     }
 
     private boolean isValidTimestamp(final long ts) {
