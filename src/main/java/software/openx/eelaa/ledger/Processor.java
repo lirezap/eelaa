@@ -77,11 +77,11 @@ final class Processor {
                 final var destinationWallet = putAndGetDestinationAccountWallet(destinationAccountWallets, transaction);
 
                 if (isAllowedTransaction(sourceWallet, destinationWallet, transaction)) {
-                    final var addition = sourceWallet.get_thisTurnAccumulatedOverdraft() + transaction.getAmount();
-                    if (isSafeToAdd(sourceWallet.get_thisTurnAccumulatedOverdraft(), transaction.getAmount(), addition)) {
+                    final var accumulation = sourceWallet.get_thisTurnAccumulatedOverdraft() + transaction.getAmount();
+                    if (isSafeToAdd(sourceWallet.get_thisTurnAccumulatedOverdraft(), transaction.getAmount(), accumulation)) {
                         // Update cache here, because we will do the transaction in later time.
                         succeededTransactionsCache.put(transaction, transaction);
-                        sourceWallet.set_thisTurnAccumulatedOverdraft(addition);
+                        sourceWallet.set_thisTurnAccumulatedOverdraft(accumulation);
                         transaction.set_sourceWallet(sourceWallet);
                         transaction.set_destinationWallet(destinationWallet);
                     } else {
@@ -312,8 +312,8 @@ final class Processor {
         return ((first ^ r) & (second ^ r)) >= 0;
     }
 
-    private boolean isSafeToAdd(final long first, final long second, final long addition) {
-        return ((first ^ addition) & (second ^ addition)) >= 0;
+    private boolean isSafeToAdd(final long first, final long second, final long result) {
+        return ((first ^ result) & (second ^ result)) >= 0;
     }
 
     private boolean isSafeToSubtract(final long first, final long second) {
@@ -321,7 +321,7 @@ final class Processor {
         return ((first ^ second) & (first ^ r)) >= 0;
     }
 
-    private boolean isSafeToSubtract(final long first, final long second, final long subtraction) {
-        return ((first ^ second) & (first ^ subtraction)) >= 0;
+    private boolean isSafeToSubtract(final long first, final long second, final long result) {
+        return ((first ^ second) & (first ^ result)) >= 0;
     }
 }
