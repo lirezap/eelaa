@@ -45,7 +45,7 @@ final class Processor {
                 ledgerConfig.getInitialWalletsPerAccountCap());
     }
 
-    public synchronized void process(final Transaction... transactions) {
+    public void process(final Transaction... transactions) {
         final var now = System.currentTimeMillis();
         for (final var transaction : transactions) {
             if (transaction != null && isValidTransaction(transaction, now)) {
@@ -62,7 +62,7 @@ final class Processor {
         }
     }
 
-    public synchronized boolean processAtomically(final Transaction... transactions) {
+    public boolean processAtomically(final Transaction... transactions) {
         final var now = System.currentTimeMillis();
         for (final var transaction : transactions) {
             if (transaction != null) {
@@ -105,7 +105,7 @@ final class Processor {
         return true;
     }
 
-    public synchronized ObjectOpenHashSet<Wallet> fetchAccount(final int ledger, final long account) {
+    public ObjectOpenHashSet<Wallet> fetchAccount(final int ledger, final long account) {
         final var accounts = ledgers.get(ledger);
         if (accounts != null) {
             return accounts.get(account);
@@ -114,7 +114,7 @@ final class Processor {
         return null;
     }
 
-    public synchronized Wallet fetchWallet(final int ledger, final long account, final int wallet) {
+    public Wallet fetchWallet(final int ledger, final long account, final int wallet) {
         final var wallets = fetchAccount(ledger, account);
         if (wallets != null) {
             final var builtForEqualityCheck = new Wallet(ledger, account, wallet);
@@ -128,11 +128,11 @@ final class Processor {
         return null;
     }
 
-    public synchronized Transaction fetchTransaction(final int ledger, final String id) {
+    public Transaction fetchTransaction(final int ledger, final String id) {
         return succeededTransactionsCache.getIfPresent(new Transaction(ledger, id));
     }
 
-    public synchronized void reverseBalancesOfSucceededTransactions(final Transaction... transactions) {
+    public void reverseBalancesOfSucceededTransactions(final Transaction... transactions) {
         for (final var transaction : transactions) {
             if (transaction != null && !transaction.is_failed()) {
                 final var accounts = getAccounts(transaction.getLedger());
@@ -149,7 +149,7 @@ final class Processor {
         }
     }
 
-    public synchronized void loadWallets(final List<Wallet> ws) {
+    public void loadWallets(final List<Wallet> ws) {
         for (final var w : ws) {
             var accounts = ledgers.get(w.getLedger());
             if (accounts == null) {

@@ -20,7 +20,7 @@ import static software.openx.eelaa.storage.ValueLayouts.LONG;
  *
  * @author Alireza Pourtaghi
  */
-final class AtomicFile implements AutoCloseable {
+public final class AtomicFile implements AutoCloseable {
     private static final boolean IS_MAC = SystemUtil.isMac();
 
     private final Path filePath;

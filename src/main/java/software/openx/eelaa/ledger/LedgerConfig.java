@@ -11,14 +11,14 @@ public final class LedgerConfig {
     static final long TRANSACTION_ID_REQUIRED_BACKOFF_MS = 5000;
 
     private final Path dataDirectoryPath;
-    private final int glFileMaxWaitQueueSize;
+    private final int executorMaxWaitQueueSize;
     private final int succeededTransactionsCacheTTLSeconds;
     private final int initialAccountsCap;
     private final int initialWalletsPerAccountCap;
 
     private LedgerConfig(final Builder builder) {
         this.dataDirectoryPath = builder.dataDirectoryPath;
-        this.glFileMaxWaitQueueSize = builder.glFileMaxWaitQueueSize;
+        this.executorMaxWaitQueueSize = builder.executorMaxWaitQueueSize;
         this.succeededTransactionsCacheTTLSeconds = builder.succeededTransactionsCacheTTLSeconds;
         this.initialAccountsCap = builder.initialAccountsCap;
         this.initialWalletsPerAccountCap = builder.initialWalletsPerAccountCap;
@@ -28,8 +28,8 @@ public final class LedgerConfig {
         return dataDirectoryPath;
     }
 
-    public int getGlFileMaxWaitQueueSize() {
-        return glFileMaxWaitQueueSize;
+    public int getExecutorMaxWaitQueueSize() {
+        return executorMaxWaitQueueSize;
     }
 
     public int getSucceededTransactionsCacheTTLSeconds() {
@@ -48,7 +48,7 @@ public final class LedgerConfig {
     public String toString() {
         return "LedgerConfig{" +
                 "dataDirectoryPath=" + dataDirectoryPath +
-                ", glFileMaxWaitQueueSize=" + glFileMaxWaitQueueSize +
+                ", executorMaxWaitQueueSize=" + executorMaxWaitQueueSize +
                 ", succeededTransactionsCacheTTLSeconds=" + succeededTransactionsCacheTTLSeconds +
                 ", initialAccountsCap=" + initialAccountsCap +
                 ", initialWalletsPerAccountCap=" + initialWalletsPerAccountCap +
@@ -62,7 +62,7 @@ public final class LedgerConfig {
      */
     public static final class Builder {
         private Path dataDirectoryPath = Path.of("./");
-        private int glFileMaxWaitQueueSize = 64000;
+        private int executorMaxWaitQueueSize = 64000;
         private int succeededTransactionsCacheTTLSeconds = (int) (TRANSACTION_ID_REQUIRED_BACKOFF_MS / 1000 * 2);
         private int initialAccountsCap = 64000;
         private int initialWalletsPerAccountCap = 4;
@@ -75,8 +75,8 @@ public final class LedgerConfig {
             return this;
         }
 
-        public Builder glFileMaxWaitQueueSize(final int glFileMaxWaitQueueSize) {
-            this.glFileMaxWaitQueueSize = Math.max(256, glFileMaxWaitQueueSize);
+        public Builder executorMaxWaitQueueSize(final int executorMaxWaitQueueSize) {
+            this.executorMaxWaitQueueSize = Math.max(256, executorMaxWaitQueueSize);
             return this;
         }
 

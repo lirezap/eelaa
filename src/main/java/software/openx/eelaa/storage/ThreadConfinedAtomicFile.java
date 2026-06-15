@@ -37,7 +37,8 @@ public final class ThreadConfinedAtomicFile implements AutoCloseable {
                                                                           final int maxWaitQueueSize) {
 
         // Bounded queue executor with abort policy.
-        final var executor = new ThreadPoolExecutor(1, 1, 0L, SECONDS, new ArrayBlockingQueue<>(maxWaitQueueSize));
+        final var queue = new ArrayBlockingQueue<Runnable>(maxWaitQueueSize);
+        final var executor = new ThreadPoolExecutor(1, 1, 0L, SECONDS, queue);
 
         return CompletableFuture.supplyAsync(() -> {
             try {
