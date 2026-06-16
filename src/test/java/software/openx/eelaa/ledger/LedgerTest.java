@@ -19,8 +19,7 @@ public class LedgerTest {
 
     @Test
     public void testConcurrency() throws Exception {
-        // TODO: Remove hard coded library path.
-        try (var lz4 = LZ4.newInstance(new LZ4Config.Builder(Path.of("/opt/homebrew/Cellar/lz4/1.10.0/lib/liblz4.dylib")).build());
+        try (var lz4 = LZ4.newInstance(new LZ4Config.Builder(Path.of(System.getenv("NATIVE_LIBRARIES_LZ4_PATH"))).build());
              var ledger = Ledger.newTestInstance(new LedgerConfig.Builder().dataDirectoryPath(Path.of("/tmp/")).build(), lz4)) {
 
             var t1 = new Transaction(
