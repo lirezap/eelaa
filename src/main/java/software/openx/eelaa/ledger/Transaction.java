@@ -1,5 +1,10 @@
 package software.openx.eelaa.ledger;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.nio.charset.StandardCharsets;
+
+import static software.openx.eelaa.ValueLayouts.*;
 import static software.openx.eelaa.ledger.LedgerConfig.TRANSACTION_ID_REQUIRED_BACKOFF_MS;
 
 /**
@@ -23,6 +28,7 @@ public final class Transaction {
     private String _failReason;
     private Wallet _sourceWallet;
     private Wallet _destinationWallet;
+    private MemorySegment _memoryPointer;
 
     Transaction(final int ledger, final String id) {
         this(ledger, 0, 0, 0, 0, id, "", 0, 0, "");
@@ -49,6 +55,37 @@ public final class Transaction {
         this._failReason = null;
         this._sourceWallet = null;
         this._destinationWallet = null;
+        this._memoryPointer = null;
+    }
+
+    private int binarySize() {
+        return 87 +
+                id.getBytes(StandardCharsets.UTF_8).length +
+                currency.getBytes(StandardCharsets.UTF_8).length +
+                metadata.getBytes(StandardCharsets.UTF_8).length;
+    }
+
+    public MemorySegment encodeV1(final Arena arena) {
+        final var memory = arena.allocate(6 + binarySize());
+
+        var position = putByteLE(memory, 0, (byte) 0b00000001);
+        position = putByteLE(memory, position, (byte) 0b00000000);
+        position = putIntLE(memory, position, binarySize());
+        position = putIntLE(memory, position, getLedger());
+        position = putLongLE(memory, position, getSourceAccount());
+        position = putIntLE(memory, position, getSourceWallet());
+        position = putLongLE(memory, position, getDestinationAccount());
+        position = putIntLE(memory, position, getDestinationWallet());
+        position = putString(memory, position, getId());
+        position = putString(memory, position, getCurrency());
+        position = putLongLE(memory, position, getAmount());
+        position = putLongLE(memory, position, getMaxOverdraftAmount());
+        position = putString(memory, position, getMetadata());
+        position = putLongLE(memory, position, getSourceWalletNewBalance());
+        position = putLongLE(memory, position, getDestinationWalletNewBalance());
+        putLongLE(memory, position, getTs());
+
+        return memory;
     }
 
     public String validate(final long now) {
@@ -179,6 +216,10 @@ public final class Transaction {
         return _destinationWallet;
     }
 
+    public MemorySegment get_memoryPointer() {
+        return _memoryPointer;
+    }
+
     public void setSourceWalletNewBalance(final long sourceWalletNewBalance) {
         this.sourceWalletNewBalance = sourceWalletNewBalance;
     }
@@ -205,6 +246,10 @@ public final class Transaction {
 
     public void set_destinationWallet(final Wallet _destinationWallet) {
         this._destinationWallet = _destinationWallet;
+    }
+
+    public void set_memoryPointer(final MemorySegment _memoryPointer) {
+        this._memoryPointer = _memoryPointer;
     }
 
     @Override
@@ -242,6 +287,7 @@ public final class Transaction {
                 ", _failReason='" + _failReason + '\'' +
                 ", _sourceWallet=" + _sourceWallet +
                 ", _destinationWallet=" + _destinationWallet +
+                ", _memoryPointer=" + _memoryPointer +
                 '}';
     }
 }

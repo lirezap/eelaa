@@ -13,7 +13,7 @@ import java.util.Objects;
 
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 import static java.nio.file.StandardOpenOption.*;
-import static software.openx.eelaa.storage.ValueLayouts.LONG;
+import static software.openx.eelaa.ValueLayouts.LONG_LE;
 
 /**
  * An atomic file implementation based on {@link FileChannel}. The implementation holds the position value itself.
@@ -157,14 +157,14 @@ public final class AtomicFile implements AutoCloseable {
     }
 
     private void incrementDurabilitySize(final long incrementValue) {
-        final var newValue = Math.addExact(fileHeaderMemory.get(LONG, 0), incrementValue);
-        fileHeaderMemory.set(LONG, 0, newValue);
+        final var newValue = Math.addExact(fileHeaderMemory.get(LONG_LE, 0), incrementValue);
+        fileHeaderMemory.set(LONG_LE, 0, newValue);
     }
 
     private void prepareFileHeader() throws IOException {
         try (final var _ = file.lock()) {
             if (file.size() == 0) {
-                fileHeaderMemory.set(LONG, 0, fileHeaderMemory.byteSize());
+                fileHeaderMemory.set(LONG_LE, 0, fileHeaderMemory.byteSize());
                 writeAllBytes(fileHeaderMemory, 0);
             } else {
                 read(fileHeaderMemory, 0);
@@ -197,7 +197,7 @@ public final class AtomicFile implements AutoCloseable {
                         // 256 bytes file header.
                         final var header = arena.allocate(256);
                         if (header.byteSize() == movedFile.read(header.asByteBuffer().clear(), 0)) {
-                            movedFile.truncate(header.get(LONG, 0));
+                            movedFile.truncate(header.get(LONG_LE, 0));
                             Files.move(movePath, filePath, ATOMIC_MOVE);
                         } else {
                             throw new IOException("incomplete read or file corrupted!");

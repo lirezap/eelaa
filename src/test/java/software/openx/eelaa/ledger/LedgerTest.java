@@ -2,13 +2,15 @@ package software.openx.eelaa.ledger;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import software.openx.eelaa.lz4.LZ4;
+import software.openx.eelaa.lz4.LZ4Config;
 
 import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ForkJoinPool;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author Alireza Pourtaghi
@@ -17,9 +19,9 @@ public class LedgerTest {
 
     @Test
     public void testConcurrency() throws Exception {
-        // TODO: Provide appropriate lz4 instance.
-        try (var ledger =
-                     Ledger.newTestInstance(new LedgerConfig.Builder().dataDirectoryPath(Path.of("/tmp/")).build(), null)) {
+        // TODO: Remove hard coded library path.
+        try (var lz4 = LZ4.newInstance(new LZ4Config.Builder(Path.of("/opt/homebrew/Cellar/lz4/1.10.0/lib/liblz4.dylib")).build());
+             var ledger = Ledger.newTestInstance(new LedgerConfig.Builder().dataDirectoryPath(Path.of("/tmp/")).build(), lz4)) {
 
             var t1 = new Transaction(
                     1,

@@ -1,5 +1,11 @@
 package software.openx.eelaa.ledger;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.nio.charset.StandardCharsets;
+
+import static software.openx.eelaa.ValueLayouts.*;
+
 /**
  * @author Alireza Pourtaghi
  */
@@ -22,6 +28,25 @@ public final class Wallet {
         this.currency = currency == null ? "" : currency;
         this.balance = balance;
         this._thisTurnAccumulatedOverdraft = 0;
+    }
+
+    private int binarySize() {
+        return 29 + currency.getBytes(StandardCharsets.UTF_8).length;
+    }
+
+    public MemorySegment encodeV1(final Arena arena) {
+        final var memory = arena.allocate(6 + binarySize());
+
+        var position = putByteLE(memory, 0, (byte) 0b00000001);
+        position = putByteLE(memory, position, (byte) 0b00000000);
+        position = putIntLE(memory, position, binarySize());
+        position = putIntLE(memory, position, getLedger());
+        position = putLongLE(memory, position, getAccount());
+        position = putIntLE(memory, position, getWallet());
+        position = putString(memory, position, getCurrency());
+        putLongLE(memory, position, getBalance());
+
+        return memory;
     }
 
     public int getLedger() {

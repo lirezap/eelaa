@@ -6,12 +6,14 @@ import org.slf4j.LoggerFactory;
 import software.openx.eelaa.lz4.LZ4;
 import software.openx.eelaa.storage.AtomicFile;
 
+import java.lang.foreign.Arena;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static software.openx.eelaa.ValueLayouts.*;
 
 /**
  * Lock-free, high performance and crash-safe monetary ledger implementation.
@@ -40,8 +42,8 @@ public final class Ledger implements AutoCloseable {
         final var queue = new ArrayBlockingQueue<Runnable>(ledgerConfig.getExecutorMaxWaitQueueSize());
         final var executor = new ThreadPoolExecutor(1, 1, 0L, SECONDS, queue);
         final var processor = Processor.newInstance(ledgerConfig);
-        final var transactionsFile = AtomicFile.newInstance(
-                ledgerConfig.getDataDirectoryPath().resolve("transactions.gl"));
+        final var transactionsFile = executor.submit(() -> AtomicFile.newInstance(
+                ledgerConfig.getDataDirectoryPath().resolve("transactions.gl"))).get();
 
         return new Ledger(executor, processor, transactionsFile, lz4);
     }
@@ -51,8 +53,8 @@ public final class Ledger implements AutoCloseable {
         final var queue = new ArrayBlockingQueue<Runnable>(ledgerConfig.getExecutorMaxWaitQueueSize());
         final var executor = new ThreadPoolExecutor(1, 1, 0L, SECONDS, queue);
         final var processor = Processor.newInstance(ledgerConfig);
-        final var transactionsFile = AtomicFile.newInstance(
-                ledgerConfig.getDataDirectoryPath().resolve(System.currentTimeMillis() + "-" + "transactions.gl"));
+        final var transactionsFile = executor.submit(() -> AtomicFile.newInstance(
+                ledgerConfig.getDataDirectoryPath().resolve(System.currentTimeMillis() + "-" + "transactions.gl"))).get();
 
         return new Ledger(executor, processor, transactionsFile, lz4);
     }
@@ -60,19 +62,14 @@ public final class Ledger implements AutoCloseable {
     public CompletableFuture<Boolean> process(final Transaction... transactions) {
         return CompletableFuture.supplyAsync(() -> {
             processor.process(transactions);
-            var succeededCount = 0;
-            for (final var transaction : transactions) {
-                if (transaction != null && !transaction.is_failed()) succeededCount++;
-            }
-
-            return persist(transactions, succeededCount) ? Boolean.TRUE : Boolean.FALSE;
+            return persist(transactions) ? Boolean.TRUE : Boolean.FALSE;
         }, executor);
     }
 
     public CompletableFuture<Boolean> processAtomically(final Transaction... transactions) {
         return CompletableFuture.supplyAsync(() -> {
             if (processor.processAtomically(transactions)) {
-                return persist(transactions, transactions.length) ? Boolean.TRUE : Boolean.FALSE;
+                return persist(transactions) ? Boolean.TRUE : Boolean.FALSE;
             }
 
             return Boolean.TRUE;
@@ -91,19 +88,66 @@ public final class Ledger implements AutoCloseable {
         return CompletableFuture.supplyAsync(() -> processor.fetchTransaction(ledger, id), executor);
     }
 
-    private boolean persist(final Transaction[] transactions, final int persistSize) {
-        // TODO: Complete implementation.
-        return true;
+    private boolean persist(final Transaction... transactions) {
+        try (final var arena = Arena.ofConfined()) {
+            var allocationSize = 0L;
+            for (final var transaction : transactions) {
+                if (transaction != null && !transaction.is_failed()) {
+                    final var encoded = transaction.encodeV1(arena);
+                    transaction.set_memoryPointer(encoded);
+                    allocationSize += encoded.byteSize();
+                }
+            }
+
+            if (allocationSize == 0) {
+                // Nothing to append.
+                return true;
+            }
+
+            final var memory = arena.allocate(allocationSize);
+            var position = 0L;
+            for (final var transaction : transactions) {
+                if (transaction != null && !transaction.is_failed()) {
+                    position = putMemory(memory, position, transaction.get_memoryPointer());
+                }
+            }
+
+            final var headerSize = 6;
+            final var compressionMemory = arena.allocate(headerSize + lz4.compressBound((int) memory.byteSize()));
+            position = putByteLE(compressionMemory, 0, (byte) 0b00000001);
+            position = putByteLE(compressionMemory, position, (byte) 0b00000001);
+            putIntLE(compressionMemory, position, (int) compressionMemory.byteSize() - headerSize);
+
+            lz4.compressDefault(
+                    memory,
+                    compressionMemory.asSlice(headerSize),
+                    (int) memory.byteSize(),
+                    (int) compressionMemory.byteSize() - headerSize);
+
+            transactionsFile.append(compressionMemory.asByteBuffer());
+            return true;
+        } catch (final Throwable cause) {
+            // We must return back the transferred balances of in-memory wallets.
+            processor.reverseBalancesOfSucceededTransactions(transactions);
+
+            logger.error("{}", cause.getMessage(), cause);
+            return false;
+        }
     }
 
     @Override
     public void close() throws Exception {
+        executor.submit(() -> {
+            try {
+                transactionsFile.close();
+            } catch (final Exception _) {
+            }
+        });
+
         executor.shutdown();
         if (!executor.awaitTermination(60, SECONDS)) {
             // Safe to ignore runnable list!
             executor.shutdownNow();
         }
-
-        transactionsFile.close();
     }
 }
