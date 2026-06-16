@@ -112,17 +112,20 @@ public final class Ledger implements AutoCloseable {
                 }
             }
 
-            final var headerSize = 6;
-            final var compressionMemory = arena.allocate(headerSize + lz4.compressBound((int) memory.byteSize()));
+            final var headerSize = 10;
+            final var requiredCompressionSpace = lz4.compressBound((int) memory.byteSize());
+            final var compressionMemory = arena.allocate(headerSize + requiredCompressionSpace);
+
             position = putByteLE(compressionMemory, 0, (byte) 0b00000001);
             position = putByteLE(compressionMemory, position, (byte) 0b00000001);
-            putIntLE(compressionMemory, position, (int) compressionMemory.byteSize() - headerSize);
+            position = putIntLE(compressionMemory, position, 4 + requiredCompressionSpace);
+            putIntLE(compressionMemory, position, (int) memory.byteSize());
 
             lz4.compressDefault(
                     memory,
                     compressionMemory.asSlice(headerSize),
                     (int) memory.byteSize(),
-                    (int) compressionMemory.byteSize() - headerSize);
+                    requiredCompressionSpace);
 
             transactionsFile.append(compressionMemory.asByteBuffer());
             return true;
@@ -140,9 +143,10 @@ public final class Ledger implements AutoCloseable {
         executor.submit(() -> {
             try {
                 transactionsFile.close();
-            } catch (final Exception _) {
+            } catch (final Exception ex) {
+                logger.error("{}", ex.getMessage(), ex);
             }
-        });
+        }).get();
 
         executor.shutdown();
         if (!executor.awaitTermination(60, SECONDS)) {
