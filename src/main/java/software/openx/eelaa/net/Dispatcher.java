@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.ReferenceCountUtil;
+import software.openx.eelaa.ledger.Ledger;
 import software.openx.eelaa.ping.PingHandler;
 
 /**
@@ -13,11 +14,13 @@ import software.openx.eelaa.ping.PingHandler;
  */
 final class Dispatcher extends SimpleChannelInboundHandler<ByteBuf> {
     private final CPUHeavyTaskExecutor cpuHeavyTaskExecutor;
+    private final Ledger ledger;
     private final SequenceIdsHolder sequenceIdsHolder;
 
-    public Dispatcher(final CPUHeavyTaskExecutor cpuHeavyTaskExecutor) {
+    public Dispatcher(final CPUHeavyTaskExecutor cpuHeavyTaskExecutor, final Ledger ledger) {
         super(false);
         this.cpuHeavyTaskExecutor = cpuHeavyTaskExecutor;
+        this.ledger = ledger;
         this.sequenceIdsHolder = new SequenceIdsHolder();
     }
 

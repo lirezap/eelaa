@@ -4,6 +4,7 @@ import io.netty.util.ResourceLeakDetector;
 import io.netty.util.ResourceLeakDetector.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.openx.eelaa.ledger.Ledger;
 import software.openx.eelaa.lz4.LZ4;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -20,21 +21,23 @@ public final class TCPServer implements AutoCloseable {
     private final NativeServerBootstrap nativeServerBootstrap;
     private final CPUHeavyTaskExecutor cpuHeavyTaskExecutor;
     private final LZ4 lz4;
+    private final Ledger ledger;
 
     private TCPServer(final TCPServerConfig config, final NativeServerBootstrap nativeServerBootstrap,
-                      final CPUHeavyTaskExecutor cpuHeavyTaskExecutor, final LZ4 lz4) {
+                      final CPUHeavyTaskExecutor cpuHeavyTaskExecutor, final LZ4 lz4, final Ledger ledger) {
 
         this.config = config;
         this.nativeServerBootstrap = nativeServerBootstrap;
         this.cpuHeavyTaskExecutor = cpuHeavyTaskExecutor;
         this.lz4 = lz4;
+        this.ledger = ledger;
     }
 
-    public static TCPServer newInstance(final TCPServerConfig config, final LZ4 lz4) {
+    public static TCPServer newInstance(final TCPServerConfig config, final LZ4 lz4, final Ledger ledger) {
         final var nativeServerBootstrap = NativeServerBootstrap.newInstance(config);
         final var cpuHeavyTaskExecutor = CPUHeavyTaskExecutor.newInstance(config.getCpuHeavyTaskExecutorConfig());
 
-        return new TCPServer(config, nativeServerBootstrap, cpuHeavyTaskExecutor, lz4);
+        return new TCPServer(config, nativeServerBootstrap, cpuHeavyTaskExecutor, lz4, ledger);
     }
 
     public void start() throws Exception {
@@ -45,7 +48,7 @@ public final class TCPServer implements AutoCloseable {
         }
 
         nativeServerBootstrap.configure();
-        nativeServerBootstrap.childHandler(new ClientSocketChannelInitializer(config, tlsContext(), cpuHeavyTaskExecutor, lz4));
+        nativeServerBootstrap.childHandler(new ClientSocketChannelInitializer(config, tlsContext(), cpuHeavyTaskExecutor, lz4, ledger));
         nativeServerBootstrap.bind(config.getHost(), config.getPort()).sync();
         logger.info("Started TCP server using configuration: {}", config);
     }

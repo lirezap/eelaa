@@ -5,6 +5,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.timeout.IdleStateHandler;
+import software.openx.eelaa.ledger.Ledger;
 import software.openx.eelaa.lz4.LZ4;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -19,6 +20,7 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
     private final TCPServerConfig config;
     private final TLSContext tlsContext;
     private final CPUHeavyTaskExecutor cpuHeavyTaskExecutor;
+    private final Ledger ledger;
 
     // Sharable handlers.
     private final HeartbeatHandler heartbeatHandler;
@@ -27,11 +29,13 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
     private final InboundExceptionHandler inboundExceptionHandler;
 
     public ClientSocketChannelInitializer(final TCPServerConfig config, final TLSContext tlsContext,
-                                          final CPUHeavyTaskExecutor cpuHeavyTaskExecutor, final LZ4 lz4) {
+                                          final CPUHeavyTaskExecutor cpuHeavyTaskExecutor, final LZ4 lz4,
+                                          final Ledger ledger) {
 
         this.config = config;
         this.tlsContext = tlsContext;
         this.cpuHeavyTaskExecutor = cpuHeavyTaskExecutor;
+        this.ledger = ledger;
         this.heartbeatHandler = new HeartbeatHandler();
         this.frameHeaderLogger = new FrameHeaderLogger();
         this.frameHeaderProcessor = new FrameHeaderProcessor(new FrameDataDecompressor(cpuHeavyTaskExecutor, lz4));
@@ -81,7 +85,7 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
     }
 
     private void addDispatcher(final SocketChannel channel) {
-        channel.pipeline().addLast(new Dispatcher(cpuHeavyTaskExecutor));
+        channel.pipeline().addLast(new Dispatcher(cpuHeavyTaskExecutor, ledger));
     }
 
     private void addInboundExceptionHandler(final SocketChannel channel) {
