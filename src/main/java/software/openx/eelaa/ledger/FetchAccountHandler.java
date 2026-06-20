@@ -40,30 +40,26 @@ public final class FetchAccountHandler extends Handler {
             final var account = ledger.fetchAccount(getBuf().readInt(), getBuf().readLong()).get();
             releaseFrameBuffer();
 
-            if (account != null) {
-                if (!account.isEmpty()) {
-                    try (final var arena = Arena.ofConfined()) {
-                        var index = 0;
-                        var allocationSize = 0L;
+            if (account != null && !account.isEmpty()) {
+                try (final var arena = Arena.ofConfined()) {
+                    var index = 0;
+                    var allocationSize = 0L;
 
-                        final var encodedWallets = new MemorySegment[account.size()];
-                        for (final var wallet : account) {
-                            final var encodedWallet = wallet.encodeV1ForNetwork(arena);
-                            encodedWallets[index++] = encodedWallet;
-                            allocationSize = Math.addExact(allocationSize, encodedWallet.byteSize());
-                        }
-
-                        final var response = newV1Buf((int) Math.addExact(8, allocationSize));
-                        response.writeInt(ACCOUNT.value());
-                        response.writeInt(getSequenceId());
-                        for (final var encodedWallet : encodedWallets) {
-                            response.writeBytes(encodedWallet.asByteBuffer());
-                        }
-
-                        writeAndFlush(response);
+                    final var encodedWallets = new MemorySegment[account.size()];
+                    for (final var wallet : account) {
+                        final var encodedWallet = wallet.encodeV1ForNetwork(arena);
+                        encodedWallets[index++] = encodedWallet;
+                        allocationSize = Math.addExact(allocationSize, encodedWallet.byteSize());
                     }
-                } else {
-                    respondNothing();
+
+                    final var response = newV1Buf((int) Math.addExact(8, allocationSize));
+                    response.writeInt(ACCOUNT.value());
+                    response.writeInt(getSequenceId());
+                    for (final var encodedWallet : encodedWallets) {
+                        response.writeBytes(encodedWallet.asByteBuffer());
+                    }
+
+                    writeAndFlush(response);
                 }
             } else {
                 respondNothing();
