@@ -61,7 +61,7 @@ public final class LZ4 implements AutoCloseable {
 
     public String versionString() throws Throwable {
         final var versionPtr = (MemorySegment) versionStringHandle.invokeExact();
-        return versionPtr.reinterpret(strlen(versionPtr) + 1).getString(0);
+        return versionPtr.reinterpret(Math.addExact(strlen(versionPtr), 1)).getString(0);
     }
 
     public int compressBound(final int inputSize) throws Throwable {

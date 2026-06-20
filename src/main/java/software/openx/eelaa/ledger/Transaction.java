@@ -59,18 +59,20 @@ public final class Transaction {
     }
 
     private int binarySize() {
-        return 87 +
-                id.getBytes(StandardCharsets.UTF_8).length +
-                currency.getBytes(StandardCharsets.UTF_8).length +
-                metadata.getBytes(StandardCharsets.UTF_8).length;
+        var sum = Math.addExact(87, id.getBytes(StandardCharsets.UTF_8).length);
+        sum = Math.addExact(sum, currency.getBytes(StandardCharsets.UTF_8).length);
+        sum = Math.addExact(sum, metadata.getBytes(StandardCharsets.UTF_8).length);
+
+        return sum;
     }
 
     public MemorySegment encodeV1(final Arena arena) {
-        final var memory = arena.allocate(6 + binarySize());
+        final var binarySize = binarySize();
+        final var memory = arena.allocate(6 + binarySize);
 
         var position = putByteLE(memory, 0, (byte) 0b00000001);
         position = putByteLE(memory, position, (byte) 0b00000000);
-        position = putIntLE(memory, position, binarySize());
+        position = putIntLE(memory, position, binarySize);
         position = putIntLE(memory, position, getLedger());
         position = putLongLE(memory, position, getSourceAccount());
         position = putIntLE(memory, position, getSourceWallet());

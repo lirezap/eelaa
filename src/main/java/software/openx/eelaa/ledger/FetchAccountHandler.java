@@ -4,6 +4,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import software.openx.eelaa.net.Handler;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+
 import static software.openx.eelaa.net.FrameNumericType.ACCOUNT;
 import static software.openx.eelaa.net.FrameNumericType.FETCH_ACCOUNT;
 
@@ -37,10 +40,26 @@ public final class FetchAccountHandler extends Handler {
             ledger.fetchAccount(getBuf().readInt(), getBuf().readLong())
                     .thenAccept(account -> {
                         if (account != null) {
-                            // TODO: Complete implementation.
-                            final var buf = newV1Buf(8);
-                            buf.writeInt(ACCOUNT.value());
-                            buf.writeInt(getSequenceId());
+                            try (final var arena = Arena.ofConfined()) {
+                                var index = 0;
+                                var allocationSize = 0L;
+
+                                final var wallets = new MemorySegment[account.size()];
+                                for (final var wallet : account) {
+                                    final var segment = wallet.encodeV1(arena);
+                                    wallets[index++] = segment;
+                                    allocationSize += segment.byteSize();
+                                }
+
+                                final var buf = newV1Buf(8 + (int) allocationSize);
+                                buf.writeInt(ACCOUNT.value());
+                                buf.writeInt(getSequenceId());
+                                for (final var wallet : wallets) {
+                                    buf.writeBytes(wallet.asByteBuffer());
+                                }
+
+                                writeAndFlush(buf);
+                            }
                         } else {
                             respondNothing();
                         }
