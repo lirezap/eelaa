@@ -5,6 +5,8 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.ReferenceCountUtil;
 
+import static software.openx.eelaa.net.FrameNumericType.NOTHING;
+
 /**
  * Basic required handling functionalities that every handler must implement.
  *
@@ -43,7 +45,7 @@ public abstract class Handler implements Runnable {
      * @return true if it can be handled otherwise false
      */
     private boolean canHandle() {
-        return frameNumericType() == frameNumericType;
+        return frameNumericType == frameNumericType();
     }
 
     /**
@@ -93,11 +95,26 @@ public abstract class Handler implements Runnable {
     }
 
     /**
+     * Releases the incoming frame's buffer.
+     */
+    protected final void releaseFrameBuffer() {
+        ReferenceCountUtil.release(buf);
+    }
+
+    /**
+     * Releases frame buffer, then closes the connection.
+     */
+    protected final void releaseFrameBufferThenClose() {
+        releaseFrameBuffer();
+        close();
+    }
+
+    /**
      * Fires an exception into channel's pipeline.
      *
      * @param ex exception instance
      */
-    protected final void fireException(final Exception ex) {
+    private void fireException(final Exception ex) {
         ctx.fireExceptionCaught(ex);
     }
 
@@ -139,10 +156,10 @@ public abstract class Handler implements Runnable {
     }
 
     /**
-     * Releases the incoming frame's buffer.
+     * Responds NOTHING model.
      */
-    protected final void releaseFrameBuffer() {
-        ReferenceCountUtil.release(buf);
+    protected final void respondNothing() {
+        writeAndFlush(newV1Buf(8).writeInt(NOTHING.value()).writeInt(sequenceId));
     }
 
     protected final ByteBuf getBuf() {

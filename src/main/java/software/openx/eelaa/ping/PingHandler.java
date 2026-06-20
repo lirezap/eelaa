@@ -25,7 +25,7 @@ public final class PingHandler extends Handler {
 
     @Override
     protected boolean isValid() {
-        // Ping message must not contain any extra data.
+        // Must not contain any extra data.
         return getBuf().readableBytes() == 0;
     }
 
@@ -38,7 +38,7 @@ public final class PingHandler extends Handler {
             writeAndFlush(response);
             releaseFrameBuffer();
         } else {
-            close();
+            releaseFrameBufferThenClose();
         }
     }
 }

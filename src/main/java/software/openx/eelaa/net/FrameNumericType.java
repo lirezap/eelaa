@@ -10,7 +10,10 @@ public enum FrameNumericType {
     NOTHING(0),
 
     PING(1),
-    PONG(1001);
+    PONG(2),
+
+    FETCH_ACCOUNT(100),
+    ACCOUNT(101);
 
     private static final FrameNumericType[] frameNumericTypes = FrameNumericType.values();
     private final int value;
