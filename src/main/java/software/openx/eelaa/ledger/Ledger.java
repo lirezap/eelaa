@@ -93,7 +93,7 @@ public final class Ledger implements AutoCloseable {
             var allocationSize = 0L;
             for (final var transaction : transactions) {
                 if (transaction != null && !transaction.is_failed()) {
-                    final var encoded = transaction.encodeV1(arena);
+                    final var encoded = transaction.encodeV1ForStorage(arena);
                     transaction.set_memoryPointer(encoded);
                     allocationSize += encoded.byteSize();
                 }

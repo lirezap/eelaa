@@ -46,7 +46,7 @@ public final class FetchAccountHandler extends Handler {
 
                         final var encodedWallets = new MemorySegment[account.size()];
                         for (final var wallet : account) {
-                            final var encodedWallet = wallet.encodeV1(arena);
+                            final var encodedWallet = wallet.encodeV1ForNetwork(arena);
                             encodedWallets[index++] = encodedWallet;
                             allocationSize = Math.addExact(allocationSize, encodedWallet.byteSize());
                         }

@@ -34,7 +34,7 @@ public final class Wallet {
         return Math.addExact(29, currency.getBytes(StandardCharsets.UTF_8).length);
     }
 
-    public MemorySegment encodeV1(final Arena arena) {
+    public MemorySegment encodeV1ForStorage(final Arena arena) {
         final var binarySize = binarySize();
         final var memory = arena.allocate(6 + binarySize);
 
@@ -44,8 +44,24 @@ public final class Wallet {
         position = putIntLE(memory, position, getLedger());
         position = putLongLE(memory, position, getAccount());
         position = putIntLE(memory, position, getWallet());
-        position = putString(memory, position, getCurrency());
+        position = putStringLE(memory, position, getCurrency());
         putLongLE(memory, position, getBalance());
+
+        return memory;
+    }
+
+    public MemorySegment encodeV1ForNetwork(final Arena arena) {
+        final var binarySize = binarySize();
+        final var memory = arena.allocate(6 + binarySize);
+
+        var position = putByteBE(memory, 0, (byte) 0b00000001);
+        position = putByteBE(memory, position, (byte) 0b00000000);
+        position = putIntBE(memory, position, binarySize);
+        position = putIntBE(memory, position, getLedger());
+        position = putLongBE(memory, position, getAccount());
+        position = putIntBE(memory, position, getWallet());
+        position = putStringBE(memory, position, getCurrency());
+        putLongBE(memory, position, getBalance());
 
         return memory;
     }

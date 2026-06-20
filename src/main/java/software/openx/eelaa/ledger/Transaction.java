@@ -66,7 +66,7 @@ public final class Transaction {
         return sum;
     }
 
-    public MemorySegment encodeV1(final Arena arena) {
+    public MemorySegment encodeV1ForStorage(final Arena arena) {
         final var binarySize = binarySize();
         final var memory = arena.allocate(6 + binarySize);
 
@@ -78,14 +78,38 @@ public final class Transaction {
         position = putIntLE(memory, position, getSourceWallet());
         position = putLongLE(memory, position, getDestinationAccount());
         position = putIntLE(memory, position, getDestinationWallet());
-        position = putString(memory, position, getId());
-        position = putString(memory, position, getCurrency());
+        position = putStringLE(memory, position, getId());
+        position = putStringLE(memory, position, getCurrency());
         position = putLongLE(memory, position, getAmount());
         position = putLongLE(memory, position, getMaxOverdraftAmount());
-        position = putString(memory, position, getMetadata());
+        position = putStringLE(memory, position, getMetadata());
         position = putLongLE(memory, position, getSourceWalletNewBalance());
         position = putLongLE(memory, position, getDestinationWalletNewBalance());
         putLongLE(memory, position, getTs());
+
+        return memory;
+    }
+
+    public MemorySegment encodeV1ForNetwork(final Arena arena) {
+        final var binarySize = binarySize();
+        final var memory = arena.allocate(6 + binarySize);
+
+        var position = putByteBE(memory, 0, (byte) 0b00000001);
+        position = putByteBE(memory, position, (byte) 0b00000000);
+        position = putIntBE(memory, position, binarySize);
+        position = putIntBE(memory, position, getLedger());
+        position = putLongBE(memory, position, getSourceAccount());
+        position = putIntBE(memory, position, getSourceWallet());
+        position = putLongBE(memory, position, getDestinationAccount());
+        position = putIntBE(memory, position, getDestinationWallet());
+        position = putStringBE(memory, position, getId());
+        position = putStringBE(memory, position, getCurrency());
+        position = putLongBE(memory, position, getAmount());
+        position = putLongBE(memory, position, getMaxOverdraftAmount());
+        position = putStringBE(memory, position, getMetadata());
+        position = putLongBE(memory, position, getSourceWalletNewBalance());
+        position = putLongBE(memory, position, getDestinationWalletNewBalance());
+        putLongBE(memory, position, getTs());
 
         return memory;
     }
