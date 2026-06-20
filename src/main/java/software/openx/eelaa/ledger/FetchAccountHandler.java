@@ -38,6 +38,8 @@ public final class FetchAccountHandler extends Handler {
     protected void handle() throws Exception {
         if (isValid()) {
             final var account = ledger.fetchAccount(getBuf().readInt(), getBuf().readLong()).get();
+            releaseFrameBuffer();
+
             if (account != null) {
                 if (!account.isEmpty()) {
                     try (final var arena = Arena.ofConfined()) {
@@ -66,8 +68,6 @@ public final class FetchAccountHandler extends Handler {
             } else {
                 respondNothing();
             }
-
-            releaseFrameBuffer();
         } else {
             releaseFrameBufferThenClose();
         }

@@ -32,12 +32,12 @@ public final class PingHandler extends Handler {
     @Override
     protected void handle() throws Exception {
         if (isValid()) {
+            releaseFrameBuffer();
+
             final var response = newV1Buf(8);
             response.writeInt(PONG.value());
             response.writeInt(getSequenceId());
             writeAndFlush(response);
-
-            releaseFrameBuffer();
         } else {
             releaseFrameBufferThenClose();
         }
