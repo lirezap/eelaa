@@ -4,7 +4,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.ReferenceCountUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static software.openx.eelaa.net.FrameNumericType.ERROR;
 import static software.openx.eelaa.net.FrameNumericType.NOTHING;
 
 /**
@@ -13,6 +17,8 @@ import static software.openx.eelaa.net.FrameNumericType.NOTHING;
  * @author Alireza Pourtaghi
  */
 public abstract class Handler implements Runnable {
+    private static final Logger logger = LoggerFactory.getLogger(Handler.class);
+
     private final ChannelHandlerContext ctx;
     private final ByteBuf buf;
     private final int frameNumericType;
@@ -34,6 +40,8 @@ public abstract class Handler implements Runnable {
         try {
             handle();
         } catch (final Exception ex) {
+            logger.error("sequence id: {}, message: {}", sequenceId, ex.getMessage());
+
             releaseFrameBuffer();
             fireException(ex);
         }
@@ -65,7 +73,7 @@ public abstract class Handler implements Runnable {
     /**
      * Main handling functionality implementation.
      */
-    protected abstract void handle();
+    protected abstract void handle() throws Exception;
 
     /**
      * Writes buf into channel.
@@ -160,6 +168,25 @@ public abstract class Handler implements Runnable {
      */
     protected final void respondNothing() {
         writeAndFlush(newV1Buf(8).writeInt(NOTHING.value()).writeInt(sequenceId));
+    }
+
+    /**
+     * Responds ERROR model.
+     */
+    protected final void respondError(final String code) {
+        // Null terminated
+        final var codeLength = code.getBytes(UTF_8).length + 1;
+        final var error = ctx.alloc().buffer(18 + codeLength);
+        error.writeByte(0b00000001);
+        error.writeByte(0b00000000);
+        error.writeInt(12 + codeLength);
+        error.writeInt(ERROR.value());
+        error.writeInt(getSequenceId());
+        error.writeInt(codeLength);
+        error.writeCharSequence(code, UTF_8);
+        error.writeByte(0b00000000);
+
+        writeAndFlush(error);
     }
 
     protected final ByteBuf getBuf() {
