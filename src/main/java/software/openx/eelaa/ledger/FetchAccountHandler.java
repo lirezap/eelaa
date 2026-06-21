@@ -40,7 +40,7 @@ public final class FetchAccountHandler extends Handler {
             if (account != null && !account.isEmpty()) {
                 var length = 0;
                 for (final var wallet : account) {
-                    length += wallet.binarySize();
+                    length += wallet.frameBinarySize();
                 }
 
                 final var response = newV1Buf(8 + length);

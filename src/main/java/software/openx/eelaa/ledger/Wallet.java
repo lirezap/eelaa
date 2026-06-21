@@ -33,8 +33,12 @@ public final class Wallet {
         this._thisTurnAccumulatedOverdraft = 0;
     }
 
-    public int binarySize() {
+    private int binarySize() {
         return Math.addExact(25, currency.getBytes(UTF_8).length);
+    }
+
+    public int frameBinarySize() {
+        return 6 + binarySize();
     }
 
     public MemorySegment encodeV1(final Arena arena) {

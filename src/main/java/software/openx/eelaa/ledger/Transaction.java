@@ -61,12 +61,16 @@ public final class Transaction {
         this._memoryPointer = null;
     }
 
-    public int binarySize() {
-        var sum = Math.addExact(75, id.getBytes(UTF_8).length);
+    private int binarySize() {
+        var sum = Math.addExact(71, id.getBytes(UTF_8).length);
         sum = Math.addExact(sum, currency.getBytes(UTF_8).length);
         sum = Math.addExact(sum, metadata.getBytes(UTF_8).length);
 
         return sum;
+    }
+
+    public int frameBinarySize() {
+        return 6 + binarySize();
     }
 
     public MemorySegment encodeV1(final Arena arena) {
