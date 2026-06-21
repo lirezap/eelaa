@@ -1,4 +1,4 @@
-package software.openx.eelaa;
+package software.openx.eelaa.binary;
 
 import java.lang.foreign.MemorySegment;
 
