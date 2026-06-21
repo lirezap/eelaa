@@ -1,4 +1,4 @@
-package software.openx.eelaa.ping;
+package software.openx.eelaa.handlers;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

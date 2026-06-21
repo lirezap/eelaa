@@ -1,4 +1,4 @@
-package software.openx.eelaa.wallet;
+package software.openx.eelaa.handlers;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

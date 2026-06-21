@@ -4,10 +4,10 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.ReferenceCountUtil;
-import software.openx.eelaa.account.FetchAccountHandler;
-import software.openx.eelaa.wallet.FetchWalletHandler;
+import software.openx.eelaa.handlers.FetchAccountHandler;
+import software.openx.eelaa.handlers.FetchWalletHandler;
+import software.openx.eelaa.handlers.PingHandler;
 import software.openx.eelaa.ledger.Ledger;
-import software.openx.eelaa.ping.PingHandler;
 
 /**
  * Dispatcher implementation that selects appropriate handler for incoming frame.
