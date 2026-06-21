@@ -13,7 +13,10 @@ public enum FrameNumericType {
     PONG(2),
 
     FETCH_ACCOUNT(100),
-    ACCOUNT(101);
+    ACCOUNT(101),
+
+    FETCH_WALLET(200),
+    WALLET(201);
 
     private static final FrameNumericType[] frameNumericTypes = FrameNumericType.values();
     private final int value;
