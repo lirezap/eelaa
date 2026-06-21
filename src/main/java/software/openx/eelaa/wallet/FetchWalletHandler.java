@@ -1,7 +1,8 @@
-package software.openx.eelaa.ledger;
+package software.openx.eelaa.wallet;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import software.openx.eelaa.ledger.Ledger;
 import software.openx.eelaa.net.Handler;
 
 import static software.openx.eelaa.net.FrameNumericType.FETCH_WALLET;
