@@ -38,7 +38,7 @@ public final class Wallet {
     }
 
     public int frameBinarySize() {
-        return 6 + binarySize();
+        return Math.addExact(6, binarySize());
     }
 
     public MemorySegment encodeV1(final Arena arena) {
@@ -59,7 +59,7 @@ public final class Wallet {
 
     public ByteBuf encodeV1(final ByteBufAllocator allocator) {
         final var binarySize = binarySize();
-        final var buffer = allocator.buffer(6 + binarySize);
+        final var buffer = allocator.buffer(Math.addExact(6, binarySize));
 
         buffer.writeByte(0b00000001);
         buffer.writeByte(0b00000000);

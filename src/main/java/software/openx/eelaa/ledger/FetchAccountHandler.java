@@ -40,10 +40,10 @@ public final class FetchAccountHandler extends Handler {
             if (account != null && !account.isEmpty()) {
                 var length = 0;
                 for (final var wallet : account) {
-                    length += wallet.frameBinarySize();
+                    length = Math.addExact(length, wallet.frameBinarySize());
                 }
 
-                final var response = newV1Buf(8 + length);
+                final var response = newV1Buf(Math.addExact(8, length));
                 response.writeInt(ACCOUNT.value());
                 response.writeInt(getSequenceId());
                 write(response);
