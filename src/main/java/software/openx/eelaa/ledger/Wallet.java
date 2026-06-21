@@ -1,9 +1,12 @@
 package software.openx.eelaa.ledger;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.nio.charset.StandardCharsets;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static software.openx.eelaa.ValueLayouts.*;
 
 /**
@@ -30,11 +33,11 @@ public final class Wallet {
         this._thisTurnAccumulatedOverdraft = 0;
     }
 
-    private int binarySize() {
-        return Math.addExact(29, currency.getBytes(StandardCharsets.UTF_8).length);
+    public int binarySize() {
+        return Math.addExact(25, currency.getBytes(UTF_8).length);
     }
 
-    public MemorySegment encodeV1ForStorage(final Arena arena) {
+    public MemorySegment encodeV1(final Arena arena) {
         final var binarySize = binarySize();
         final var memory = arena.allocate(6 + binarySize);
 
@@ -44,26 +47,27 @@ public final class Wallet {
         position = putIntLE(memory, position, getLedger());
         position = putLongLE(memory, position, getAccount());
         position = putIntLE(memory, position, getWallet());
-        position = putStringLE(memory, position, getCurrency());
+        position = putString(memory, position, getCurrency());
         putLongLE(memory, position, getBalance());
 
         return memory;
     }
 
-    public MemorySegment encodeV1ForNetwork(final Arena arena) {
+    public ByteBuf encodeV1(final ByteBufAllocator allocator) {
         final var binarySize = binarySize();
-        final var memory = arena.allocate(6 + binarySize);
+        final var buffer = allocator.buffer(6 + binarySize);
 
-        var position = putByteBE(memory, 0, (byte) 0b00000001);
-        position = putByteBE(memory, position, (byte) 0b00000000);
-        position = putIntBE(memory, position, binarySize);
-        position = putIntBE(memory, position, getLedger());
-        position = putLongBE(memory, position, getAccount());
-        position = putIntBE(memory, position, getWallet());
-        position = putStringBE(memory, position, getCurrency());
-        putLongBE(memory, position, getBalance());
+        buffer.writeByte(0b00000001);
+        buffer.writeByte(0b00000000);
+        buffer.writeInt(binarySize);
+        buffer.writeInt(getLedger());
+        buffer.writeLong(getAccount());
+        buffer.writeInt(getWallet());
+        buffer.writeCharSequence(getCurrency(), UTF_8);
+        buffer.writeByte(0x00);
+        buffer.writeLong(getBalance());
 
-        return memory;
+        return buffer;
     }
 
     public int getLedger() {

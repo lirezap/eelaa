@@ -4,9 +4,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import software.openx.eelaa.net.Handler;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment;
-
 import static software.openx.eelaa.net.FrameNumericType.ACCOUNT;
 import static software.openx.eelaa.net.FrameNumericType.FETCH_ACCOUNT;
 
@@ -41,26 +38,21 @@ public final class FetchAccountHandler extends Handler {
             releaseFrameBuffer();
 
             if (account != null && !account.isEmpty()) {
-                try (final var arena = Arena.ofConfined()) {
-                    var index = 0;
-                    var allocationSize = 0L;
-
-                    final var encodedWallets = new MemorySegment[account.size()];
-                    for (final var wallet : account) {
-                        final var encodedWallet = wallet.encodeV1ForNetwork(arena);
-                        encodedWallets[index++] = encodedWallet;
-                        allocationSize = Math.addExact(allocationSize, encodedWallet.byteSize());
-                    }
-
-                    final var response = newV1Buf((int) Math.addExact(8, allocationSize));
-                    response.writeInt(ACCOUNT.value());
-                    response.writeInt(getSequenceId());
-                    for (final var encodedWallet : encodedWallets) {
-                        response.writeBytes(encodedWallet.asByteBuffer());
-                    }
-
-                    writeAndFlush(response);
+                var length = 0;
+                for (final var wallet : account) {
+                    length += wallet.binarySize();
                 }
+
+                final var response = newV1Buf(8 + length);
+                response.writeInt(ACCOUNT.value());
+                response.writeInt(getSequenceId());
+                write(response);
+
+                for (final var wallet : account) {
+                    write(wallet.encodeV1(getCtx().alloc()));
+                }
+
+                flush();
             } else {
                 respondNothing();
             }

@@ -1,9 +1,12 @@
 package software.openx.eelaa.ledger;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.nio.charset.StandardCharsets;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static software.openx.eelaa.ValueLayouts.*;
 import static software.openx.eelaa.ledger.LedgerConfig.TRANSACTION_ID_REQUIRED_BACKOFF_MS;
 
@@ -58,15 +61,15 @@ public final class Transaction {
         this._memoryPointer = null;
     }
 
-    private int binarySize() {
-        var sum = Math.addExact(87, id.getBytes(StandardCharsets.UTF_8).length);
-        sum = Math.addExact(sum, currency.getBytes(StandardCharsets.UTF_8).length);
-        sum = Math.addExact(sum, metadata.getBytes(StandardCharsets.UTF_8).length);
+    public int binarySize() {
+        var sum = Math.addExact(75, id.getBytes(UTF_8).length);
+        sum = Math.addExact(sum, currency.getBytes(UTF_8).length);
+        sum = Math.addExact(sum, metadata.getBytes(UTF_8).length);
 
         return sum;
     }
 
-    public MemorySegment encodeV1ForStorage(final Arena arena) {
+    public MemorySegment encodeV1(final Arena arena) {
         final var binarySize = binarySize();
         final var memory = arena.allocate(6 + binarySize);
 
@@ -78,11 +81,11 @@ public final class Transaction {
         position = putIntLE(memory, position, getSourceWallet());
         position = putLongLE(memory, position, getDestinationAccount());
         position = putIntLE(memory, position, getDestinationWallet());
-        position = putStringLE(memory, position, getId());
-        position = putStringLE(memory, position, getCurrency());
+        position = putString(memory, position, getId());
+        position = putString(memory, position, getCurrency());
         position = putLongLE(memory, position, getAmount());
         position = putLongLE(memory, position, getMaxOverdraftAmount());
-        position = putStringLE(memory, position, getMetadata());
+        position = putString(memory, position, getMetadata());
         position = putLongLE(memory, position, getSourceWalletNewBalance());
         position = putLongLE(memory, position, getDestinationWalletNewBalance());
         putLongLE(memory, position, getTs());
@@ -90,28 +93,31 @@ public final class Transaction {
         return memory;
     }
 
-    public MemorySegment encodeV1ForNetwork(final Arena arena) {
+    public ByteBuf encodeV1(final ByteBufAllocator allocator) {
         final var binarySize = binarySize();
-        final var memory = arena.allocate(6 + binarySize);
+        final var buffer = allocator.buffer(6 + binarySize);
 
-        var position = putByteBE(memory, 0, (byte) 0b00000001);
-        position = putByteBE(memory, position, (byte) 0b00000000);
-        position = putIntBE(memory, position, binarySize);
-        position = putIntBE(memory, position, getLedger());
-        position = putLongBE(memory, position, getSourceAccount());
-        position = putIntBE(memory, position, getSourceWallet());
-        position = putLongBE(memory, position, getDestinationAccount());
-        position = putIntBE(memory, position, getDestinationWallet());
-        position = putStringBE(memory, position, getId());
-        position = putStringBE(memory, position, getCurrency());
-        position = putLongBE(memory, position, getAmount());
-        position = putLongBE(memory, position, getMaxOverdraftAmount());
-        position = putStringBE(memory, position, getMetadata());
-        position = putLongBE(memory, position, getSourceWalletNewBalance());
-        position = putLongBE(memory, position, getDestinationWalletNewBalance());
-        putLongBE(memory, position, getTs());
+        buffer.writeByte(0b00000001);
+        buffer.writeByte(0b00000000);
+        buffer.writeInt(binarySize);
+        buffer.writeInt(getLedger());
+        buffer.writeLong(getSourceAccount());
+        buffer.writeInt(getSourceWallet());
+        buffer.writeLong(getDestinationAccount());
+        buffer.writeInt(getDestinationWallet());
+        buffer.writeCharSequence(getId(), UTF_8);
+        buffer.writeByte(0x00);
+        buffer.writeCharSequence(getCurrency(), UTF_8);
+        buffer.writeByte(0x00);
+        buffer.writeLong(getAmount());
+        buffer.writeLong(getMaxOverdraftAmount());
+        buffer.writeCharSequence(getMetadata(), UTF_8);
+        buffer.writeByte(0x00);
+        buffer.writeLong(getSourceWalletNewBalance());
+        buffer.writeLong(getDestinationWalletNewBalance());
+        buffer.writeLong(getTs());
 
-        return memory;
+        return buffer;
     }
 
     public String validate(final long now) {

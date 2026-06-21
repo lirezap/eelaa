@@ -85,6 +85,13 @@ public abstract class Handler implements Runnable {
     }
 
     /**
+     * Flushes the channel.
+     */
+    protected final void flush() {
+        ctx.flush();
+    }
+
+    /**
      * Writes and flushes buf into channel.
      *
      * @param response response buffer to be written
@@ -176,17 +183,20 @@ public abstract class Handler implements Runnable {
     protected final void respondError(final String code) {
         // Null terminated
         final var codeLength = code.getBytes(UTF_8).length + 1;
-        final var error = ctx.alloc().buffer(18 + codeLength);
+        final var error = ctx.alloc().buffer(14 + codeLength);
         error.writeByte(0b00000001);
         error.writeByte(0b00000000);
-        error.writeInt(12 + codeLength);
+        error.writeInt(8 + codeLength);
         error.writeInt(ERROR.value());
         error.writeInt(getSequenceId());
-        error.writeInt(codeLength);
         error.writeCharSequence(code, UTF_8);
-        error.writeByte(0b00000000);
+        error.writeByte(0x00);
 
         writeAndFlush(error);
+    }
+
+    public final ChannelHandlerContext getCtx() {
+        return ctx;
     }
 
     protected final ByteBuf getBuf() {
