@@ -75,6 +75,16 @@ public final class Wallet {
         return buffer;
     }
 
+    public static Wallet decode(final ByteBuf buf) {
+        return new Wallet(
+                buf.readInt(),
+                buf.readLong(),
+                buf.readInt(),
+                StringUtil.readNullTerminatedUTF8String(buf),
+                buf.readLong()
+        );
+    }
+
     public int getLedger() {
         return ledger;
     }

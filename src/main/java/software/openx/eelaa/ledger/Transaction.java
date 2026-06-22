@@ -62,6 +62,26 @@ public final class Transaction {
         this._memoryPointer = null;
     }
 
+    private Transaction(final int ledger, final long sourceAccount, final int sourceWallet,
+                        final long destinationAccount, final int destinationWallet, final String id,
+                        final String currency, final long amount, final long maxOverdraftAmount, final String metadata,
+                        final long sourceWalletNewBalance, final long destinationWalletNewBalance, final long ts) {
+
+        this.ledger = ledger;
+        this.sourceAccount = sourceAccount;
+        this.sourceWallet = sourceWallet;
+        this.destinationAccount = destinationAccount;
+        this.destinationWallet = destinationWallet;
+        this.id = id == null ? "" : id;
+        this.currency = currency == null ? "" : currency;
+        this.amount = amount;
+        this.maxOverdraftAmount = maxOverdraftAmount;
+        this.metadata = metadata == null ? "" : metadata;
+        this.sourceWalletNewBalance = sourceWalletNewBalance;
+        this.destinationWalletNewBalance = destinationWalletNewBalance;
+        this.ts = ts;
+    }
+
     private int binarySize() {
         var sum = Math.addExact(68, StringUtil.requiredNullTerminatedUTF8BytesLength(id));
         sum = Math.addExact(sum, StringUtil.requiredNullTerminatedUTF8BytesLength(currency));
@@ -123,6 +143,24 @@ public final class Transaction {
         buffer.writeLong(getTs());
 
         return buffer;
+    }
+
+    public static Transaction decode(final ByteBuf buf) {
+        return new Transaction(
+                buf.readInt(),
+                buf.readLong(),
+                buf.readInt(),
+                buf.readLong(),
+                buf.readInt(),
+                StringUtil.readNullTerminatedUTF8String(buf),
+                StringUtil.readNullTerminatedUTF8String(buf),
+                buf.readLong(),
+                buf.readLong(),
+                StringUtil.readNullTerminatedUTF8String(buf),
+                buf.readLong(),
+                buf.readLong(),
+                buf.readLong()
+        );
     }
 
     public String validate(final long now) {
