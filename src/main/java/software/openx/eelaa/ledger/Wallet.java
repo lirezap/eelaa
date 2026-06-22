@@ -8,7 +8,7 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static software.openx.eelaa.binary.ValueLayouts.*;
+import static software.openx.eelaa.binary.MemorySegmentUtil.*;
 
 /**
  * @author Alireza Pourtaghi

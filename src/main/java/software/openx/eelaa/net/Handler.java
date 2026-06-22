@@ -148,7 +148,7 @@ public abstract class Handler implements Runnable {
      * @return newly created buffer
      */
     protected final ByteBuf newV1Buf(final int length) {
-        var buf = ctx.alloc().buffer(6 + length);
+        final var buf = ctx.alloc().buffer(6 + length);
         buf.writeByte(0b00000001);
         buf.writeByte(0b00000000);
         buf.writeInt(length);
@@ -157,16 +157,19 @@ public abstract class Handler implements Runnable {
     }
 
     /**
-     * Creates a new buffer based on version one message format and compressed flag enabled.
+     * Creates a new frame header buffer based on version one message format.
      *
-     * @param length data section length
+     * @param headerLengthOfDataSection  the length of header in the data section of frame
+     * @param contentLengthOdDataSection the length of content in the data section of frame
      * @return newly created buffer
      */
-    protected final ByteBuf newV1BufCompressed(final int length) {
-        var buf = ctx.alloc().buffer(6 + length);
+    protected final ByteBuf newV1FrameHeaderBuf(final int headerLengthOfDataSection,
+                                                final int contentLengthOdDataSection) {
+
+        final var buf = ctx.alloc().buffer(6 + headerLengthOfDataSection);
         buf.writeByte(0b00000001);
-        buf.writeByte(0b00000001);
-        buf.writeInt(length);
+        buf.writeByte(0b00000000);
+        buf.writeInt(Math.addExact(headerLengthOfDataSection, contentLengthOdDataSection));
 
         return buf;
     }
@@ -188,7 +191,7 @@ public abstract class Handler implements Runnable {
         error.writeByte(0b00000000);
         error.writeInt(8 + codeLength);
         error.writeInt(ERROR.value());
-        error.writeInt(getSequenceId());
+        error.writeInt(sequenceId);
         error.writeCharSequence(code, UTF_8);
         error.writeZero(1);
 

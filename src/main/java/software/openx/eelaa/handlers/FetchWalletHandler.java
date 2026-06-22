@@ -39,10 +39,10 @@ public final class FetchWalletHandler extends Handler {
             releaseFrameBuffer();
 
             if (wallet != null) {
-                final var response = newV1Buf(Math.addExact(8, wallet.frameBinarySize()));
-                response.writeInt(WALLET.value());
-                response.writeInt(getSequenceId());
-                write(response);
+                final var frameHeader = newV1FrameHeaderBuf(8, wallet.frameBinarySize());
+                frameHeader.writeInt(WALLET.value());
+                frameHeader.writeInt(getSequenceId());
+                write(frameHeader);
                 writeAndFlush(wallet.encodeV1(getCtx().alloc()));
             } else {
                 respondNothing();

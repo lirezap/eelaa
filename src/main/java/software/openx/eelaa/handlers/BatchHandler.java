@@ -49,13 +49,13 @@ public final class BatchHandler extends Handler {
     private Transaction[] decodeBatch() {
         final var readerIndex = getBuf().readerIndex();
         var count = 0;
-        // Counting number of elements.
+        // Counting number of items.
         while (getBuf().readableBytes() > 0) {
             getBuf().readByte();
             getBuf().readByte();
 
             final var length = getBuf().readInt();
-            getBuf().readerIndex(getBuf().readerIndex() + length);
+            getBuf().readerIndex(Math.addExact(getBuf().readerIndex(), length));
             count++;
         }
 
@@ -70,7 +70,7 @@ public final class BatchHandler extends Handler {
             final var length = getBuf().readInt();
 
             batch[index++] = Transaction.decode(getBuf().slice(getBuf().readerIndex(), length));
-            getBuf().readerIndex(getBuf().readerIndex() + length);
+            getBuf().readerIndex(Math.addExact(getBuf().readerIndex(), length));
         }
 
         // Release incoming frame buffer.
@@ -92,14 +92,14 @@ public final class BatchHandler extends Handler {
             if (transaction.is_failed()) {
                 final var failedTransaction = new FailedTransaction(transaction.getId(), transaction.get_failReason());
                 failedTransactions[index++] = failedTransaction.encodeV1(getCtx().alloc());
-                length = failedTransaction.frameBinarySize();
+                length = Math.addExact(length, failedTransaction.frameBinarySize());
             }
         }
 
-        final var response = newV1Buf(6 + length);
-        response.writeInt(FAILED_TRANSACTIONS.value());
-        response.writeInt(getSequenceId());
-        write(response);
+        final var frameHeader = newV1FrameHeaderBuf(8, length);
+        frameHeader.writeInt(FAILED_TRANSACTIONS.value());
+        frameHeader.writeInt(getSequenceId());
+        write(frameHeader);
 
         for (final var failedTransaction : failedTransactions) {
             write(failedTransaction);

@@ -13,7 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static software.openx.eelaa.binary.ValueLayouts.*;
+import static software.openx.eelaa.binary.MemorySegmentUtil.*;
 
 /**
  * Lock-free, high performance and crash-safe monetary ledger implementation.

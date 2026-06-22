@@ -9,7 +9,7 @@ import static java.nio.ByteOrder.LITTLE_ENDIAN;
 /**
  * @author Alireza Pourtaghi
  */
-public final class ValueLayouts {
+public final class MemorySegmentUtil {
     public static final OfByte BYTE_LE = JAVA_BYTE.withOrder(LITTLE_ENDIAN);
     public static final OfByte BYTE_BE = JAVA_BYTE.withOrder(BIG_ENDIAN);
 
@@ -21,41 +21,41 @@ public final class ValueLayouts {
 
     public static long putByteLE(final MemorySegment memory, final long position, final byte value) {
         memory.set(BYTE_LE, position, value);
-        return position + BYTE_LE.byteSize();
+        return Math.addExact(position, BYTE_LE.byteSize());
     }
 
     public static long putByteBE(final MemorySegment memory, final long position, final byte value) {
         memory.set(BYTE_BE, position, value);
-        return position + BYTE_BE.byteSize();
+        return Math.addExact(position, BYTE_BE.byteSize());
     }
 
     public static long putIntLE(final MemorySegment memory, final long position, final int value) {
         memory.set(INT_LE, position, value);
-        return position + INT_LE.byteSize();
+        return Math.addExact(position, INT_LE.byteSize());
     }
 
     public static long putIntBE(final MemorySegment memory, final long position, final int value) {
         memory.set(INT_BE, position, value);
-        return position + INT_BE.byteSize();
+        return Math.addExact(position, INT_BE.byteSize());
     }
 
     public static long putLongLE(final MemorySegment memory, final long position, final long value) {
         memory.set(LONG_LE, position, value);
-        return position + LONG_LE.byteSize();
+        return Math.addExact(position, LONG_LE.byteSize());
     }
 
     public static long putLongBE(final MemorySegment memory, final long position, final long value) {
         memory.set(LONG_BE, position, value);
-        return position + LONG_BE.byteSize();
+        return Math.addExact(position, LONG_BE.byteSize());
     }
 
     public static long putString(final MemorySegment memory, final long position, final String value) {
         memory.setString(position, value);
-        return position + StringUtil.requiredNullTerminatedUTF8BytesLength(value);
+        return Math.addExact(position, StringUtil.requiredNullTerminatedUTF8BytesLength(value));
     }
 
     public static long putMemory(final MemorySegment memory, final long position, final MemorySegment value) {
         MemorySegment.copy(value, 0, memory, position, value.byteSize());
-        return position + value.byteSize();
+        return Math.addExact(position, value.byteSize());
     }
 }

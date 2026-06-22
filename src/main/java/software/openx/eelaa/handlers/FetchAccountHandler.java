@@ -44,10 +44,10 @@ public final class FetchAccountHandler extends Handler {
                     length = Math.addExact(length, wallet.frameBinarySize());
                 }
 
-                final var response = newV1Buf(Math.addExact(8, length));
-                response.writeInt(ACCOUNT.value());
-                response.writeInt(getSequenceId());
-                write(response);
+                final var frameHeader = newV1FrameHeaderBuf(8, length);
+                frameHeader.writeInt(ACCOUNT.value());
+                frameHeader.writeInt(getSequenceId());
+                write(frameHeader);
 
                 for (final var wallet : account) {
                     write(wallet.encodeV1(getCtx().alloc()));

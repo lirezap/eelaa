@@ -15,7 +15,7 @@ public final class StringUtil {
     }
 
     public static int requiredNullTerminatedUTF8BytesLength(final String string) {
-        return Math.addExact(ByteBufUtil.utf8Bytes(string), 1);
+        return Math.addExact(requiredUTF8BytesLength(string), 1);
     }
 
     public static String readNullTerminatedUTF8String(final ByteBuf buf) {
