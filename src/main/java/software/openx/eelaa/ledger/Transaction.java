@@ -110,13 +110,13 @@ public final class Transaction {
         buffer.writeLong(getDestinationAccount());
         buffer.writeInt(getDestinationWallet());
         buffer.writeCharSequence(getId(), UTF_8);
-        buffer.writeByte(0x00);
+        buffer.writeZero(1);
         buffer.writeCharSequence(getCurrency(), UTF_8);
-        buffer.writeByte(0x00);
+        buffer.writeZero(1);
         buffer.writeLong(getAmount());
         buffer.writeLong(getMaxOverdraftAmount());
         buffer.writeCharSequence(getMetadata(), UTF_8);
-        buffer.writeByte(0x00);
+        buffer.writeZero(1);
         buffer.writeLong(getSourceWalletNewBalance());
         buffer.writeLong(getDestinationWalletNewBalance());
         buffer.writeLong(getTs());

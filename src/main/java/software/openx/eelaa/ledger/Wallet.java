@@ -68,7 +68,7 @@ public final class Wallet {
         buffer.writeLong(getAccount());
         buffer.writeInt(getWallet());
         buffer.writeCharSequence(getCurrency(), UTF_8);
-        buffer.writeByte(0x00);
+        buffer.writeZero(1);
         buffer.writeLong(getBalance());
 
         return buffer;

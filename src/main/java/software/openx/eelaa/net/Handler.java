@@ -190,7 +190,7 @@ public abstract class Handler implements Runnable {
         error.writeInt(ERROR.value());
         error.writeInt(getSequenceId());
         error.writeCharSequence(code, UTF_8);
-        error.writeByte(0x00);
+        error.writeZero(1);
 
         writeAndFlush(error);
     }
