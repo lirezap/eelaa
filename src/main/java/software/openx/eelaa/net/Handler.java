@@ -6,6 +6,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.ReferenceCountUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.openx.eelaa.binary.StringUtil;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static software.openx.eelaa.net.FrameNumericType.ERROR;
@@ -181,8 +182,7 @@ public abstract class Handler implements Runnable {
      * Responds ERROR model.
      */
     protected final void respondError(final String code) {
-        // Null terminated
-        final var codeLength = code.getBytes(UTF_8).length + 1;
+        final var codeLength = StringUtil.requiredNullTerminatedUTF8BytesLength(code);
         final var error = ctx.alloc().buffer(14 + codeLength);
         error.writeByte(0b00000001);
         error.writeByte(0b00000000);

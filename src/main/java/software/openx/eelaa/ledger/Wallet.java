@@ -2,6 +2,7 @@ package software.openx.eelaa.ledger;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import software.openx.eelaa.binary.StringUtil;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -34,7 +35,7 @@ public final class Wallet {
     }
 
     private int binarySize() {
-        return Math.addExact(25, currency.getBytes(UTF_8).length);
+        return Math.addExact(24, StringUtil.requiredNullTerminatedUTF8BytesLength(currency));
     }
 
     public int frameBinarySize() {

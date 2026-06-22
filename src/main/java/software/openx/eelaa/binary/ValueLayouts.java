@@ -5,7 +5,6 @@ import java.lang.foreign.MemorySegment;
 import static java.lang.foreign.ValueLayout.*;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author Alireza Pourtaghi
@@ -51,11 +50,8 @@ public final class ValueLayouts {
     }
 
     public static long putString(final MemorySegment memory, final long position, final String value) {
-        // Null terminated
-        final var length = value.getBytes(UTF_8).length + 1;
         memory.setString(position, value);
-
-        return position + length;
+        return position + StringUtil.requiredNullTerminatedUTF8BytesLength(value);
     }
 
     public static long putMemory(final MemorySegment memory, final long position, final MemorySegment value) {

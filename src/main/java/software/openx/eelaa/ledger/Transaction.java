@@ -2,6 +2,7 @@ package software.openx.eelaa.ledger;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import software.openx.eelaa.binary.StringUtil;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -62,9 +63,9 @@ public final class Transaction {
     }
 
     private int binarySize() {
-        var sum = Math.addExact(71, id.getBytes(UTF_8).length);
-        sum = Math.addExact(sum, currency.getBytes(UTF_8).length);
-        sum = Math.addExact(sum, metadata.getBytes(UTF_8).length);
+        var sum = Math.addExact(68, StringUtil.requiredNullTerminatedUTF8BytesLength(id));
+        sum = Math.addExact(sum, StringUtil.requiredNullTerminatedUTF8BytesLength(currency));
+        sum = Math.addExact(sum, StringUtil.requiredNullTerminatedUTF8BytesLength(metadata));
 
         return sum;
     }
