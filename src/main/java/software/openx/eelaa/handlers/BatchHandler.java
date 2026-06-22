@@ -12,7 +12,7 @@ import static software.openx.eelaa.net.FrameNumericType.FAILED_TRANSACTIONS;
 /**
  * @author Alireza Pourtaghi
  */
-public final class BatchHandler extends Handler {
+public sealed class BatchHandler extends Handler permits AtomicBatchHandler {
     private final Ledger ledger;
 
     public BatchHandler(final ChannelHandlerContext ctx, final ByteBuf buf, final int frameNumericType,
@@ -28,22 +28,54 @@ public final class BatchHandler extends Handler {
     }
 
     @Override
-    protected boolean isValid() {
+    protected final boolean isValid() {
         return getBuf().readableBytes() > 0;
     }
 
     @Override
-    protected void handle() throws Exception {
+    protected final void handle() throws Exception {
         if (isValid()) {
-            final var batch = decodeBatch();
-            if (ledger.process(batch).get()) {
-                respondProcessed(batch);
-            } else {
-                respondError("batch_process.failed");
-            }
+            process(decodeBatch());
         } else {
             releaseFrameBufferThenClose();
         }
+    }
+
+    protected void process(final Transaction[] batch) throws Exception {
+        if (ledger.process(batch).get()) {
+            respondProcessed(batch);
+        } else {
+            respondError("batch_process.failed");
+        }
+    }
+
+    protected void respondProcessed(final Transaction[] batch) {
+        var failedCount = 0;
+        for (final var transaction : batch) {
+            if (transaction.is_failed()) failedCount++;
+        }
+
+        final var failedTransactions = new ByteBuf[failedCount];
+        var index = 0;
+        var length = 0;
+        for (final var transaction : batch) {
+            if (transaction.is_failed()) {
+                final var failedTransaction = new FailedTransaction(transaction.getId(), transaction.get_failReason());
+                failedTransactions[index++] = failedTransaction.encodeV1(getCtx().alloc());
+                length = Math.addExact(length, failedTransaction.frameBinarySize());
+            }
+        }
+
+        final var frameHeader = newV1FrameHeaderBuf(8, length);
+        frameHeader.writeInt(FAILED_TRANSACTIONS.value());
+        frameHeader.writeInt(getSequenceId());
+        write(frameHeader);
+
+        for (final var failedTransaction : failedTransactions) {
+            write(failedTransaction);
+        }
+
+        flush();
     }
 
     private Transaction[] decodeBatch() {
@@ -79,32 +111,7 @@ public final class BatchHandler extends Handler {
         return batch;
     }
 
-    private void respondProcessed(final Transaction[] batch) {
-        var failedCount = 0;
-        for (final var transaction : batch) {
-            if (transaction.is_failed()) failedCount++;
-        }
-
-        final var failedTransactions = new ByteBuf[failedCount];
-        var index = 0;
-        var length = 0;
-        for (final var transaction : batch) {
-            if (transaction.is_failed()) {
-                final var failedTransaction = new FailedTransaction(transaction.getId(), transaction.get_failReason());
-                failedTransactions[index++] = failedTransaction.encodeV1(getCtx().alloc());
-                length = Math.addExact(length, failedTransaction.frameBinarySize());
-            }
-        }
-
-        final var frameHeader = newV1FrameHeaderBuf(8, length);
-        frameHeader.writeInt(FAILED_TRANSACTIONS.value());
-        frameHeader.writeInt(getSequenceId());
-        write(frameHeader);
-
-        for (final var failedTransaction : failedTransactions) {
-            write(failedTransaction);
-        }
-
-        flush();
+    protected final Ledger getLedger() {
+        return ledger;
     }
 }
