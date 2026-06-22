@@ -118,7 +118,7 @@ public final class Ledger implements AutoCloseable {
 
             position = putByteLE(compressionMemory, 0, (byte) 0b00000001);
             position = putByteLE(compressionMemory, position, (byte) 0b00000001);
-            position = putIntLE(compressionMemory, position, 4 + requiredCompressionSpace);
+            position = putIntLE(compressionMemory, position, Math.addExact(4, requiredCompressionSpace));
             putIntLE(compressionMemory, position, (int) memory.byteSize());
 
             lz4.compressDefault(
