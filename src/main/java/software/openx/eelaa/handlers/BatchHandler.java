@@ -1,0 +1,110 @@
+package software.openx.eelaa.handlers;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import software.openx.eelaa.ledger.Ledger;
+import software.openx.eelaa.ledger.Transaction;
+import software.openx.eelaa.net.Handler;
+
+import static software.openx.eelaa.net.FrameNumericType.BATCH;
+import static software.openx.eelaa.net.FrameNumericType.FAILED_TRANSACTIONS;
+
+/**
+ * @author Alireza Pourtaghi
+ */
+public final class BatchHandler extends Handler {
+    private final Ledger ledger;
+
+    public BatchHandler(final ChannelHandlerContext ctx, final ByteBuf buf, final int frameNumericType,
+                        final int sequenceId, final Ledger ledger) {
+
+        super(ctx, buf, frameNumericType, sequenceId);
+        this.ledger = ledger;
+    }
+
+    @Override
+    protected int frameNumericType() {
+        return BATCH.value();
+    }
+
+    @Override
+    protected boolean isValid() {
+        return getBuf().readableBytes() > 0;
+    }
+
+    @Override
+    protected void handle() throws Exception {
+        if (isValid()) {
+            final var batch = decodeBatch();
+            if (ledger.process(batch).get()) {
+                respondProcessed(batch);
+            } else {
+                respondError("batch_process.failed");
+            }
+        } else {
+            releaseFrameBufferThenClose();
+        }
+    }
+
+    private Transaction[] decodeBatch() {
+        final var readerIndex = getBuf().readerIndex();
+        var count = 0;
+        // Counting number of elements.
+        while (getBuf().readableBytes() > 0) {
+            getBuf().readByte();
+            getBuf().readByte();
+
+            final var length = getBuf().readInt();
+            getBuf().readerIndex(getBuf().readerIndex() + length);
+            count++;
+        }
+
+        // Reset reader index.
+        getBuf().readerIndex(readerIndex);
+
+        final var batch = new Transaction[count];
+        var index = 0;
+        while (getBuf().readableBytes() > 0) {
+            final var version = getBuf().readByte();
+            final var flags = getBuf().readByte();
+            final var length = getBuf().readInt();
+
+            batch[index++] = Transaction.decode(getBuf().slice(getBuf().readerIndex(), length));
+            getBuf().readerIndex(getBuf().readerIndex() + length);
+        }
+
+        // Release incoming frame buffer.
+        releaseFrameBuffer();
+
+        return batch;
+    }
+
+    private void respondProcessed(final Transaction[] batch) {
+        var failedCount = 0;
+        for (final var transaction : batch) {
+            if (transaction.is_failed()) failedCount++;
+        }
+
+        final var failedTransactions = new ByteBuf[failedCount];
+        var index = 0;
+        var length = 0;
+        for (final var transaction : batch) {
+            if (transaction.is_failed()) {
+                final var failedTransaction = new FailedTransaction(transaction.getId(), transaction.get_failReason());
+                failedTransactions[index++] = failedTransaction.encodeV1(getCtx().alloc());
+                length = failedTransaction.frameBinarySize();
+            }
+        }
+
+        final var response = newV1Buf(6 + length);
+        response.writeInt(FAILED_TRANSACTIONS.value());
+        response.writeInt(getSequenceId());
+        write(response);
+
+        for (final var failedTransaction : failedTransactions) {
+            write(failedTransaction);
+        }
+
+        flush();
+    }
+}

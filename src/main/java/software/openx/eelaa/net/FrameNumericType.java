@@ -16,7 +16,11 @@ public enum FrameNumericType {
     ACCOUNT(101),
 
     FETCH_WALLET(200),
-    WALLET(201);
+    WALLET(201),
+
+    BATCH(300),
+    ATOMIC_BATCH(301),
+    FAILED_TRANSACTIONS(302);
 
     private static final FrameNumericType[] frameNumericTypes = FrameNumericType.values();
     private final int value;

@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.ReferenceCountUtil;
+import software.openx.eelaa.handlers.BatchHandler;
 import software.openx.eelaa.handlers.FetchAccountHandler;
 import software.openx.eelaa.handlers.FetchWalletHandler;
 import software.openx.eelaa.handlers.PingHandler;
@@ -50,6 +51,8 @@ final class Dispatcher extends SimpleChannelInboundHandler<ByteBuf> {
                         cpuHeavyTaskExecutor.submit(new FetchAccountHandler(ctx, buf, frameNumericType, sequenceId, ledger));
                 case FETCH_WALLET ->
                         cpuHeavyTaskExecutor.submit(new FetchWalletHandler(ctx, buf, frameNumericType, sequenceId, ledger));
+                case BATCH ->
+                        cpuHeavyTaskExecutor.submit(new BatchHandler(ctx, buf, frameNumericType, sequenceId, ledger));
 
                 case null, default -> throw HandlerNotFoundException.INSTANCE;
             }
