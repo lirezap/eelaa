@@ -2,7 +2,7 @@ package software.openx.eelaa.handlers;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import software.openx.eelaa.binary.StringUtil;
+import software.openx.eelaa.memory.StringUtil;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 

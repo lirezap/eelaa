@@ -1,4 +1,4 @@
-package software.openx.eelaa.binary;
+package software.openx.eelaa.memory;
 
 import java.lang.foreign.MemorySegment;
 
@@ -7,6 +7,8 @@ import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 /**
+ * Utility methods useful for working with off-heap memory.
+ *
  * @author Alireza Pourtaghi
  */
 public final class MemorySegmentUtil {

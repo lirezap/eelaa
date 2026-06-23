@@ -13,7 +13,7 @@ import java.util.Objects;
 
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 import static java.nio.file.StandardOpenOption.*;
-import static software.openx.eelaa.binary.MemorySegmentUtil.LONG_LE;
+import static software.openx.eelaa.memory.MemorySegmentUtil.LONG_LE;
 
 /**
  * An atomic file implementation based on {@link FileChannel}. The implementation holds the position value itself.

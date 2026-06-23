@@ -1,4 +1,4 @@
-package software.openx.eelaa.binary;
+package software.openx.eelaa.memory;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
@@ -6,6 +6,8 @@ import io.netty.buffer.ByteBufUtil;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
+ * Utility methods useful for working with string memory.
+ *
  * @author Alireza Pourtaghi
  */
 public final class StringUtil {

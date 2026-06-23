@@ -2,14 +2,14 @@ package software.openx.eelaa.ledger;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import software.openx.eelaa.binary.StringUtil;
+import software.openx.eelaa.memory.StringUtil;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static software.openx.eelaa.binary.MemorySegmentUtil.*;
 import static software.openx.eelaa.ledger.LedgerConfig.TRANSACTION_ID_REQUIRED_BACKOFF_MS;
+import static software.openx.eelaa.memory.MemorySegmentUtil.*;
 
 /**
  * @author Alireza Pourtaghi
