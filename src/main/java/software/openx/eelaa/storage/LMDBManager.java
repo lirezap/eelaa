@@ -1,0 +1,177 @@
+package software.openx.eelaa.storage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import software.openx.eelaa.lmdb.LMDB;
+import software.openx.eelaa.lmdb.LMDBConfig;
+
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static java.lang.foreign.MemorySegment.NULL;
+import static java.lang.foreign.ValueLayout.*;
+import static software.openx.eelaa.lmdb.LMDBFlags.MDB_CREATE;
+import static software.openx.eelaa.lmdb.LMDBFlags.MDB_NOOVERWRITE;
+
+/**
+ * {@link LMDB} manager. Must be used by a single thread.
+ *
+ * @author Alireza Pourtaghi
+ */
+public final class LMDBManager implements AutoCloseable {
+    private static final Logger logger = LoggerFactory.getLogger(LMDBManager.class);
+
+    private final Arena memory;
+    private final LMDB lmdb;
+    private final MemorySegment env;
+
+    private LMDBManager(final Arena memory, final LMDB lmdb, final MemorySegment env) {
+        this.memory = memory;
+        this.lmdb = lmdb;
+        this.env = env;
+    }
+
+    public static LMDBManager newInstance(final Path lmdbLibraryPath, final Path dataDirectoryPath, final long mapSize,
+                                          final int maxDbs, final int openFlags, final int openMode) {
+
+        final var memory = Arena.ofConfined();
+        try {
+            if (!Files.isDirectory(dataDirectoryPath)) {
+                throw new RuntimeException("invalid data directory path!");
+            }
+
+            final var lmdb = LMDB.newInstance(new LMDBConfig.Builder(lmdbLibraryPath).memory(memory).build());
+            logger.info("Using LMDB version: {}", lmdb.mdbVersion());
+
+            final var envPtr = memory.allocate(ADDRESS);
+            var error = lmdb.mdbEnvCreate(envPtr);
+            if (error != 0) {
+                throw new RuntimeException(String.format("LMDB env creation failed with error code: %s", error));
+            }
+
+            final var env = envPtr.get(ADDRESS, 0);
+            error = lmdb.mdbEnvSetMapSize(env, mapSize);
+            if (error != 0) {
+                lmdb.mdbEnvClose(env);
+                throw new RuntimeException(String.format("LMDB set map size failed with error code: %s", error));
+            }
+
+            error = lmdb.mdbEnvSetMaxDbs(env, maxDbs);
+            if (error != 0) {
+                lmdb.mdbEnvClose(env);
+                throw new RuntimeException(String.format("LMDB set max dbs failed with error code: %s", error));
+            }
+
+            try (final var shortLivedMemory = Arena.ofConfined()) {
+                final var path = shortLivedMemory.allocateFrom(dataDirectoryPath.toString());
+                error = lmdb.mdbEnvOpen(env, path, openFlags, openMode);
+                if (error != 0) {
+                    lmdb.mdbEnvClose(env);
+                    throw new RuntimeException(String.format("LMDB env open failed with error code: %s", error));
+                }
+            }
+
+            return new LMDBManager(memory, lmdb, env);
+        } catch (final Throwable cause) {
+            memory.close();
+            throw new RuntimeException(cause);
+        }
+    }
+
+    public int openDb(final String dbName) {
+        try {
+            try (final var shortLivedMemory = Arena.ofConfined()) {
+                final var txnPtr = shortLivedMemory.allocate(ADDRESS);
+                var error = lmdb.mdbTxnBegin(env, NULL, 0, txnPtr);
+                if (error != 0) {
+                    throw new RuntimeException(String.format("LMDB txn create failed with error code: %s", error));
+                }
+
+                final var txn = txnPtr.get(ADDRESS, 0);
+                final var dbi = shortLivedMemory.allocate(ADDRESS);
+                error = lmdb.mdbDbiOpen(txn, shortLivedMemory.allocateFrom(dbName), MDB_CREATE, dbi);
+                if (error != 0) {
+                    // TODO: Should we abort transaction?!
+                    throw new RuntimeException(String.format("LMDB dbi open failed with error code: %s", error));
+                }
+
+                error = lmdb.mdbTxnCommit(txn);
+                if (error != 0) {
+                    throw new RuntimeException(String.format("LMDB txn commit failed with error code: %s", error));
+                }
+
+                return dbi.get(JAVA_INT, 0);
+            }
+        } catch (final Throwable cause) {
+            throw new RuntimeException(cause);
+        }
+    }
+
+    public MemorySegment newTxn(final Arena txnMemory, final MemorySegment parent, final int flags) {
+        try {
+            final var txnPtr = txnMemory.allocate(ADDRESS);
+            var error = lmdb.mdbTxnBegin(env, parent, flags, txnPtr);
+            if (error != 0) {
+                throw new RuntimeException(String.format("LMDB txn begin failed with error code: %s", error));
+            }
+
+            return txnPtr.get(ADDRESS, 0);
+        } catch (final Throwable cause) {
+            throw new RuntimeException(cause);
+        }
+    }
+
+    public void commitTxn(final MemorySegment txn) {
+        try {
+            final var error = lmdb.mdbTxnCommit(txn);
+            if (error != 0) {
+                throw new RuntimeException(String.format("LMDB txn commit failed with error code: %s", error));
+            }
+        } catch (final Throwable cause) {
+            throw new RuntimeException(cause);
+        }
+    }
+
+    public boolean put(final int dbi, final MemorySegment key, final MemorySegment value) {
+        try {
+            try (final var shortLivedMemory = Arena.ofConfined()) {
+                final var txn = newTxn(shortLivedMemory, NULL, 0);
+                var error = lmdb.mdbPut(txn, dbi, asLMDBVal(shortLivedMemory, key), asLMDBVal(shortLivedMemory, value), MDB_NOOVERWRITE);
+                if (error == 0) {
+                    commitTxn(txn);
+                    return true;
+                }
+
+                if (error == -30799) {
+                    // TODO: Should we abort transaction?!
+                    return false;
+                }
+
+                // TODO: Should we abort transaction?!
+                throw new RuntimeException(String.format("LMDB put failed with error code: %s", error));
+            }
+        } catch (final Throwable cause) {
+            throw new RuntimeException(cause);
+        }
+    }
+
+    private MemorySegment asLMDBVal(final Arena memory, final MemorySegment value) {
+        final var lmdbVal = memory.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
+        lmdbVal.set(JAVA_LONG, 0, value.byteSize());
+        lmdbVal.set(ADDRESS, JAVA_LONG.byteSize(), value);
+
+        return lmdbVal;
+    }
+
+    @Override
+    public void close() throws Exception {
+        try {
+            lmdb.mdbEnvClose(env);
+            memory.close();
+        } catch (final Throwable cause) {
+            throw new Exception(cause);
+        }
+    }
+}
