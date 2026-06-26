@@ -37,22 +37,13 @@ public final class LZ4 implements AutoCloseable {
         final var linker = Linker.nativeLinker();
         final var lib = SymbolLookup.libraryLookup(lz4Config.getLibraryPath(), memory);
 
-        final var versionNumberHandle =
-                linker.downcallHandle(lib.find(FUNCTION.LZ4_versionNumber.name()).orElseThrow(), FUNCTION.LZ4_versionNumber.fd);
-
-        final var versionStringHandle =
-                linker.downcallHandle(lib.find(FUNCTION.LZ4_versionString.name()).orElseThrow(), FUNCTION.LZ4_versionString.fd);
-
-        final var compressBoundHandle =
-                linker.downcallHandle(lib.find(FUNCTION.LZ4_compressBound.name()).orElseThrow(), FUNCTION.LZ4_compressBound.fd);
-
-        final var compressDefaultHandle =
-                linker.downcallHandle(lib.find(FUNCTION.LZ4_compress_default.name()).orElseThrow(), FUNCTION.LZ4_compress_default.fd);
-
-        final var decompressSafeHandle =
-                linker.downcallHandle(lib.find(FUNCTION.LZ4_decompress_safe.name()).orElseThrow(), FUNCTION.LZ4_decompress_safe.fd);
-
-        return new LZ4(memory, versionNumberHandle, versionStringHandle, compressBoundHandle, compressDefaultHandle, decompressSafeHandle);
+        return new LZ4(
+                memory,
+                linker.downcallHandle(lib.find(FUNCTION.LZ4_versionNumber.name()).orElseThrow(), FUNCTION.LZ4_versionNumber.fd),
+                linker.downcallHandle(lib.find(FUNCTION.LZ4_versionString.name()).orElseThrow(), FUNCTION.LZ4_versionString.fd),
+                linker.downcallHandle(lib.find(FUNCTION.LZ4_compressBound.name()).orElseThrow(), FUNCTION.LZ4_compressBound.fd),
+                linker.downcallHandle(lib.find(FUNCTION.LZ4_compress_default.name()).orElseThrow(), FUNCTION.LZ4_compress_default.fd),
+                linker.downcallHandle(lib.find(FUNCTION.LZ4_decompress_safe.name()).orElseThrow(), FUNCTION.LZ4_decompress_safe.fd));
     }
 
     public int versionNumber() throws Throwable {
