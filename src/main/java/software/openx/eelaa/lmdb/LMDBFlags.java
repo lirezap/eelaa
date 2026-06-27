@@ -1,6 +1,8 @@
 package software.openx.eelaa.lmdb;
 
 /**
+ * List of LMDB related flags for passing into its functions.
+ *
  * @author Alireza Pourtaghi
  */
 public final class LMDBFlags {
