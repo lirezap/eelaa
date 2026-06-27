@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.openx.eelaa.lmdb.LMDB;
 import software.openx.eelaa.lmdb.LMDBConfig;
+import software.openx.eelaa.memory.MemorySegmentUtil;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -12,8 +13,7 @@ import java.nio.file.Path;
 
 import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.ValueLayout.*;
-import static software.openx.eelaa.lmdb.LMDBFlags.MDB_CREATE;
-import static software.openx.eelaa.lmdb.LMDBFlags.MDB_NOOVERWRITE;
+import static software.openx.eelaa.lmdb.LMDBFlags.*;
 
 /**
  * {@link LMDB} manager. Must be used by a single thread.
@@ -83,25 +83,15 @@ public final class LMDBManager implements AutoCloseable {
     public int openDb(final String dbName) {
         try {
             try (final var shortLivedMemory = Arena.ofConfined()) {
-                final var txnPtr = shortLivedMemory.allocate(ADDRESS);
-                var error = lmdb.mdbTxnBegin(env, NULL, 0, txnPtr);
-                if (error != 0) {
-                    throw new RuntimeException(String.format("LMDB txn create failed with error code: %s", error));
-                }
-
-                final var txn = txnPtr.get(ADDRESS, 0);
+                final var txn = newTxn(shortLivedMemory, NULL, 0);
                 final var dbi = shortLivedMemory.allocate(ADDRESS);
-                error = lmdb.mdbDbiOpen(txn, shortLivedMemory.allocateFrom(dbName), MDB_CREATE, dbi);
+                final var error = lmdb.mdbDbiOpen(txn, shortLivedMemory.allocateFrom(dbName), MDB_CREATE, dbi);
                 if (error != 0) {
                     // TODO: Should we abort transaction?!
                     throw new RuntimeException(String.format("LMDB dbi open failed with error code: %s", error));
                 }
 
-                error = lmdb.mdbTxnCommit(txn);
-                if (error != 0) {
-                    throw new RuntimeException(String.format("LMDB txn commit failed with error code: %s", error));
-                }
-
+                commitTxn(txn);
                 return dbi.get(JAVA_INT, 0);
             }
         } catch (final Throwable cause) {
@@ -127,6 +117,7 @@ public final class LMDBManager implements AutoCloseable {
         try {
             final var error = lmdb.mdbTxnCommit(txn);
             if (error != 0) {
+                // TODO: Should we abort transaction?!
                 throw new RuntimeException(String.format("LMDB txn commit failed with error code: %s", error));
             }
         } catch (final Throwable cause) {
@@ -151,6 +142,29 @@ public final class LMDBManager implements AutoCloseable {
 
                 // TODO: Should we abort transaction?!
                 throw new RuntimeException(String.format("LMDB put failed with error code: %s", error));
+            }
+        } catch (final Throwable cause) {
+            throw new RuntimeException(cause);
+        }
+    }
+
+    public MemorySegment get(final int dbi, final MemorySegment key, final Arena valueMemory) {
+        try {
+            try (final var shortLivedMemory = Arena.ofConfined()) {
+                final var txn = newTxn(shortLivedMemory, NULL, MDB_RDONLY);
+                final var lmdbVal = shortLivedMemory.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
+                var error = lmdb.mdbGet(txn, dbi, asLMDBVal(shortLivedMemory, key), lmdbVal);
+                if (error == 0) {
+                    final var size = lmdbVal.get(JAVA_LONG, 0);
+                    final var value = valueMemory.allocate(size);
+                    MemorySegmentUtil.putMemory(value, 0, lmdbVal.get(ADDRESS, JAVA_LONG.byteSize()).reinterpret(size));
+
+                    commitTxn(txn);
+                    return value;
+                }
+
+                // TODO: Should we abort transaction?!
+                throw new RuntimeException(String.format("LMDB get failed with error code: %s", error));
             }
         } catch (final Throwable cause) {
             throw new RuntimeException(cause);
