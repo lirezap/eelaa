@@ -33,8 +33,7 @@ public class AtomicFileTest {
                     try {
                         file.append(segment.asByteBuffer());
                         succeeded.incrementAndGet();
-                    } catch (Exception ex) {
-                        System.out.println(ex.getMessage());
+                    } catch (Exception _) {
                     }
                 });
             }

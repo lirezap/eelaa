@@ -155,6 +155,25 @@ public final class LMDBManager implements AutoCloseable {
         }
     }
 
+    public boolean put(final MemorySegment txn, final int dbi, final MemorySegment key, final MemorySegment value) {
+        try {
+            try (final var shortLivedMemory = Arena.ofConfined()) {
+                var error = lmdb.mdbPut(txn, dbi, asLMDBVal(shortLivedMemory, key), asLMDBVal(shortLivedMemory, value), MDB_NOOVERWRITE);
+                if (error == 0) {
+                    return true;
+                }
+
+                if (error == -30799) {
+                    return false;
+                }
+
+                throw new RuntimeException(String.format("LMDB put failed with error code: %s", error));
+            }
+        } catch (final Throwable cause) {
+            throw new RuntimeException(cause);
+        }
+    }
+
     public MemorySegment get(final int dbi, final MemorySegment key, final Arena valueMemory) {
         try {
             try (final var shortLivedMemory = Arena.ofConfined()) {
@@ -176,6 +195,29 @@ public final class LMDBManager implements AutoCloseable {
                 }
 
                 abortTxn(txn);
+                throw new RuntimeException(String.format("LMDB get failed with error code: %s", error));
+            }
+        } catch (final Throwable cause) {
+            throw new RuntimeException(cause);
+        }
+    }
+
+    public MemorySegment get(final MemorySegment txn, final int dbi, final MemorySegment key, final Arena valueMemory) {
+        try {
+            try (final var shortLivedMemory = Arena.ofConfined()) {
+                final var lmdbVal = shortLivedMemory.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
+                var error = lmdb.mdbGet(txn, dbi, asLMDBVal(shortLivedMemory, key), lmdbVal);
+                if (error == 0) {
+                    final var size = lmdbVal.get(JAVA_LONG, 0);
+                    final var value = valueMemory.allocate(size);
+                    MemorySegmentUtil.putMemory(value, 0, lmdbVal.get(ADDRESS, JAVA_LONG.byteSize()).reinterpret(size));
+                    return value;
+                }
+
+                if (error == -30798) {
+                    return NULL;
+                }
+
                 throw new RuntimeException(String.format("LMDB get failed with error code: %s", error));
             }
         } catch (final Throwable cause) {
