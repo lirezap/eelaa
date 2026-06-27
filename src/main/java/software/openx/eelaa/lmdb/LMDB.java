@@ -22,6 +22,7 @@ public final class LMDB implements AutoCloseable {
     private final MethodHandle mdbEnvOpenHandle;
     private final MethodHandle mdbTxnBeginHandle;
     private final MethodHandle mdbTxnCommitHandle;
+    private final MethodHandle mdbTxnAbortHandle;
     private final MethodHandle mdbDbiOpenHandle;
     private final MethodHandle mdbGetHandle;
     private final MethodHandle mdbPutHandle;
@@ -30,8 +31,8 @@ public final class LMDB implements AutoCloseable {
                  final MethodHandle mdbEnvCloseHandle, final MethodHandle mdbEnvSetMapSizeHandle,
                  final MethodHandle mdbEnvSetMaxDbsHandle, final MethodHandle mdbEnvOpenHandle,
                  final MethodHandle mdbTxnBeginHandle, final MethodHandle mdbTxnCommitHandle,
-                 final MethodHandle mdbDbiOpenHandle, final MethodHandle mdbGetHandle,
-                 final MethodHandle mdbPutHandle) {
+                 final MethodHandle mdbTxnAbortHandle, final MethodHandle mdbDbiOpenHandle,
+                 final MethodHandle mdbGetHandle, final MethodHandle mdbPutHandle) {
 
         this.memory = memory;
         this.mdbVersionHandle = mdbVersionHandle;
@@ -42,6 +43,7 @@ public final class LMDB implements AutoCloseable {
         this.mdbEnvOpenHandle = mdbEnvOpenHandle;
         this.mdbTxnBeginHandle = mdbTxnBeginHandle;
         this.mdbTxnCommitHandle = mdbTxnCommitHandle;
+        this.mdbTxnAbortHandle = mdbTxnAbortHandle;
         this.mdbDbiOpenHandle = mdbDbiOpenHandle;
         this.mdbGetHandle = mdbGetHandle;
         this.mdbPutHandle = mdbPutHandle;
@@ -62,6 +64,7 @@ public final class LMDB implements AutoCloseable {
                 linker.downcallHandle(lib.find(FUNCTION.mdb_env_open.name()).orElseThrow(), FUNCTION.mdb_env_open.fd),
                 linker.downcallHandle(lib.find(FUNCTION.mdb_txn_begin.name()).orElseThrow(), FUNCTION.mdb_txn_begin.fd),
                 linker.downcallHandle(lib.find(FUNCTION.mdb_txn_commit.name()).orElseThrow(), FUNCTION.mdb_txn_commit.fd),
+                linker.downcallHandle(lib.find(FUNCTION.mdb_txn_abort.name()).orElseThrow(), FUNCTION.mdb_txn_abort.fd),
                 linker.downcallHandle(lib.find(FUNCTION.mdb_dbi_open.name()).orElseThrow(), FUNCTION.mdb_dbi_open.fd),
                 linker.downcallHandle(lib.find(FUNCTION.mdb_get.name()).orElseThrow(), FUNCTION.mdb_get.fd),
                 linker.downcallHandle(lib.find(FUNCTION.mdb_put.name()).orElseThrow(), FUNCTION.mdb_put.fd));
@@ -102,6 +105,10 @@ public final class LMDB implements AutoCloseable {
 
     public int mdbTxnCommit(final MemorySegment txn) throws Throwable {
         return (int) mdbTxnCommitHandle.invokeExact(txn);
+    }
+
+    public void mdbTxnAbort(final MemorySegment txn) throws Throwable {
+        mdbTxnAbortHandle.invokeExact(txn);
     }
 
     public int mdbDbiOpen(final MemorySegment txn, final MemorySegment name, final int flags,
@@ -145,6 +152,7 @@ public final class LMDB implements AutoCloseable {
         mdb_env_open(FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, JAVA_INT, JAVA_INT)),
         mdb_txn_begin(FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, JAVA_INT, ADDRESS)),
         mdb_txn_commit(FunctionDescriptor.of(JAVA_INT, ADDRESS)),
+        mdb_txn_abort(FunctionDescriptor.ofVoid(ADDRESS)),
         mdb_dbi_open(FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, JAVA_INT, ADDRESS)),
         mdb_get(FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, ADDRESS, ADDRESS)),
         mdb_put(FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, ADDRESS, ADDRESS, JAVA_INT));

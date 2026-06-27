@@ -80,25 +80,6 @@ public final class LMDBManager implements AutoCloseable {
         }
     }
 
-    public int openDb(final String dbName) {
-        try {
-            try (final var shortLivedMemory = Arena.ofConfined()) {
-                final var txn = newTxn(shortLivedMemory, NULL, 0);
-                final var dbi = shortLivedMemory.allocate(ADDRESS);
-                final var error = lmdb.mdbDbiOpen(txn, shortLivedMemory.allocateFrom(dbName), MDB_CREATE, dbi);
-                if (error != 0) {
-                    // TODO: Should we abort transaction?!
-                    throw new RuntimeException(String.format("LMDB dbi open failed with error code: %s", error));
-                }
-
-                commitTxn(txn);
-                return dbi.get(JAVA_INT, 0);
-            }
-        } catch (final Throwable cause) {
-            throw new RuntimeException(cause);
-        }
-    }
-
     public MemorySegment newTxn(final Arena txnMemory, final MemorySegment parent, final int flags) {
         try {
             final var txnPtr = txnMemory.allocate(ADDRESS);
@@ -117,8 +98,34 @@ public final class LMDBManager implements AutoCloseable {
         try {
             final var error = lmdb.mdbTxnCommit(txn);
             if (error != 0) {
-                // TODO: Should we abort transaction?!
                 throw new RuntimeException(String.format("LMDB txn commit failed with error code: %s", error));
+            }
+        } catch (final Throwable cause) {
+            throw new RuntimeException(cause);
+        }
+    }
+
+    public void abortTxn(final MemorySegment txn) {
+        try {
+            lmdb.mdbTxnAbort(txn);
+        } catch (final Throwable cause) {
+            throw new RuntimeException(cause);
+        }
+    }
+
+    public int openDb(final String dbName) {
+        try {
+            try (final var shortLivedMemory = Arena.ofConfined()) {
+                final var txn = newTxn(shortLivedMemory, NULL, 0);
+                final var dbi = shortLivedMemory.allocate(ADDRESS);
+                final var error = lmdb.mdbDbiOpen(txn, shortLivedMemory.allocateFrom(dbName), MDB_CREATE, dbi);
+                if (error != 0) {
+                    abortTxn(txn);
+                    throw new RuntimeException(String.format("LMDB dbi open failed with error code: %s", error));
+                }
+
+                commitTxn(txn);
+                return dbi.get(JAVA_INT, 0);
             }
         } catch (final Throwable cause) {
             throw new RuntimeException(cause);
@@ -136,11 +143,11 @@ public final class LMDBManager implements AutoCloseable {
                 }
 
                 if (error == -30799) {
-                    // TODO: Should we abort transaction?!
+                    abortTxn(txn);
                     return false;
                 }
 
-                // TODO: Should we abort transaction?!
+                abortTxn(txn);
                 throw new RuntimeException(String.format("LMDB put failed with error code: %s", error));
             }
         } catch (final Throwable cause) {
@@ -164,11 +171,11 @@ public final class LMDBManager implements AutoCloseable {
                 }
 
                 if (error == -30798) {
-                    // TODO: Should we abort transaction?!
+                    abortTxn(txn);
                     return NULL;
                 }
 
-                // TODO: Should we abort transaction?!
+                abortTxn(txn);
                 throw new RuntimeException(String.format("LMDB get failed with error code: %s", error));
             }
         } catch (final Throwable cause) {
