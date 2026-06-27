@@ -163,6 +163,11 @@ public final class LMDBManager implements AutoCloseable {
                     return value;
                 }
 
+                if (error == -30798) {
+                    // TODO: Should we abort transaction?!
+                    return NULL;
+                }
+
                 // TODO: Should we abort transaction?!
                 throw new RuntimeException(String.format("LMDB get failed with error code: %s", error));
             }
