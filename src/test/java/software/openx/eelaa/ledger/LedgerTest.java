@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import software.openx.eelaa.lz4.LZ4;
 import software.openx.eelaa.lz4.LZ4Config;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ForkJoinPool;
@@ -19,8 +20,9 @@ public class LedgerTest {
 
     @Test
     public void testConcurrency() throws Exception {
+        var tempDirectory = Files.createTempDirectory(String.valueOf(System.currentTimeMillis()));
         try (var lz4 = LZ4.newInstance(new LZ4Config.Builder(Path.of(System.getenv("NATIVE_LIBRARIES_LZ4_PATH"))).build());
-             var ledger = Ledger.newTestInstance(new LedgerConfig.Builder().dataDirectoryPath(Path.of("/tmp/")).build(), lz4)) {
+             var ledger = Ledger.newFastInstance(new LedgerConfig.Builder().dataDirectoryPath(tempDirectory).build(), lz4)) {
 
             var t1 = new Transaction(
                     1,
