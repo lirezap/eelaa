@@ -174,6 +174,48 @@ public final class LMDBManager implements AutoCloseable {
         }
     }
 
+    public boolean putOrReplace(final int dbi, final MemorySegment key, final MemorySegment value) {
+        try {
+            try (final var shortLivedMemory = Arena.ofConfined()) {
+                final var txn = newTxn(shortLivedMemory, NULL, 0);
+                var error = lmdb.mdbPut(txn, dbi, asLMDBVal(shortLivedMemory, key), asLMDBVal(shortLivedMemory, value), 0);
+                if (error == 0) {
+                    commitTxn(txn);
+                    return true;
+                }
+
+                if (error == -30799) {
+                    abortTxn(txn);
+                    return false;
+                }
+
+                abortTxn(txn);
+                throw new RuntimeException(String.format("LMDB put failed with error code: %s", error));
+            }
+        } catch (final Throwable cause) {
+            throw new RuntimeException(cause);
+        }
+    }
+
+    public boolean putOrReplace(final MemorySegment txn, final int dbi, final MemorySegment key, final MemorySegment value) {
+        try {
+            try (final var shortLivedMemory = Arena.ofConfined()) {
+                var error = lmdb.mdbPut(txn, dbi, asLMDBVal(shortLivedMemory, key), asLMDBVal(shortLivedMemory, value), 0);
+                if (error == 0) {
+                    return true;
+                }
+
+                if (error == -30799) {
+                    return false;
+                }
+
+                throw new RuntimeException(String.format("LMDB put failed with error code: %s", error));
+            }
+        } catch (final Throwable cause) {
+            throw new RuntimeException(cause);
+        }
+    }
+
     public MemorySegment get(final int dbi, final MemorySegment key, final Arena valueMemory) {
         try {
             try (final var shortLivedMemory = Arena.ofConfined()) {
