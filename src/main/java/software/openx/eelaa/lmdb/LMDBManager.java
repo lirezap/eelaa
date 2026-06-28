@@ -1,9 +1,7 @@
-package software.openx.eelaa.storage;
+package software.openx.eelaa.lmdb;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.openx.eelaa.lmdb.LMDB;
-import software.openx.eelaa.lmdb.LMDBConfig;
 import software.openx.eelaa.memory.MemorySegmentUtil;
 
 import java.lang.foreign.Arena;

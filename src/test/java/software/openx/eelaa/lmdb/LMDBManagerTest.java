@@ -1,4 +1,4 @@
-package software.openx.eelaa.storage;
+package software.openx.eelaa.lmdb;
 
 import org.junit.jupiter.api.Test;
 
