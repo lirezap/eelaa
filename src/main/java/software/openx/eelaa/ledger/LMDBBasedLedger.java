@@ -63,7 +63,9 @@ final class LMDBBasedLedger extends Ledger {
             if (fetchedTransaction == null) {
                 try (final var arena = Arena.ofConfined()) {
                     final var storedTransaction = lmdbManager.get(transactionsDbi, arena.allocateFrom(ledger + ":" + id), arena);
-                    return Transaction.decode(storedTransaction.asSlice(6));
+                    if (storedTransaction != NULL) {
+                        return Transaction.decode(storedTransaction.asSlice(6));
+                    }
                 }
             }
 
