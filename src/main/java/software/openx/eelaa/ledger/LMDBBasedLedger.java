@@ -59,7 +59,7 @@ final class LMDBBasedLedger extends Ledger {
 
     @Override
     public CompletableFuture<Transaction> fetchTransaction(final int ledger, final String id) {
-        return super.fetchTransaction(ledger, id).thenApply(fetchedTransaction -> {
+        return super.fetchTransaction(ledger, id).thenApplyAsync(fetchedTransaction -> {
             if (fetchedTransaction == null) {
                 try (final var arena = Arena.ofConfined()) {
                     final var storedTransaction = lmdbManager.get(transactionsDbi, arena.allocateFrom(ledger + ":" + id), arena);
@@ -68,7 +68,7 @@ final class LMDBBasedLedger extends Ledger {
             }
 
             return fetchedTransaction;
-        });
+        }, getExecutor());
     }
 
     @Override
