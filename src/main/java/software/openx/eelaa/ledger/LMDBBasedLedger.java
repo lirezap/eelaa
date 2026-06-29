@@ -64,18 +64,18 @@ final class LMDBBasedLedger extends Ledger {
             try {
                 for (final var transaction : transactions) {
                     if (transaction != null && !transaction.is_failed()) {
-                        final var sourceWallet = getProcessor().fetchWallet(
-                                transaction.getLedger(), transaction.getSourceAccount(), transaction.getSourceWallet());
+                        final var sourceWallet = getProcessor()
+                                .fetchWallet(transaction.getLedger(), transaction.getSourceAccount(), transaction.getSourceWallet())
+                                .encodeV1(arena);
 
-                        final var destinationWallet = getProcessor().fetchWallet(
-                                transaction.getLedger(), transaction.getDestinationAccount(), transaction.getDestinationWallet());
+                        final var destinationWallet = getProcessor()
+                                .fetchWallet(transaction.getLedger(), transaction.getDestinationAccount(), transaction.getDestinationWallet())
+                                .encodeV1(arena);
 
-                        var key = arena.allocateFrom(transaction.getId());
+                        final var key = arena.allocateFrom(transaction.getId());
                         if (lmdbManager.put(txn, transactionsDbi, key, transaction.encodeV1(arena))) {
-                            key = arena.allocateFrom(sourceWallet.uniqueIdentifier());
-                            if (lmdbManager.putOrReplace(txn, walletsDbi, key, sourceWallet.encodeV1(arena))) {
-                                key = arena.allocateFrom(destinationWallet.uniqueIdentifier());
-                                if (lmdbManager.putOrReplace(txn, walletsDbi, key, destinationWallet.encodeV1(arena))) {
+                            if (lmdbManager.putOrReplace(txn, walletsDbi, sourceWallet.asSlice(6, 16), sourceWallet)) {
+                                if (lmdbManager.putOrReplace(txn, walletsDbi, destinationWallet.asSlice(6, 16), destinationWallet)) {
                                     commit = true;
                                 }
                             }

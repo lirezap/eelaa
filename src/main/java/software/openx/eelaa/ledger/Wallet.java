@@ -85,10 +85,6 @@ public final class Wallet {
         );
     }
 
-    public String uniqueIdentifier() {
-        return String.format("%d:%d:%d", getLedger(), getAccount(), getWallet());
-    }
-
     public int getLedger() {
         return ledger;
     }
