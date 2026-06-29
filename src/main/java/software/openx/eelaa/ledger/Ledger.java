@@ -60,7 +60,7 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
         return CompletableFuture.supplyAsync(() -> processor.fetchWallet(ledger, account, wallet), executor);
     }
 
-    public final CompletableFuture<Transaction> fetchTransaction(final int ledger, final String id) {
+    public CompletableFuture<Transaction> fetchTransaction(final int ledger, final String id) {
         return CompletableFuture.supplyAsync(() -> processor.fetchTransaction(ledger, id), executor);
     }
 

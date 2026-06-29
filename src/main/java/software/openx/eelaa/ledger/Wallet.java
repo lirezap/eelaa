@@ -6,6 +6,7 @@ import software.openx.eelaa.memory.StringUtil;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static software.openx.eelaa.memory.MemorySegmentUtil.*;
@@ -81,8 +82,17 @@ public final class Wallet {
                 buf.readLong(),
                 buf.readInt(),
                 StringUtil.readNullTerminatedUTF8String(buf),
-                buf.readLong()
-        );
+                buf.readLong());
+    }
+
+    public static Wallet decode(final MemorySegment memory) {
+        final var position = new AtomicLong(0);
+        return new Wallet(
+                getIntLE(memory, position),
+                getLongLE(memory, position),
+                getIntLE(memory, position),
+                getString(memory, position),
+                getLongLE(memory, position));
     }
 
     public int getLedger() {

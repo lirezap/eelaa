@@ -1,6 +1,7 @@
 package software.openx.eelaa.memory;
 
 import java.lang.foreign.MemorySegment;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.foreign.ValueLayout.*;
 import static java.nio.ByteOrder.BIG_ENDIAN;
@@ -31,6 +32,14 @@ public final class MemorySegmentUtil {
         return Math.addExact(position, BYTE_BE.byteSize());
     }
 
+    public static byte getByteLE(final MemorySegment memory, final AtomicLong position) {
+        return memory.get(BYTE_LE, position.getAndAdd(BYTE_LE.byteSize()));
+    }
+
+    public static byte getByteBE(final MemorySegment memory, final AtomicLong position) {
+        return memory.get(BYTE_BE, position.getAndAdd(BYTE_BE.byteSize()));
+    }
+
     public static long putIntLE(final MemorySegment memory, final long position, final int value) {
         memory.set(INT_LE, position, value);
         return Math.addExact(position, INT_LE.byteSize());
@@ -39,6 +48,14 @@ public final class MemorySegmentUtil {
     public static long putIntBE(final MemorySegment memory, final long position, final int value) {
         memory.set(INT_BE, position, value);
         return Math.addExact(position, INT_BE.byteSize());
+    }
+
+    public static int getIntLE(final MemorySegment memory, final AtomicLong position) {
+        return memory.get(INT_LE, position.getAndAdd(INT_LE.byteSize()));
+    }
+
+    public static int getIntBE(final MemorySegment memory, final AtomicLong position) {
+        return memory.get(INT_BE, position.getAndAdd(INT_BE.byteSize()));
     }
 
     public static long putLongLE(final MemorySegment memory, final long position, final long value) {
@@ -51,9 +68,24 @@ public final class MemorySegmentUtil {
         return Math.addExact(position, LONG_BE.byteSize());
     }
 
+    public static long getLongLE(final MemorySegment memory, final AtomicLong position) {
+        return memory.get(LONG_LE, position.getAndAdd(LONG_LE.byteSize()));
+    }
+
+    public static long getLongBE(final MemorySegment memory, final AtomicLong position) {
+        return memory.get(LONG_BE, position.getAndAdd(LONG_BE.byteSize()));
+    }
+
     public static long putString(final MemorySegment memory, final long position, final String value) {
         memory.setString(position, value);
         return Math.addExact(position, StringUtil.requiredNullTerminatedUTF8BytesLength(value));
+    }
+
+    public static String getString(final MemorySegment memory, final AtomicLong position) {
+        final var value = memory.getString(position.get());
+        position.addAndGet(StringUtil.requiredNullTerminatedUTF8BytesLength(value));
+
+        return value;
     }
 
     public static long putMemory(final MemorySegment memory, final long position, final MemorySegment value) {

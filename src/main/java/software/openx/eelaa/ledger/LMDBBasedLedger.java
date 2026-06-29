@@ -8,6 +8,7 @@ import software.openx.eelaa.lz4.LZ4;
 import java.lang.foreign.Arena;
 import java.nio.file.Path;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -57,6 +58,20 @@ final class LMDBBasedLedger extends Ledger {
     }
 
     @Override
+    public CompletableFuture<Transaction> fetchTransaction(final int ledger, final String id) {
+        return super.fetchTransaction(ledger, id).thenApply(fetchedTransaction -> {
+            if (fetchedTransaction == null) {
+                try (final var arena = Arena.ofConfined()) {
+                    final var storedTransaction = lmdbManager.get(transactionsDbi, arena.allocateFrom(ledger + ":" + id), arena);
+                    return Transaction.decode(storedTransaction.asSlice(6));
+                }
+            }
+
+            return fetchedTransaction;
+        });
+    }
+
+    @Override
     boolean persist(final Transaction... transactions) {
         var commit = false;
         try (final var arena = Arena.ofConfined()) {
@@ -72,7 +87,7 @@ final class LMDBBasedLedger extends Ledger {
                                 .fetchWallet(transaction.getLedger(), transaction.getDestinationAccount(), transaction.getDestinationWallet())
                                 .encodeV1(arena);
 
-                        final var key = arena.allocateFrom(transaction.getId());
+                        final var key = arena.allocateFrom(transaction.getLedger() + ":" + transaction.getId());
                         if (lmdbManager.put(txn, transactionsDbi, key, transaction.encodeV1(arena))) {
                             if (lmdbManager.putOrReplace(txn, walletsDbi, sourceWallet.asSlice(6, 16), sourceWallet)) {
                                 if (lmdbManager.putOrReplace(txn, walletsDbi, destinationWallet.asSlice(6, 16), destinationWallet)) {

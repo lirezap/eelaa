@@ -6,6 +6,7 @@ import software.openx.eelaa.memory.StringUtil;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static software.openx.eelaa.ledger.LedgerConfig.TRANSACTION_ID_REQUIRED_BACKOFF_MS;
@@ -159,8 +160,25 @@ public final class Transaction {
                 StringUtil.readNullTerminatedUTF8String(buf),
                 buf.readLong(),
                 buf.readLong(),
-                buf.readLong()
-        );
+                buf.readLong());
+    }
+
+    public static Transaction decode(final MemorySegment memory) {
+        final var position = new AtomicLong(0);
+        return new Transaction(
+                getIntLE(memory, position),
+                getLongLE(memory, position),
+                getIntLE(memory, position),
+                getLongLE(memory, position),
+                getIntLE(memory, position),
+                getString(memory, position),
+                getString(memory, position),
+                getLongLE(memory, position),
+                getLongLE(memory, position),
+                getString(memory, position),
+                getLongLE(memory, position),
+                getLongLE(memory, position),
+                getLongLE(memory, position));
     }
 
     public String validate(final long now) {
