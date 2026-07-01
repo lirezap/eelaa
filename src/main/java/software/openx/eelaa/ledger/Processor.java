@@ -55,6 +55,9 @@ final class Processor {
                 final var sourceWallet = putAndGetSourceAccountWallet(sourceAccountWallets, transaction);
                 final var destinationWallet = putAndGetDestinationAccountWallet(destinationAccountWallets, transaction);
 
+                // Good for later use of references.
+                transaction.set_sourceWallet(sourceWallet);
+                transaction.set_destinationWallet(destinationWallet);
                 if (isAllowedTransaction(sourceWallet, destinationWallet, transaction)) {
                     doTransaction(sourceWallet, destinationWallet, transaction, now);
                 }

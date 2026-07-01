@@ -49,7 +49,7 @@ final class LMDBBasedLedger extends Ledger {
                 lmdbLibraryPath,
                 ledgerConfig.getDataDirectoryPath(),
                 Math.max(1, databaseSizeGbs) * 1073741824L,
-                2,
+                4,
                 MDB_NORDAHEAD,
                 0644)).get();
 
@@ -85,13 +85,8 @@ final class LMDBBasedLedger extends Ledger {
                 for (int i = 0; i < transactions.length; i++) {
                     final var transaction = transactions[i];
                     if (transaction != null && !transaction.is_failed()) {
-                        final var sourceWallet = getProcessor()
-                                .fetchWallet(transaction.getLedger(), transaction.getSourceAccount(), transaction.getSourceWallet())
-                                .encodeV1(arena);
-
-                        final var destinationWallet = getProcessor()
-                                .fetchWallet(transaction.getLedger(), transaction.getDestinationAccount(), transaction.getDestinationWallet())
-                                .encodeV1(arena);
+                        final var sourceWallet = transaction.get_sourceWallet().encodeV1(arena);
+                        final var destinationWallet = transaction.get_destinationWallet().encodeV1(arena);
 
                         final var key = arena.allocateFrom(transaction.getLedger() + ":" + transaction.getId());
                         if (lmdbManager.put(txn, transactionsDbi, key, transaction.encodeV1(arena))) {
