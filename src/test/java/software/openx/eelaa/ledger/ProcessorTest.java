@@ -1054,8 +1054,8 @@ public class ProcessorTest {
         assertTrue(System.currentTimeMillis() >= transaction.getTs());
         assertFalse(transaction.is_failed());
         assertNull(transaction.get_failReason());
-        assertNull(transaction.get_sourceWallet());
-        assertNull(transaction.get_destinationWallet());
+        assertNotNull(transaction.get_sourceWallet());
+        assertNotNull(transaction.get_destinationWallet());
     }
 
     @Test
