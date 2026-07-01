@@ -6,6 +6,7 @@ import software.openx.eelaa.lmdb.LMDBManager;
 import software.openx.eelaa.lz4.LZ4;
 
 import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.file.Path;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -14,6 +15,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 import static java.lang.foreign.MemorySegment.NULL;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static software.openx.eelaa.lmdb.LMDBFlags.MDB_NORDAHEAD;
 
 /**
  * LMDB based crash-safe monetary ledger implementation.
@@ -48,7 +50,7 @@ final class LMDBBasedLedger extends Ledger {
                 ledgerConfig.getDataDirectoryPath(),
                 Math.max(1, databaseSizeGbs) * 1073741824L,
                 2,
-                0,
+                MDB_NORDAHEAD,
                 0644)).get();
 
         final var transactionsDbi = executor.submit(() -> lmdbManager.openDb("transactions")).get();
@@ -75,11 +77,13 @@ final class LMDBBasedLedger extends Ledger {
 
     @Override
     boolean persist(final Transaction... transactions) {
-        var commit = false;
         try (final var arena = Arena.ofConfined()) {
+            var commit = false;
+
             final var txn = lmdbManager.newTxn(arena, NULL, 0);
-            try {
-                for (final var transaction : transactions) {
+            try { // Atomic or exception code block!
+                for (int i = 0; i < transactions.length; i++) {
+                    final var transaction = transactions[i];
                     if (transaction != null && !transaction.is_failed()) {
                         final var sourceWallet = getProcessor()
                                 .fetchWallet(transaction.getLedger(), transaction.getSourceAccount(), transaction.getSourceWallet())
@@ -91,20 +95,17 @@ final class LMDBBasedLedger extends Ledger {
 
                         final var key = arena.allocateFrom(transaction.getLedger() + ":" + transaction.getId());
                         if (lmdbManager.put(txn, transactionsDbi, key, transaction.encodeV1(arena))) {
-                            if (lmdbManager.putOrReplace(txn, walletsDbi, sourceWallet.asSlice(6, 16), sourceWallet)) {
-                                if (lmdbManager.putOrReplace(txn, walletsDbi, destinationWallet.asSlice(6, 16), destinationWallet)) {
-                                    commit = true;
-                                }
-                            }
+                            lmdbManager.putOrReplace(txn, walletsDbi, sourceWallet.asSlice(6, 16), sourceWallet);
+                            lmdbManager.putOrReplace(txn, walletsDbi, destinationWallet.asSlice(6, 16), destinationWallet);
+                        } else {
+                            throw new RuntimeException("duplicate transaction key provided!");
                         }
                     }
                 }
+
+                commit = true;
             } finally {
-                if (commit) {
-                    lmdbManager.commitTxn(txn);
-                } else {
-                    lmdbManager.abortTxn(txn);
-                }
+                finalize(txn, commit);
             }
 
             return commit;
@@ -114,6 +115,14 @@ final class LMDBBasedLedger extends Ledger {
 
             logger.error("{}", cause.getMessage(), cause);
             return false;
+        }
+    }
+
+    private void finalize(final MemorySegment txn, final boolean commit) {
+        if (commit) {
+            lmdbManager.commitTxn(txn);
+        } else {
+            lmdbManager.abortTxn(txn);
         }
     }
 

@@ -98,8 +98,8 @@ public class LMDBManagerTest {
             var value = arena.allocateFrom("value");
             var secondValue = arena.allocateFrom("secondValue");
 
-            assertTrue(manager.putOrReplace(dbi, key, value));
-            assertTrue(manager.putOrReplace(dbi, key, secondValue));
+            manager.putOrReplace(dbi, key, value);
+            manager.putOrReplace(dbi, key, secondValue);
             assertEquals("secondValue", manager.get(dbi, key, arena).getString(0));
         }
     }
@@ -116,7 +116,7 @@ public class LMDBManagerTest {
 
             for (int i = 1; i <= 1000000; i++) {
                 var value = arena.allocateFrom("value" + i);
-                assertTrue(manager.putOrReplace(txn, dbi, key, value));
+                manager.putOrReplace(txn, dbi, key, value);
             }
             manager.commitTxn(txn);
 

@@ -133,19 +133,24 @@ final class Processor {
     }
 
     public void reverseBalancesOfSucceededTransactions(final Transaction... transactions) {
-        for (final var transaction : transactions) {
-            if (transaction != null && !transaction.is_failed()) {
-                final var accounts = getAccounts(transaction.getLedger());
-                final var sourceAccountWallets = getWallets(accounts, transaction.getSourceAccount());
-                final var destinationAccountWallets = getWallets(accounts, transaction.getDestinationAccount());
-                final var sourceWallet = putAndGetSourceAccountWallet(sourceAccountWallets, transaction);
-                final var destinationWallet = putAndGetDestinationAccountWallet(destinationAccountWallets, transaction);
+        try {
+            for (final var transaction : transactions) {
+                if (transaction != null && !transaction.is_failed()) {
+                    final var accounts = getAccounts(transaction.getLedger());
+                    final var sourceAccountWallets = getWallets(accounts, transaction.getSourceAccount());
+                    final var destinationAccountWallets = getWallets(accounts, transaction.getDestinationAccount());
+                    final var sourceWallet = putAndGetSourceAccountWallet(sourceAccountWallets, transaction);
+                    final var destinationWallet = putAndGetDestinationAccountWallet(destinationAccountWallets, transaction);
 
-                // No need for addition/subtraction safety check for reversal.
-                sourceWallet.setBalance(sourceWallet.getBalance() + transaction.getAmount());
-                destinationWallet.setBalance(destinationWallet.getBalance() - transaction.getAmount());
-                succeededTransactionsCache.invalidate(transaction);
+                    // No need for addition/subtraction safety check for reversal.
+                    sourceWallet.setBalance(sourceWallet.getBalance() + transaction.getAmount());
+                    destinationWallet.setBalance(destinationWallet.getBalance() - transaction.getAmount());
+                    succeededTransactionsCache.invalidate(transaction);
+                }
             }
+        } catch (final Throwable cause) {
+            // Must never reach line of code!
+            System.exit(-1);
         }
     }
 
