@@ -6,8 +6,10 @@ import software.openx.eelaa.ledger.Ledger;
 import software.openx.eelaa.ledger.LedgerConfig;
 import software.openx.eelaa.lz4.LZ4;
 import software.openx.eelaa.lz4.LZ4Config;
+import software.openx.eelaa.net.CPUHeavyTaskExecutorConfig;
 import software.openx.eelaa.net.TCPServer;
 import software.openx.eelaa.net.TCPServerConfig;
+import software.openx.eelaa.net.TLSContextConfig;
 
 /**
  * Main application class to be executed.
@@ -61,8 +63,40 @@ public final class EelaaApplication implements AutoCloseable {
     }
 
     private static TCPServer tcpServer(final Configuration config, final LZ4 lz4, final Ledger ledger) {
-        // TODO: Complete implementation.
-        return TCPServer.newInstance(new TCPServerConfig.Builder().build(), lz4, ledger);
+        final var tlsContextConfig = new TLSContextConfig.Builder()
+                .useTls(config.loadBoolean("servers.tcp.tlsContextConfig.useTls"))
+                .serverCertPath(config.loadPath("servers.tcp.tlsContextConfig.serverCertPath"))
+                .serverKeyPath(config.loadPath("servers.tcp.tlsContextConfig.serverKeyPath"))
+                .useOcsp(config.loadBoolean("servers.tcp.tlsContextConfig.useOcsp"))
+                .sessionCacheSize(config.loadInt("servers.tcp.tlsContextConfig.sessionCacheSize"))
+                .sessionTimeoutSeconds(config.loadInt("servers.tcp.tlsContextConfig.sessionTimeoutSeconds"))
+                .handshakeTimeoutSeconds(config.loadInt("servers.tcp.tlsContextConfig.handshakeTimeoutSeconds"))
+                .build();
+
+        final var cpuHeavyTaskExecutorConfig = new CPUHeavyTaskExecutorConfig.Builder()
+                .nThreads(config.loadInt("servers.tcp.cpuHeavyTaskExecutorConfig.nThreads"))
+                .shutdownQuietPeriodSeconds(config.loadInt("servers.tcp.cpuHeavyTaskExecutorConfig.shutdownQuietPeriodSeconds"))
+                .shutdownWaitTimeSeconds(config.loadInt("servers.tcp.cpuHeavyTaskExecutorConfig.shutdownWaitTimeSeconds"))
+                .build();
+
+        final var tcpServerConfig = new TCPServerConfig.Builder()
+                .host(config.loadString("servers.tcp.host"))
+                .port(config.loadInt("servers.tcp.port"))
+                .eventLoopGroupNThreads(config.loadInt("servers.tcp.eventLoopGroupNThreads"))
+                .soBacklog(config.loadInt("servers.tcp.soBacklog"))
+                .maxFrameSize(config.loadInt("servers.tcp.maxFrameSize"))
+                .lowWriteBufferWaterMark(config.loadInt("servers.tcp.lowWriteBufferWaterMark"))
+                .highWriteBufferWaterMark(config.loadInt("servers.tcp.highWriteBufferWaterMark"))
+                .tlsContextConfig(tlsContextConfig)
+                .allIdleTimeoutSeconds(config.loadInt("servers.tcp.allIdleTimeoutSeconds"))
+                .logFrameHeader(config.loadBoolean("servers.tcp.logFrameHeader"))
+                .cpuHeavyTaskExecutorConfig(cpuHeavyTaskExecutorConfig)
+                .shutdownQuietPeriodSeconds(config.loadInt("servers.tcp.shutdownQuietPeriodSeconds"))
+                .shutdownWaitTimeSeconds(config.loadInt("servers.tcp.shutdownWaitTimeSeconds"))
+                .detectResourceLeak(config.loadBoolean("servers.tcp.detectResourceLeak"))
+                .build();
+
+        return TCPServer.newInstance(tcpServerConfig, lz4, ledger);
     }
 
     private static void addShutdownHook(final EelaaApplication application) {
