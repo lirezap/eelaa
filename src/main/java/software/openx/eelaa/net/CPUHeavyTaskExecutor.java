@@ -25,6 +25,6 @@ final class CPUHeavyTaskExecutor extends DefaultEventExecutorGroup {
     @Override
     public Future<?> shutdownGracefully() {
         return super.shutdownGracefully(
-                config.getShutdownQuitePeriodSeconds(), config.getShutdownWaitTimeSeconds(), SECONDS);
+                config.getShutdownQuietPeriodSeconds(), config.getShutdownWaitTimeSeconds(), SECONDS);
     }
 }

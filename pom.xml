@@ -24,13 +24,23 @@
         <os.maven.extension.version>1.7.1</os.maven.extension.version>
 
         <!-- Dependencies Versioning -->
+        <lightbend.config.version>1.4.3</lightbend.config.version>
         <netty.version>4.2.15.Final</netty.version>
+        <netty.tcnative.boringssl.static.version>2.0.77.Final</netty.tcnative.boringssl.static.version>
         <agrona.version>2.4.1</agrona.version>
         <fastutil.version>8.5.18</fastutil.version>
         <caffeine.version>3.2.4</caffeine.version>
     </properties>
 
     <dependencies>
+        <!-- Source: https://mvnrepository.com/artifact/com.typesafe/config -->
+        <dependency>
+            <groupId>com.typesafe</groupId>
+            <artifactId>config</artifactId>
+            <version>${lightbend.config.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
         <!-- Source: https://mvnrepository.com/artifact/io.netty/netty-common -->
         <dependency>
             <groupId>io.netty</groupId>
@@ -101,7 +111,7 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-tcnative-boringssl-static</artifactId>
-            <version>2.0.77.Final</version>
+            <version>${netty.tcnative.boringssl.static.version}</version>
             <classifier>${os.detected.classifier}</classifier>
             <scope>compile</scope>
         </dependency>

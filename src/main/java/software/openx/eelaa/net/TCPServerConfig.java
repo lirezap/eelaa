@@ -17,7 +17,7 @@ public final class TCPServerConfig {
     private final int allIdleTimeoutSeconds;
     private final boolean logFrameHeader;
     private final CPUHeavyTaskExecutorConfig cpuHeavyTaskExecutorConfig;
-    private final int shutdownQuitePeriodSeconds;
+    private final int shutdownQuietPeriodSeconds;
     private final int shutdownWaitTimeSeconds;
     private final boolean detectResourceLeak;
 
@@ -33,7 +33,7 @@ public final class TCPServerConfig {
         this.allIdleTimeoutSeconds = builder.allIdleTimeoutSeconds;
         this.logFrameHeader = builder.logFrameHeader;
         this.cpuHeavyTaskExecutorConfig = builder.cpuHeavyTaskExecutorConfig;
-        this.shutdownQuitePeriodSeconds = builder.shutdownQuitePeriodSeconds;
+        this.shutdownQuietPeriodSeconds = builder.shutdownQuietPeriodSeconds;
         this.shutdownWaitTimeSeconds = builder.shutdownWaitTimeSeconds;
         this.detectResourceLeak = builder.detectResourceLeak;
     }
@@ -82,8 +82,8 @@ public final class TCPServerConfig {
         return cpuHeavyTaskExecutorConfig;
     }
 
-    public int getShutdownQuitePeriodSeconds() {
-        return shutdownQuitePeriodSeconds;
+    public int getShutdownQuietPeriodSeconds() {
+        return shutdownQuietPeriodSeconds;
     }
 
     public int getShutdownWaitTimeSeconds() {
@@ -108,7 +108,7 @@ public final class TCPServerConfig {
                 ", allIdleTimeoutSeconds=" + allIdleTimeoutSeconds +
                 ", logFrameHeader=" + logFrameHeader +
                 ", cpuHeavyTaskExecutorConfig=" + cpuHeavyTaskExecutorConfig +
-                ", shutdownQuitePeriodSeconds=" + shutdownQuitePeriodSeconds +
+                ", shutdownQuietPeriodSeconds=" + shutdownQuietPeriodSeconds +
                 ", shutdownWaitTimeSeconds=" + shutdownWaitTimeSeconds +
                 ", detectResourceLeak=" + detectResourceLeak +
                 '}';
@@ -131,7 +131,7 @@ public final class TCPServerConfig {
         private int allIdleTimeoutSeconds = 120;
         private boolean logFrameHeader = false;
         private CPUHeavyTaskExecutorConfig cpuHeavyTaskExecutorConfig = new CPUHeavyTaskExecutorConfig.Builder().build();
-        private int shutdownQuitePeriodSeconds = 1;
+        private int shutdownQuietPeriodSeconds = 1;
         private int shutdownWaitTimeSeconds = 30;
         private boolean detectResourceLeak = false;
 
@@ -193,8 +193,8 @@ public final class TCPServerConfig {
             return this;
         }
 
-        public Builder shutdownQuitePeriodSeconds(final int shutdownQuitePeriodSeconds) {
-            this.shutdownQuitePeriodSeconds = Math.max(1, shutdownQuitePeriodSeconds);
+        public Builder shutdownQuietPeriodSeconds(final int shutdownQuietPeriodSeconds) {
+            this.shutdownQuietPeriodSeconds = Math.max(1, shutdownQuietPeriodSeconds);
             return this;
         }
 

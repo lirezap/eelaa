@@ -21,7 +21,7 @@ public class LedgerTest {
     @Test
     public void testConcurrency() throws Exception {
         var tempDirectory = Files.createTempDirectory(String.valueOf(System.currentTimeMillis()));
-        try (var lz4 = LZ4.newInstance(new LZ4Config.Builder(Path.of(System.getenv("NATIVE_LIBRARIES_LZ4_PATH"))).build());
+        try (var lz4 = LZ4.newInstance(new LZ4Config.Builder(Path.of(System.getenv("LIBRARIES_NATIVE_LZ4_PATH"))).build());
              var ledger = Ledger.newFastInstance(new LedgerConfig.Builder().dataDirectoryPath(tempDirectory).build(), lz4)) {
 
             var t1 = new Transaction(

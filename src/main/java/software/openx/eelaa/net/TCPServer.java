@@ -64,10 +64,10 @@ public final class TCPServer implements AutoCloseable {
     @Override
     public void close() throws Exception {
         nativeServerBootstrap.config().group().shutdownGracefully(
-                config.getShutdownQuitePeriodSeconds(), config.getShutdownWaitTimeSeconds(), SECONDS).sync();
+                config.getShutdownQuietPeriodSeconds(), config.getShutdownWaitTimeSeconds(), SECONDS).sync();
 
         nativeServerBootstrap.config().childGroup().shutdownGracefully(
-                config.getShutdownQuitePeriodSeconds(), config.getShutdownWaitTimeSeconds(), SECONDS).sync();
+                config.getShutdownQuietPeriodSeconds(), config.getShutdownWaitTimeSeconds(), SECONDS).sync();
 
         cpuHeavyTaskExecutor.shutdownGracefully().sync();
         logger.info("TCP server closed gracefully!");

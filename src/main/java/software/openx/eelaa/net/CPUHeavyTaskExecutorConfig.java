@@ -7,12 +7,12 @@ package software.openx.eelaa.net;
  */
 public final class CPUHeavyTaskExecutorConfig {
     private final int nThreads;
-    private final int shutdownQuitePeriodSeconds;
+    private final int shutdownQuietPeriodSeconds;
     private final int shutdownWaitTimeSeconds;
 
     private CPUHeavyTaskExecutorConfig(final Builder builder) {
         this.nThreads = builder.nThreads;
-        this.shutdownQuitePeriodSeconds = builder.shutdownQuitePeriodSeconds;
+        this.shutdownQuietPeriodSeconds = builder.shutdownQuietPeriodSeconds;
         this.shutdownWaitTimeSeconds = builder.shutdownWaitTimeSeconds;
     }
 
@@ -20,8 +20,8 @@ public final class CPUHeavyTaskExecutorConfig {
         return nThreads;
     }
 
-    public int getShutdownQuitePeriodSeconds() {
-        return shutdownQuitePeriodSeconds;
+    public int getShutdownQuietPeriodSeconds() {
+        return shutdownQuietPeriodSeconds;
     }
 
     public int getShutdownWaitTimeSeconds() {
@@ -32,7 +32,7 @@ public final class CPUHeavyTaskExecutorConfig {
     public String toString() {
         return "CPUHeavyTaskExecutorConfig{" +
                 "nThreads=" + nThreads +
-                ", shutdownQuitePeriodSeconds=" + shutdownQuitePeriodSeconds +
+                ", shutdownQuietPeriodSeconds=" + shutdownQuietPeriodSeconds +
                 ", shutdownWaitTimeSeconds=" + shutdownWaitTimeSeconds +
                 '}';
     }
@@ -44,7 +44,7 @@ public final class CPUHeavyTaskExecutorConfig {
      */
     public static final class Builder {
         private int nThreads = 4;
-        private int shutdownQuitePeriodSeconds = 1;
+        private int shutdownQuietPeriodSeconds = 1;
         private int shutdownWaitTimeSeconds = 30;
 
         public Builder() {
@@ -55,8 +55,8 @@ public final class CPUHeavyTaskExecutorConfig {
             return this;
         }
 
-        public Builder shutdownQuitePeriodSeconds(final int shutdownQuitePeriodSeconds) {
-            this.shutdownQuitePeriodSeconds = Math.max(1, shutdownQuitePeriodSeconds);
+        public Builder shutdownQuietPeriodSeconds(final int shutdownQuietPeriodSeconds) {
+            this.shutdownQuietPeriodSeconds = Math.max(1, shutdownQuietPeriodSeconds);
             return this;
         }
 
