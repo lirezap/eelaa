@@ -29,14 +29,14 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
                                      final int databaseSizeGbs) throws Exception {
 
         final var ledger = LMDBBasedLedger.newInstance(ledgerConfig, lz4, lmdbLibraryPath, databaseSizeGbs);
-        ledger.loadWallets();
+        ledger.getExecutor().submit(ledger::loadWallets).get();
 
         return ledger;
     }
 
     public static Ledger newFastInstance(final LedgerConfig ledgerConfig, final LZ4 lz4) throws Exception {
         final var ledger = WALBasedLedger.newInstance(ledgerConfig, lz4);
-        ledger.loadWallets();
+        ledger.getExecutor().submit(ledger::loadWallets).get();
 
         return ledger;
     }

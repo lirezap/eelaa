@@ -8,6 +8,7 @@ import software.openx.eelaa.lz4.LZ4;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -16,6 +17,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import static java.lang.foreign.MemorySegment.NULL;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static software.openx.eelaa.lmdb.LMDBFlags.MDB_NORDAHEAD;
+import static software.openx.eelaa.lmdb.LMDBFlags.MDB_RDONLY;
 
 /**
  * LMDB based crash-safe monetary ledger implementation.
@@ -77,7 +79,36 @@ final class LMDBBasedLedger extends Ledger {
 
     @Override
     void loadWallets() {
-        // TODO: Complete implementation.
+        logger.info("Loading wallets into ledger ...");
+        try (final var arena = Arena.ofConfined()) {
+            final var txn = lmdbManager.newTxn(arena, NULL, MDB_RDONLY);
+            try {
+                final var cursor = lmdbManager.newCursor(txn, walletsDbi, arena);
+                try {
+                    var wallets = new ArrayList<Wallet>(100_000);
+                    var wallet = lmdbManager.iterateFromFirst(cursor, arena);
+                    while (wallet != NULL) {
+                        wallets.add(Wallet.decode(wallet));
+                        if (wallets.size() == 100_000) {
+                            getProcessor().loadWallets(wallets);
+                            logger.info("Loaded {} wallets into ledger successfully", wallets.size());
+                            wallets = new ArrayList<>(100_000);
+                        }
+
+                        wallet = lmdbManager.iterateFromFirst(cursor, arena);
+                    }
+
+                    if (!wallets.isEmpty()) {
+                        getProcessor().loadWallets(wallets);
+                        logger.info("Loaded {} wallets into ledger successfully", wallets.size());
+                    }
+                } finally {
+                    lmdbManager.closeCursor(cursor);
+                }
+            } finally {
+                lmdbManager.commitTxn(txn);
+            }
+        }
     }
 
     @Override
