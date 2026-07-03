@@ -28,11 +28,17 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
     public static Ledger newInstance(final LedgerConfig ledgerConfig, final LZ4 lz4, final Path lmdbLibraryPath,
                                      final int databaseSizeGbs) throws Exception {
 
-        return LMDBBasedLedger.newInstance(ledgerConfig, lz4, lmdbLibraryPath, databaseSizeGbs);
+        final var ledger = LMDBBasedLedger.newInstance(ledgerConfig, lz4, lmdbLibraryPath, databaseSizeGbs);
+        ledger.loadWallets();
+
+        return ledger;
     }
 
     public static Ledger newFastInstance(final LedgerConfig ledgerConfig, final LZ4 lz4) throws Exception {
-        return WALBasedLedger.newInstance(ledgerConfig, lz4);
+        final var ledger = WALBasedLedger.newInstance(ledgerConfig, lz4);
+        ledger.loadWallets();
+
+        return ledger;
     }
 
     public final CompletableFuture<Boolean> process(final Transaction... transactions) {
@@ -63,6 +69,8 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
     public CompletableFuture<Transaction> fetchTransaction(final int ledger, final String id) {
         return CompletableFuture.supplyAsync(() -> processor.fetchTransaction(ledger, id), executor);
     }
+
+    abstract void loadWallets();
 
     abstract boolean persist(final Transaction... transactions);
 

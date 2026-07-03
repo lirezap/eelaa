@@ -42,6 +42,11 @@ final class WALBasedLedger extends Ledger {
     }
 
     @Override
+    void loadWallets() {
+        // TODO: Complete implementation.
+    }
+
+    @Override
     boolean persist(final Transaction... transactions) {
         try (final var arena = Arena.ofConfined()) {
             var allocationSize = 0L;
