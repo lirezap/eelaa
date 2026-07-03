@@ -26,13 +26,18 @@ public final class LMDB implements AutoCloseable {
     private final MethodHandle mdbDbiOpenHandle;
     private final MethodHandle mdbGetHandle;
     private final MethodHandle mdbPutHandle;
+    private final MethodHandle mdbCursorOpenHandle;
+    private final MethodHandle mdbCursorCloseHandle;
+    private final MethodHandle mdbCursorGetHandle;
 
-    private LMDB(final Arena memory, final MethodHandle mdbVersionHandle, final MethodHandle mdbEnvCreateHandle,
-                 final MethodHandle mdbEnvCloseHandle, final MethodHandle mdbEnvSetMapSizeHandle,
-                 final MethodHandle mdbEnvSetMaxDbsHandle, final MethodHandle mdbEnvOpenHandle,
-                 final MethodHandle mdbTxnBeginHandle, final MethodHandle mdbTxnCommitHandle,
-                 final MethodHandle mdbTxnAbortHandle, final MethodHandle mdbDbiOpenHandle,
-                 final MethodHandle mdbGetHandle, final MethodHandle mdbPutHandle) {
+    public LMDB(final Arena memory, final MethodHandle mdbVersionHandle, final MethodHandle mdbEnvCreateHandle,
+                final MethodHandle mdbEnvCloseHandle, final MethodHandle mdbEnvSetMapSizeHandle,
+                final MethodHandle mdbEnvSetMaxDbsHandle, final MethodHandle mdbEnvOpenHandle,
+                final MethodHandle mdbTxnBeginHandle, final MethodHandle mdbTxnCommitHandle,
+                final MethodHandle mdbTxnAbortHandle, final MethodHandle mdbDbiOpenHandle,
+                final MethodHandle mdbGetHandle, final MethodHandle mdbPutHandle,
+                final MethodHandle mdbCursorOpenHandle, final MethodHandle mdbCursorCloseHandle,
+                final MethodHandle mdbCursorGetHandle) {
 
         this.memory = memory;
         this.mdbVersionHandle = mdbVersionHandle;
@@ -47,6 +52,9 @@ public final class LMDB implements AutoCloseable {
         this.mdbDbiOpenHandle = mdbDbiOpenHandle;
         this.mdbGetHandle = mdbGetHandle;
         this.mdbPutHandle = mdbPutHandle;
+        this.mdbCursorOpenHandle = mdbCursorOpenHandle;
+        this.mdbCursorCloseHandle = mdbCursorCloseHandle;
+        this.mdbCursorGetHandle = mdbCursorGetHandle;
     }
 
     public static LMDB newInstance(final LMDBConfig lmdbConfig) {
@@ -67,7 +75,10 @@ public final class LMDB implements AutoCloseable {
                 linker.downcallHandle(lib.find(FUNCTION.mdb_txn_abort.name()).orElseThrow(), FUNCTION.mdb_txn_abort.fd),
                 linker.downcallHandle(lib.find(FUNCTION.mdb_dbi_open.name()).orElseThrow(), FUNCTION.mdb_dbi_open.fd),
                 linker.downcallHandle(lib.find(FUNCTION.mdb_get.name()).orElseThrow(), FUNCTION.mdb_get.fd),
-                linker.downcallHandle(lib.find(FUNCTION.mdb_put.name()).orElseThrow(), FUNCTION.mdb_put.fd));
+                linker.downcallHandle(lib.find(FUNCTION.mdb_put.name()).orElseThrow(), FUNCTION.mdb_put.fd),
+                linker.downcallHandle(lib.find(FUNCTION.mdb_cursor_open.name()).orElseThrow(), FUNCTION.mdb_cursor_open.fd),
+                linker.downcallHandle(lib.find(FUNCTION.mdb_cursor_close.name()).orElseThrow(), FUNCTION.mdb_cursor_close.fd),
+                linker.downcallHandle(lib.find(FUNCTION.mdb_cursor_get.name()).orElseThrow(), FUNCTION.mdb_cursor_get.fd));
     }
 
     public String mdbVersion() throws Throwable {
@@ -129,6 +140,20 @@ public final class LMDB implements AutoCloseable {
         return (int) mdbPutHandle.invokeExact(txn, dbi, key, data, flags);
     }
 
+    public int mdbCursorOpen(final MemorySegment txn, final int dbi, final MemorySegment cursorPtr) throws Throwable {
+        return (int) mdbCursorOpenHandle.invokeExact(txn, dbi, cursorPtr);
+    }
+
+    public void mdbCursorClose(final MemorySegment cursor) throws Throwable {
+        mdbCursorCloseHandle.invokeExact(cursor);
+    }
+
+    public int mdbCursorGet(final MemorySegment cursor, final MemorySegment key, final MemorySegment data,
+                            final int op) throws Throwable {
+
+        return (int) mdbCursorGetHandle.invokeExact(cursor, key, data, op);
+    }
+
     @Override
     public void close() throws Exception {
         try {
@@ -155,7 +180,10 @@ public final class LMDB implements AutoCloseable {
         mdb_txn_abort(FunctionDescriptor.ofVoid(ADDRESS)),
         mdb_dbi_open(FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, JAVA_INT, ADDRESS)),
         mdb_get(FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, ADDRESS, ADDRESS)),
-        mdb_put(FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, ADDRESS, ADDRESS, JAVA_INT));
+        mdb_put(FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, ADDRESS, ADDRESS, JAVA_INT)),
+        mdb_cursor_open(FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, ADDRESS)),
+        mdb_cursor_close(FunctionDescriptor.ofVoid(ADDRESS)),
+        mdb_cursor_get(FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS, JAVA_INT));
 
         public final FunctionDescriptor fd;
 

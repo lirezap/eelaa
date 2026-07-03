@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.lang.foreign.Arena;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 
 import static java.lang.foreign.MemorySegment.NULL;
 import static org.junit.jupiter.api.Assertions.*;
@@ -121,6 +122,39 @@ public class LMDBManagerTest {
             manager.commitTxn(txn);
 
             assertEquals("value1000000", manager.get(dbi, key, arena).getString(0));
+        }
+    }
+
+    @Test
+    public void testIterateFromFirst() throws Exception {
+        var dataDirectoryPath = Files.createTempDirectory(String.valueOf(System.currentTimeMillis()));
+        try (var manager = LMDBManager.newInstance(Path.of(System.getenv("LIBRARIES_NATIVE_LMDB_PATH")), dataDirectoryPath, 1024 * 1024, 1, 0, 0644);
+             var arena = Arena.ofConfined()) {
+
+            var dbi = manager.openDb("test");
+            var txn = manager.newTxn(arena, NULL, 0);
+
+            var values = new ArrayList<>();
+            for (int i = 1; i <= 9; i++) {
+                var key = arena.allocateFrom("key" + i);
+                var value = arena.allocateFrom("value" + i);
+                manager.put(txn, dbi, key, value);
+
+                values.add("value" + i);
+            }
+            manager.commitTxn(txn);
+
+            txn = manager.newTxn(arena, NULL, 0);
+            var cursor = manager.newCursor(txn, dbi, arena);
+            var index = 0;
+            var value = manager.iterateFromFirst(cursor, arena);
+            while (value != NULL) {
+                assertEquals(values.get(index++), value.getString(0));
+                value = manager.iterateFromFirst(cursor, arena);
+            }
+
+            manager.closeCursor(cursor);
+            manager.commitTxn(txn);
         }
     }
 }
