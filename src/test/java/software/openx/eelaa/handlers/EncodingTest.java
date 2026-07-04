@@ -28,7 +28,7 @@ public class EncodingTest {
 
     @Test
     public void testFailedTransaction1() {
-        var failedTransaction = new FailedTransaction(String.format("%s:%s", System.currentTimeMillis(), 1), "failed");
+        var failedTransaction = new FailedTransaction(String.format("%s:%s", System.currentTimeMillis(), 1), "id.not_valid");
         var encoded = failedTransaction.encodeV1(ByteBufAllocator.DEFAULT);
         assertEquals(0b00000001, encoded.readByte());
         assertEquals(0b00000000, encoded.readByte());

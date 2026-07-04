@@ -18,6 +18,10 @@ package software.openx.eelaa.ledger;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
 import org.junit.jupiter.api.Test;
+import software.openx.eelaa.memory.MemorySegmentUtil;
+
+import java.lang.foreign.Arena;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -77,6 +81,60 @@ public class EncodingTest {
     }
 
     @Test
+    public void testTransaction3() {
+        var transaction = new Transaction(1, 2, 3, 4, 5, String.format("%s:%s", System.currentTimeMillis(), 1), "IRR", 6, 7, "\"{\"a\":\"b\"}\"");
+        try (var arena = Arena.ofConfined()) {
+            var encoded = transaction.encodeV1(arena);
+            var position = new AtomicLong(0);
+            assertEquals(0b00000001, MemorySegmentUtil.getByteLE(encoded, position));
+            assertEquals(0b00000000, MemorySegmentUtil.getByteLE(encoded, position));
+            assertEquals(transaction.frameBinarySize() - 6, MemorySegmentUtil.getIntLE(encoded, position));
+
+            var decoded = Transaction.decode(encoded.asSlice(6));
+            assertEquals(transaction.getLedger(), decoded.getLedger());
+            assertEquals(transaction.getSourceAccount(), decoded.getSourceAccount());
+            assertEquals(transaction.getSourceWallet(), decoded.getSourceWallet());
+            assertEquals(transaction.getDestinationAccount(), decoded.getDestinationAccount());
+            assertEquals(transaction.getDestinationWallet(), decoded.getDestinationWallet());
+            assertEquals(transaction.getId(), decoded.getId());
+            assertEquals(transaction.getCurrency(), decoded.getCurrency());
+            assertEquals(transaction.getAmount(), decoded.getAmount());
+            assertEquals(transaction.getMaxOverdraftAmount(), decoded.getMaxOverdraftAmount());
+            assertEquals(transaction.getMetadata(), decoded.getMetadata());
+            assertEquals(transaction.getSourceWalletNewBalance(), decoded.getSourceWalletNewBalance());
+            assertEquals(transaction.getDestinationWalletNewBalance(), decoded.getDestinationWalletNewBalance());
+            assertEquals(transaction.getTs(), decoded.getTs());
+        }
+    }
+
+    @Test
+    public void testTransaction4() {
+        var transaction = new Transaction(1, 2, 3, 4, 5, null, null, 6, 7, null);
+        try (var arena = Arena.ofConfined()) {
+            var encoded = transaction.encodeV1(arena);
+            var position = new AtomicLong(0);
+            assertEquals(0b00000001, MemorySegmentUtil.getByteLE(encoded, position));
+            assertEquals(0b00000000, MemorySegmentUtil.getByteLE(encoded, position));
+            assertEquals(transaction.frameBinarySize() - 6, MemorySegmentUtil.getIntLE(encoded, position));
+
+            var decoded = Transaction.decode(encoded.asSlice(6));
+            assertEquals(transaction.getLedger(), decoded.getLedger());
+            assertEquals(transaction.getSourceAccount(), decoded.getSourceAccount());
+            assertEquals(transaction.getSourceWallet(), decoded.getSourceWallet());
+            assertEquals(transaction.getDestinationAccount(), decoded.getDestinationAccount());
+            assertEquals(transaction.getDestinationWallet(), decoded.getDestinationWallet());
+            assertEquals("", decoded.getId());
+            assertEquals("", decoded.getCurrency());
+            assertEquals(transaction.getAmount(), decoded.getAmount());
+            assertEquals(transaction.getMaxOverdraftAmount(), decoded.getMaxOverdraftAmount());
+            assertEquals("", decoded.getMetadata());
+            assertEquals(transaction.getSourceWalletNewBalance(), decoded.getSourceWalletNewBalance());
+            assertEquals(transaction.getDestinationWalletNewBalance(), decoded.getDestinationWalletNewBalance());
+            assertEquals(transaction.getTs(), decoded.getTs());
+        }
+    }
+
+    @Test
     public void testWallet1() {
         var wallet = new Wallet(1, 2, 3, "IRR", 4);
         var encoded = wallet.encodeV1(ByteBufAllocator.DEFAULT);
@@ -108,5 +166,43 @@ public class EncodingTest {
         assertEquals("", decoded.getCurrency());
         assertEquals(wallet.getBalance(), decoded.getBalance());
         ReferenceCountUtil.release(encoded);
+    }
+
+    @Test
+    public void testWallet3() {
+        var wallet = new Wallet(1, 2, 3, "IRR", 4);
+        try (var arena = Arena.ofConfined()) {
+            var encoded = wallet.encodeV1(arena);
+            var position = new AtomicLong(0);
+            assertEquals(0b00000001, MemorySegmentUtil.getByteLE(encoded, position));
+            assertEquals(0b00000000, MemorySegmentUtil.getByteLE(encoded, position));
+            assertEquals(wallet.frameBinarySize() - 6, MemorySegmentUtil.getIntLE(encoded, position));
+
+            var decoded = Wallet.decode(encoded.asSlice(6));
+            assertEquals(wallet.getLedger(), decoded.getLedger());
+            assertEquals(wallet.getAccount(), decoded.getAccount());
+            assertEquals(wallet.getWallet(), decoded.getWallet());
+            assertEquals(wallet.getCurrency(), decoded.getCurrency());
+            assertEquals(wallet.getBalance(), decoded.getBalance());
+        }
+    }
+
+    @Test
+    public void testWallet4() {
+        var wallet = new Wallet(1, 2, 3, null, 4);
+        try (var arena = Arena.ofConfined()) {
+            var encoded = wallet.encodeV1(arena);
+            var position = new AtomicLong(0);
+            assertEquals(0b00000001, MemorySegmentUtil.getByteLE(encoded, position));
+            assertEquals(0b00000000, MemorySegmentUtil.getByteLE(encoded, position));
+            assertEquals(wallet.frameBinarySize() - 6, MemorySegmentUtil.getIntLE(encoded, position));
+
+            var decoded = Wallet.decode(encoded.asSlice(6));
+            assertEquals(wallet.getLedger(), decoded.getLedger());
+            assertEquals(wallet.getAccount(), decoded.getAccount());
+            assertEquals(wallet.getWallet(), decoded.getWallet());
+            assertEquals("", decoded.getCurrency());
+            assertEquals(wallet.getBalance(), decoded.getBalance());
+        }
     }
 }
