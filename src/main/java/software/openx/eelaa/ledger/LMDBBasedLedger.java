@@ -30,9 +30,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static java.lang.foreign.MemorySegment.NULL;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static software.openx.eelaa.lmdb.LMDBFlags.MDB_NORDAHEAD;
-import static software.openx.eelaa.lmdb.LMDBFlags.MDB_RDONLY;
+import static software.openx.eelaa.lmdb.LMDBFlags.*;
 
 /**
  * LMDB based crash-safe monetary ledger implementation.
@@ -45,14 +45,17 @@ final class LMDBBasedLedger extends Ledger {
     private final LMDBManager lmdbManager;
     private final int transactionsDbi;
     private final int walletsDbi;
+    private final int ledgersDbi;
 
-    private LMDBBasedLedger(final ExecutorService executor, final Processor processor, final LZ4 lz4,
-                            final LMDBManager lmdbManager, final int transactionsDbi, final int walletsDbi) {
+    public LMDBBasedLedger(final ExecutorService executor, final Processor processor, final LZ4 lz4,
+                           final LMDBManager lmdbManager, final int transactionsDbi, final int walletsDbi,
+                           final int ledgersDbi) {
 
         super(executor, processor, lz4);
         this.lmdbManager = lmdbManager;
         this.transactionsDbi = transactionsDbi;
         this.walletsDbi = walletsDbi;
+        this.ledgersDbi = ledgersDbi;
     }
 
     public static Ledger newInstance(final LedgerConfig ledgerConfig, final LZ4 lz4, final Path lmdbLibraryPath,
@@ -72,8 +75,9 @@ final class LMDBBasedLedger extends Ledger {
 
         final var transactionsDbi = executor.submit(() -> lmdbManager.openDb("transactions")).get();
         final var walletsDbi = executor.submit(() -> lmdbManager.openDb("wallets")).get();
+        final var ledgersDbi = executor.submit(() -> lmdbManager.openDb("ledgers", MDB_CREATE | MDB_INTEGERKEY)).get();
 
-        return new LMDBBasedLedger(executor, processor, lz4, lmdbManager, transactionsDbi, walletsDbi);
+        return new LMDBBasedLedger(executor, processor, lz4, lmdbManager, transactionsDbi, walletsDbi, ledgersDbi);
     }
 
     @Override
@@ -133,8 +137,12 @@ final class LMDBBasedLedger extends Ledger {
 
             final var txn = lmdbManager.newTxn(arena, NULL, 0);
             try { // Atomic or exception code block!
-                for (int i = 0; i < transactions.length; i++) {
-                    final var transaction = transactions[i];
+                var lastIntegerKey = lmdbManager.lastIntegerKey(txn, ledgersDbi, arena);
+                if (lastIntegerKey == NULL) {
+                    lastIntegerKey = arena.allocateFrom(JAVA_LONG, 0);
+                }
+
+                for (final var transaction : transactions) {
                     if (transaction != null && !transaction.is_failed()) {
                         final var sourceWallet = transaction.get_sourceWallet().encodeV1(arena);
                         final var destinationWallet = transaction.get_destinationWallet().encodeV1(arena);
@@ -143,6 +151,9 @@ final class LMDBBasedLedger extends Ledger {
                         if (lmdbManager.put(txn, transactionsDbi, key, transaction.encodeV1(arena))) {
                             lmdbManager.putOrReplace(txn, walletsDbi, sourceWallet.asSlice(6, 16), sourceWallet);
                             lmdbManager.putOrReplace(txn, walletsDbi, destinationWallet.asSlice(6, 16), destinationWallet);
+
+                            lastIntegerKey.set(JAVA_LONG, 0, lastIntegerKey.get(JAVA_LONG, 0) + 1);
+                            lmdbManager.append(txn, ledgersDbi, lastIntegerKey, key);
                         } else {
                             throw new RuntimeException("duplicate transaction key provided!");
                         }

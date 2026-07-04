@@ -167,7 +167,7 @@ final class Processor {
                 }
             }
         } catch (final Throwable cause) {
-            // Must never reach line of code!
+            // Must never reach this line of code!
             System.exit(-1);
         }
     }
