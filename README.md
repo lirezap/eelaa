@@ -4,7 +4,7 @@ Eelaa is a fast, reliable and efficient monetary general ledger that is able to 
 second.
 It can be used as a GL module of a core banking platform or as wallet-as-a-service server.
 
-Features included:
+**Features included:**
 
 - Includes two types of ledgers, both are crash-safe and ACID compliant
     - WAL based: Very fast GL with compression enabled for handling more than a million of transactions per second
@@ -16,7 +16,7 @@ Features included:
 - Source-destination accounting
 - Real-time balances
 
-Engineered around the best practices of designing high performance systems, like:
+**Engineered around the best practices of designing high performance systems, like:**
 
 - Custom frame-based binary protocol
 - Asynchronous and event driven TCP network stack using native transports with a batch-aware network protocol/triggers
