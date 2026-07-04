@@ -25,26 +25,26 @@ import java.nio.file.Path;
  */
 public final class LMDBConfig {
     private final Path libraryPath;
-    private final Arena memory;
+    private final Arena arena;
 
     private LMDBConfig(final Builder builder) {
         this.libraryPath = builder.libraryPath;
-        this.memory = builder.memory;
+        this.arena = builder.arena;
     }
 
     public Path getLibraryPath() {
         return libraryPath;
     }
 
-    public Arena getMemory() {
-        return memory;
+    public Arena getArena() {
+        return arena;
     }
 
     @Override
     public String toString() {
         return "LMDBConfig{" +
                 "libraryPath=" + libraryPath +
-                ", memory=" + memory +
+                ", arena=" + arena +
                 '}';
     }
 
@@ -55,7 +55,7 @@ public final class LMDBConfig {
      */
     public static final class Builder {
         private Path libraryPath;
-        private Arena memory = Arena.ofShared();
+        private Arena arena = Arena.ofShared();
 
         public Builder(final Path libraryPath) {
             this.libraryPath = libraryPath;
@@ -66,8 +66,8 @@ public final class LMDBConfig {
             return this;
         }
 
-        public Builder memory(final Arena memory) {
-            this.memory = memory;
+        public Builder arena(final Arena arena) {
+            this.arena = arena;
             return this;
         }
 

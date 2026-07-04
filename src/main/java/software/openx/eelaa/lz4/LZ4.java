@@ -28,18 +28,18 @@ import static software.openx.eelaa.std.CString.strlen;
  * @author Alireza Pourtaghi
  */
 public final class LZ4 implements AutoCloseable {
-    private final Arena memory;
+    private final Arena arena;
     private final MethodHandle versionNumberHandle;
     private final MethodHandle versionStringHandle;
     private final MethodHandle compressBoundHandle;
     private final MethodHandle compressDefaultHandle;
     private final MethodHandle decompressSafeHandle;
 
-    private LZ4(final Arena memory, final MethodHandle versionNumberHandle, final MethodHandle versionStringHandle,
+    private LZ4(final Arena arena, final MethodHandle versionNumberHandle, final MethodHandle versionStringHandle,
                 final MethodHandle compressBoundHandle, final MethodHandle compressDefaultHandle,
                 final MethodHandle decompressSafeHandle) {
 
-        this.memory = memory;
+        this.arena = arena;
         this.versionNumberHandle = versionNumberHandle;
         this.versionStringHandle = versionStringHandle;
         this.compressBoundHandle = compressBoundHandle;
@@ -48,12 +48,12 @@ public final class LZ4 implements AutoCloseable {
     }
 
     public static LZ4 newInstance(final LZ4Config lz4Config) {
-        final var memory = lz4Config.getMemory();
+        final var arena = lz4Config.getArena();
         final var linker = Linker.nativeLinker();
-        final var lib = SymbolLookup.libraryLookup(lz4Config.getLibraryPath(), memory);
+        final var lib = SymbolLookup.libraryLookup(lz4Config.getLibraryPath(), arena);
 
         return new LZ4(
-                memory,
+                arena,
                 linker.downcallHandle(lib.find(FUNCTION.LZ4_versionNumber.name()).orElseThrow(), FUNCTION.LZ4_versionNumber.fd),
                 linker.downcallHandle(lib.find(FUNCTION.LZ4_versionString.name()).orElseThrow(), FUNCTION.LZ4_versionString.fd),
                 linker.downcallHandle(lib.find(FUNCTION.LZ4_compressBound.name()).orElseThrow(), FUNCTION.LZ4_compressBound.fd),
@@ -89,7 +89,7 @@ public final class LZ4 implements AutoCloseable {
     @Override
     public void close() throws Exception {
         try {
-            memory.close();
+            arena.close();
         } catch (final UnsupportedOperationException _) {
             // Just ignore close operation failure.
         }

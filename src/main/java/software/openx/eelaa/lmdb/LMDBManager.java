@@ -38,12 +38,12 @@ import static software.openx.eelaa.lmdb.LMDBFlags.*;
 public final class LMDBManager implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(LMDBManager.class);
 
-    private final Arena memory;
+    private final Arena arena;
     private final LMDB lmdb;
     private final MemorySegment env;
 
-    private LMDBManager(final Arena memory, final LMDB lmdb, final MemorySegment env) {
-        this.memory = memory;
+    private LMDBManager(final Arena arena, final LMDB lmdb, final MemorySegment env) {
+        this.arena = arena;
         this.lmdb = lmdb;
         this.env = env;
     }
@@ -51,16 +51,16 @@ public final class LMDBManager implements AutoCloseable {
     public static LMDBManager newInstance(final Path lmdbLibraryPath, final Path dataDirectoryPath, final long mapSize,
                                           final int maxDbs, final int openFlags, final int openMode) {
 
-        final var memory = Arena.ofConfined();
+        final var arena = Arena.ofConfined();
         try {
             if (!Files.isDirectory(dataDirectoryPath)) {
                 throw new RuntimeException("invalid data directory path!");
             }
 
-            final var lmdb = LMDB.newInstance(new LMDBConfig.Builder(lmdbLibraryPath).memory(memory).build());
+            final var lmdb = LMDB.newInstance(new LMDBConfig.Builder(lmdbLibraryPath).arena(arena).build());
             logger.info("Using LMDB version: {}", lmdb.mdbVersion());
 
-            final var envPtr = memory.allocate(ADDRESS);
+            final var envPtr = arena.allocate(ADDRESS);
             var error = lmdb.mdbEnvCreate(envPtr);
             if (error != 0) {
                 throw new RuntimeException(String.format("LMDB env creation failed with error code: %s", error));
@@ -88,16 +88,16 @@ public final class LMDBManager implements AutoCloseable {
                 }
             }
 
-            return new LMDBManager(memory, lmdb, env);
+            return new LMDBManager(arena, lmdb, env);
         } catch (final Throwable cause) {
-            memory.close();
+            arena.close();
             throw new RuntimeException(cause);
         }
     }
 
-    public MemorySegment newTxn(final Arena txnMemory, final MemorySegment parent, final int flags) {
+    public MemorySegment newTxn(final Arena arena, final MemorySegment parent, final int flags) {
         try {
-            final var txnPtr = txnMemory.allocate(ADDRESS);
+            final var txnPtr = arena.allocate(ADDRESS);
             final var error = lmdb.mdbTxnBegin(env, parent, flags, txnPtr);
             if (error != 0) {
                 throw new RuntimeException(String.format("LMDB txn begin failed with error code: %s", error));
@@ -130,10 +130,10 @@ public final class LMDBManager implements AutoCloseable {
 
     public int openDb(final String dbName) {
         try {
-            try (final var shortLivedMemory = Arena.ofConfined()) {
-                final var txn = newTxn(shortLivedMemory, NULL, 0);
-                final var dbi = shortLivedMemory.allocate(ADDRESS);
-                final var error = lmdb.mdbDbiOpen(txn, shortLivedMemory.allocateFrom(dbName), MDB_CREATE, dbi);
+            try (final var arena = Arena.ofConfined()) {
+                final var txn = newTxn(arena, NULL, 0);
+                final var dbi = arena.allocate(ADDRESS);
+                final var error = lmdb.mdbDbiOpen(txn, arena.allocateFrom(dbName), MDB_CREATE, dbi);
                 if (error != 0) {
                     abortTxn(txn);
                     throw new RuntimeException(String.format("LMDB dbi open failed with error code: %s", error));
@@ -149,10 +149,10 @@ public final class LMDBManager implements AutoCloseable {
 
     public int openDb(final String dbName, final int flags) {
         try {
-            try (final var shortLivedMemory = Arena.ofConfined()) {
-                final var txn = newTxn(shortLivedMemory, NULL, 0);
-                final var dbi = shortLivedMemory.allocate(ADDRESS);
-                final var error = lmdb.mdbDbiOpen(txn, shortLivedMemory.allocateFrom(dbName), flags, dbi);
+            try (final var arena = Arena.ofConfined()) {
+                final var txn = newTxn(arena, NULL, 0);
+                final var dbi = arena.allocate(ADDRESS);
+                final var error = lmdb.mdbDbiOpen(txn, arena.allocateFrom(dbName), flags, dbi);
                 if (error != 0) {
                     abortTxn(txn);
                     throw new RuntimeException(String.format("LMDB dbi open failed with error code: %s", error));
@@ -168,9 +168,9 @@ public final class LMDBManager implements AutoCloseable {
 
     public boolean put(final int dbi, final MemorySegment key, final MemorySegment value) {
         try {
-            try (final var shortLivedMemory = Arena.ofConfined()) {
-                final var txn = newTxn(shortLivedMemory, NULL, 0);
-                final var error = lmdb.mdbPut(txn, dbi, asLMDBVal(shortLivedMemory, key), asLMDBVal(shortLivedMemory, value), MDB_NOOVERWRITE);
+            try (final var arena = Arena.ofConfined()) {
+                final var txn = newTxn(arena, NULL, 0);
+                final var error = lmdb.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), MDB_NOOVERWRITE);
                 if (error == 0) {
                     commitTxn(txn);
                     return true;
@@ -191,8 +191,8 @@ public final class LMDBManager implements AutoCloseable {
 
     public boolean put(final MemorySegment txn, final int dbi, final MemorySegment key, final MemorySegment value) {
         try {
-            try (final var shortLivedMemory = Arena.ofConfined()) {
-                final var error = lmdb.mdbPut(txn, dbi, asLMDBVal(shortLivedMemory, key), asLMDBVal(shortLivedMemory, value), MDB_NOOVERWRITE);
+            try (final var arena = Arena.ofConfined()) {
+                final var error = lmdb.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), MDB_NOOVERWRITE);
                 if (error == 0) {
                     return true;
                 }
@@ -210,9 +210,9 @@ public final class LMDBManager implements AutoCloseable {
 
     public void putOrReplace(final int dbi, final MemorySegment key, final MemorySegment value) {
         try {
-            try (final var shortLivedMemory = Arena.ofConfined()) {
-                final var txn = newTxn(shortLivedMemory, NULL, 0);
-                final var error = lmdb.mdbPut(txn, dbi, asLMDBVal(shortLivedMemory, key), asLMDBVal(shortLivedMemory, value), 0);
+            try (final var arena = Arena.ofConfined()) {
+                final var txn = newTxn(arena, NULL, 0);
+                final var error = lmdb.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), 0);
                 if (error == 0) {
                     commitTxn(txn);
                     return;
@@ -228,8 +228,8 @@ public final class LMDBManager implements AutoCloseable {
 
     public void putOrReplace(final MemorySegment txn, final int dbi, final MemorySegment key, final MemorySegment value) {
         try {
-            try (final var shortLivedMemory = Arena.ofConfined()) {
-                final var error = lmdb.mdbPut(txn, dbi, asLMDBVal(shortLivedMemory, key), asLMDBVal(shortLivedMemory, value), 0);
+            try (final var arena = Arena.ofConfined()) {
+                final var error = lmdb.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), 0);
                 if (error == 0) {
                     return;
                 }
@@ -243,8 +243,8 @@ public final class LMDBManager implements AutoCloseable {
 
     public void append(final MemorySegment txn, final int dbi, final MemorySegment key, final MemorySegment value) {
         try {
-            try (final var shortLivedMemory = Arena.ofConfined()) {
-                final var error = lmdb.mdbPut(txn, dbi, asLMDBVal(shortLivedMemory, key), asLMDBVal(shortLivedMemory, value), MDB_APPEND | MDB_NOOVERWRITE);
+            try (final var arena = Arena.ofConfined()) {
+                final var error = lmdb.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), MDB_APPEND | MDB_NOOVERWRITE);
                 if (error == 0) {
                     return;
                 }
@@ -256,15 +256,15 @@ public final class LMDBManager implements AutoCloseable {
         }
     }
 
-    public MemorySegment get(final int dbi, final MemorySegment key, final Arena valueMemory) {
+    public MemorySegment get(final int dbi, final MemorySegment key, final Arena valueArena) {
         try {
-            try (final var shortLivedMemory = Arena.ofConfined()) {
-                final var txn = newTxn(shortLivedMemory, NULL, MDB_RDONLY);
-                final var lmdbVal = shortLivedMemory.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
-                final var error = lmdb.mdbGet(txn, dbi, asLMDBVal(shortLivedMemory, key), lmdbVal);
+            try (final var arena = Arena.ofConfined()) {
+                final var txn = newTxn(arena, NULL, MDB_RDONLY);
+                final var lmdbVal = arena.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
+                final var error = lmdb.mdbGet(txn, dbi, asLMDBVal(arena, key), lmdbVal);
                 if (error == 0) {
                     final var size = lmdbVal.get(JAVA_LONG, 0);
-                    final var value = valueMemory.allocate(size);
+                    final var value = valueArena.allocate(size);
                     MemorySegmentUtil.putMemory(value, 0, lmdbVal.get(ADDRESS, JAVA_LONG.byteSize()).reinterpret(size));
 
                     commitTxn(txn);
@@ -284,14 +284,14 @@ public final class LMDBManager implements AutoCloseable {
         }
     }
 
-    public MemorySegment get(final MemorySegment txn, final int dbi, final MemorySegment key, final Arena valueMemory) {
+    public MemorySegment get(final MemorySegment txn, final int dbi, final MemorySegment key, final Arena valueArena) {
         try {
-            try (final var shortLivedMemory = Arena.ofConfined()) {
-                final var lmdbVal = shortLivedMemory.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
-                final var error = lmdb.mdbGet(txn, dbi, asLMDBVal(shortLivedMemory, key), lmdbVal);
+            try (final var arena = Arena.ofConfined()) {
+                final var lmdbVal = arena.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
+                final var error = lmdb.mdbGet(txn, dbi, asLMDBVal(arena, key), lmdbVal);
                 if (error == 0) {
                     final var size = lmdbVal.get(JAVA_LONG, 0);
-                    final var value = valueMemory.allocate(size);
+                    final var value = valueArena.allocate(size);
                     MemorySegmentUtil.putMemory(value, 0, lmdbVal.get(ADDRESS, JAVA_LONG.byteSize()).reinterpret(size));
                     return value;
                 }
@@ -307,9 +307,9 @@ public final class LMDBManager implements AutoCloseable {
         }
     }
 
-    public MemorySegment newCursor(final MemorySegment txn, final int dbi, final Arena cursorMemory) {
+    public MemorySegment newCursor(final MemorySegment txn, final int dbi, final Arena arena) {
         try {
-            final var cursorPtr = cursorMemory.allocate(ADDRESS);
+            final var cursorPtr = arena.allocate(ADDRESS);
             final var error = lmdb.mdbCursorOpen(txn, dbi, cursorPtr);
             if (error != 0) {
                 throw new RuntimeException(String.format("LMDB cursor open failed with error code: %s", error));
@@ -329,16 +329,16 @@ public final class LMDBManager implements AutoCloseable {
         }
     }
 
-    public MemorySegment iterateFromFirst(final MemorySegment cursor, final Arena keyValueMemory) {
+    public MemorySegment iterateFromFirst(final MemorySegment cursor, final Arena valueArena) {
         try {
-            try (final var shortLiveMemory = Arena.ofConfined()) {
-                final var keyVal = shortLiveMemory.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
-                final var dataVal = shortLiveMemory.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
+            try (final var arena = Arena.ofConfined()) {
+                final var keyVal = arena.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
+                final var dataVal = arena.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
 
                 final var error = lmdb.mdbCursorGet(cursor, keyVal, dataVal, MDB_NEXT);
                 if (error == 0) {
                     final var size = dataVal.get(JAVA_LONG, 0);
-                    final var value = keyValueMemory.allocate(size);
+                    final var value = valueArena.allocate(size);
                     MemorySegmentUtil.putMemory(value, 0, dataVal.get(ADDRESS, JAVA_LONG.byteSize()).reinterpret(size));
                     return value;
                 }
@@ -354,17 +354,17 @@ public final class LMDBManager implements AutoCloseable {
         }
     }
 
-    public MemorySegment lastIntegerKey(final MemorySegment txn, final int dbi, final Arena keyValueMemory) {
+    public MemorySegment lastIntegerKey(final MemorySegment txn, final int dbi, final Arena arena) {
         try {
-            final var cursor = newCursor(txn, dbi, keyValueMemory);
+            final var cursor = newCursor(txn, dbi, arena);
             try {
-                final var keyVal = keyValueMemory.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
-                final var dataVal = keyValueMemory.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
+                final var keyVal = arena.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
+                final var dataVal = arena.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
 
                 final var error = lmdb.mdbCursorGet(cursor, keyVal, dataVal, MDB_LAST);
                 if (error == 0) {
                     final var size = keyVal.get(JAVA_LONG, 0);
-                    final var key = keyValueMemory.allocate(size);
+                    final var key = arena.allocate(size);
                     MemorySegmentUtil.putMemory(key, 0, keyVal.get(ADDRESS, JAVA_LONG.byteSize()).reinterpret(size));
                     return key;
                 }
@@ -382,8 +382,8 @@ public final class LMDBManager implements AutoCloseable {
         }
     }
 
-    private MemorySegment asLMDBVal(final Arena memory, final MemorySegment value) {
-        final var lmdbVal = memory.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
+    private MemorySegment asLMDBVal(final Arena arena, final MemorySegment value) {
+        final var lmdbVal = arena.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
         lmdbVal.set(JAVA_LONG, 0, value.byteSize());
         lmdbVal.set(ADDRESS, JAVA_LONG.byteSize(), value);
 
@@ -394,7 +394,7 @@ public final class LMDBManager implements AutoCloseable {
     public void close() throws Exception {
         try {
             lmdb.mdbEnvClose(env);
-            memory.close();
+            arena.close();
         } catch (final Throwable cause) {
             throw new Exception(cause);
         }

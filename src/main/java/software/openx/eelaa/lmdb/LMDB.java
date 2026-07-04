@@ -28,7 +28,7 @@ import static software.openx.eelaa.std.CString.strlen;
  * @author Alireza Pourtaghi
  */
 public final class LMDB implements AutoCloseable {
-    private final Arena memory;
+    private final Arena arena;
     private final MethodHandle mdbVersionHandle;
     private final MethodHandle mdbEnvCreateHandle;
     private final MethodHandle mdbEnvCloseHandle;
@@ -45,7 +45,7 @@ public final class LMDB implements AutoCloseable {
     private final MethodHandle mdbCursorCloseHandle;
     private final MethodHandle mdbCursorGetHandle;
 
-    public LMDB(final Arena memory, final MethodHandle mdbVersionHandle, final MethodHandle mdbEnvCreateHandle,
+    public LMDB(final Arena arena, final MethodHandle mdbVersionHandle, final MethodHandle mdbEnvCreateHandle,
                 final MethodHandle mdbEnvCloseHandle, final MethodHandle mdbEnvSetMapSizeHandle,
                 final MethodHandle mdbEnvSetMaxDbsHandle, final MethodHandle mdbEnvOpenHandle,
                 final MethodHandle mdbTxnBeginHandle, final MethodHandle mdbTxnCommitHandle,
@@ -54,7 +54,7 @@ public final class LMDB implements AutoCloseable {
                 final MethodHandle mdbCursorOpenHandle, final MethodHandle mdbCursorCloseHandle,
                 final MethodHandle mdbCursorGetHandle) {
 
-        this.memory = memory;
+        this.arena = arena;
         this.mdbVersionHandle = mdbVersionHandle;
         this.mdbEnvCreateHandle = mdbEnvCreateHandle;
         this.mdbEnvCloseHandle = mdbEnvCloseHandle;
@@ -73,12 +73,12 @@ public final class LMDB implements AutoCloseable {
     }
 
     public static LMDB newInstance(final LMDBConfig lmdbConfig) {
-        final var memory = lmdbConfig.getMemory();
+        final var arena = lmdbConfig.getArena();
         final var linker = Linker.nativeLinker();
-        final var lib = SymbolLookup.libraryLookup(lmdbConfig.getLibraryPath(), memory);
+        final var lib = SymbolLookup.libraryLookup(lmdbConfig.getLibraryPath(), arena);
 
         return new LMDB(
-                memory,
+                arena,
                 linker.downcallHandle(lib.find(FUNCTION.mdb_version.name()).orElseThrow(), FUNCTION.mdb_version.fd),
                 linker.downcallHandle(lib.find(FUNCTION.mdb_env_create.name()).orElseThrow(), FUNCTION.mdb_env_create.fd),
                 linker.downcallHandle(lib.find(FUNCTION.mdb_env_close.name()).orElseThrow(), FUNCTION.mdb_env_close.fd),
@@ -172,7 +172,7 @@ public final class LMDB implements AutoCloseable {
     @Override
     public void close() throws Exception {
         try {
-            memory.close();
+            arena.close();
         } catch (final UnsupportedOperationException _) {
             // Just ignore close operation failure.
         }
