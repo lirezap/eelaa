@@ -23,7 +23,10 @@ Engineered around the best practices of designing high performance systems, like
 - Custom atomic and crash-safe WAL implementation
 - FFM and off-heap memory management to decrease GC pressure
 - Fast compression mechanism
+- Having mechanical sympathy for the hardware it’s running on (lock-free implementations)
 - Used native libraries where ever possible
+
+---
 
 ### Test & Development Setup (macOS)
 
