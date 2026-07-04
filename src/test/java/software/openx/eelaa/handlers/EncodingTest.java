@@ -42,7 +42,7 @@ public class EncodingTest {
 
     @Test
     public void testFailedTransaction2() {
-        var failedTransaction = new FailedTransaction(String.format("%s:%s", System.currentTimeMillis(), 1), null);
+        var failedTransaction = new FailedTransaction(null, null);
         var encoded = failedTransaction.encodeV1(ByteBufAllocator.DEFAULT);
         assertEquals(0b00000001, encoded.readByte());
         assertEquals(0b00000000, encoded.readByte());
