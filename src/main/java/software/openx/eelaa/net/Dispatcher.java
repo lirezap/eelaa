@@ -67,6 +67,8 @@ final class Dispatcher extends SimpleChannelInboundHandler<ByteBuf> {
                         cpuHeavyTaskExecutor.submit(new BatchHandler(ctx, buf, frameNumericType, sequenceId, ledger));
                 case ATOMIC_BATCH ->
                         cpuHeavyTaskExecutor.submit(new AtomicBatchHandler(ctx, buf, frameNumericType, sequenceId, ledger));
+                case FETCH_TRANSACTION ->
+                        cpuHeavyTaskExecutor.submit(new FetchTransactionHandler(ctx, buf, frameNumericType, sequenceId, ledger));
 
                 case null, default -> throw HandlerNotFoundException.INSTANCE;
             }

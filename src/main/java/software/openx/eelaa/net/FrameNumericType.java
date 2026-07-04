@@ -35,7 +35,10 @@ public enum FrameNumericType {
 
     BATCH(300),
     ATOMIC_BATCH(301),
-    FAILED_TRANSACTIONS(302);
+    FAILED_TRANSACTIONS(302),
+
+    FETCH_TRANSACTION(400),
+    TRANSACTION(401);
 
     private static final FrameNumericType[] frameNumericTypes = FrameNumericType.values();
     private final int value;

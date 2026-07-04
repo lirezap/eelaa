@@ -175,16 +175,16 @@ public abstract class Handler implements Runnable {
      * Creates a new frame header buffer based on version one message format.
      *
      * @param headerLengthOfDataSection  the length of header in the data section of frame
-     * @param contentLengthOdDataSection the length of content in the data section of frame
+     * @param contentLengthOfDataSection the length of content in the data section of frame
      * @return newly created buffer
      */
     protected final ByteBuf newV1FrameHeaderBuf(final int headerLengthOfDataSection,
-                                                final int contentLengthOdDataSection) {
+                                                final int contentLengthOfDataSection) {
 
         final var buf = ctx.alloc().buffer(6 + headerLengthOfDataSection);
         buf.writeByte(0b00000001);
         buf.writeByte(0b00000000);
-        buf.writeInt(Math.addExact(headerLengthOfDataSection, contentLengthOdDataSection));
+        buf.writeInt(Math.addExact(headerLengthOfDataSection, contentLengthOfDataSection));
 
         return buf;
     }
