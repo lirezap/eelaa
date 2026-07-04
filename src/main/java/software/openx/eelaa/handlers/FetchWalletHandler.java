@@ -50,7 +50,9 @@ public final class FetchWalletHandler extends Handler {
     @Override
     protected void handle() throws Exception {
         if (isValid()) {
-            final var wallet = ledger.fetchWallet(getBuf().readInt(), getBuf().readLong(), getBuf().readInt()).get();
+            final var wallet =
+                    ledger.fetchWallet(getBuf().readInt(), getBuf().readLong(), getBuf().readInt()).get();
+
             releaseFrameBuffer();
 
             if (wallet != null) {

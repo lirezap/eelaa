@@ -50,7 +50,9 @@ public final class FetchAccountHandler extends Handler {
     @Override
     protected void handle() throws Exception {
         if (isValid()) {
-            final var account = ledger.fetchAccount(getBuf().readInt(), getBuf().readLong()).get();
+            final var account =
+                    ledger.fetchAccount(getBuf().readInt(), getBuf().readLong()).get();
+
             releaseFrameBuffer();
 
             if (account != null && !account.isEmpty()) {

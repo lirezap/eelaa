@@ -51,7 +51,9 @@ public final class FetchTransactionHandler extends Handler {
     @Override
     protected void handle() throws Exception {
         if (isValid()) {
-            final var transaction = ledger.fetchTransaction(getBuf().readInt(), StringUtil.readNullTerminatedUTF8String(getBuf())).get();
+            final var transaction =
+                    ledger.fetchTransaction(getBuf().readInt(), StringUtil.readNullTerminatedUTF8String(getBuf())).get();
+
             releaseFrameBuffer();
 
             if (transaction != null) {
