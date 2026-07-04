@@ -1,8 +1,7 @@
 ## Fast, Reliable and Efficient Monetary General Ledger
 
 Eelaa is a fast, reliable and efficient monetary general ledger that is able to handle 1 million transactions per
-second.
-It can be used as a GL module of a core banking platform or as wallet-as-a-service server.
+second. It can be used as a GL module of a core banking platform or as a wallet-as-a-service server.
 
 **Features included:**
 
@@ -15,6 +14,7 @@ It can be used as a GL module of a core banking platform or as wallet-as-a-servi
 - Automatic recovery mechanism
 - Source-destination accounting
 - Real-time balances
+- TLS v1.3
 
 **Engineered around the best practices of designing high performance systems, like:**
 
