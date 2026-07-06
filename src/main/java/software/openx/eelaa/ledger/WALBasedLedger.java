@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static software.openx.eelaa.ledger.LedgerConfig.TRANSACTION_ID_REQUIRED_BACKOFF_MS;
 import static software.openx.eelaa.memory.MemorySegmentUtil.*;
 
 /**
@@ -53,6 +54,8 @@ final class WALBasedLedger extends Ledger {
         final var transactionsFile = executor.submit(() -> AtomicFile.newInstance(
                 ledgerConfig.getDataDirectoryPath().resolve("transactions.gl"))).get();
 
+        // For safety.
+        Thread.sleep(TRANSACTION_ID_REQUIRED_BACKOFF_MS + 1000);
         return new WALBasedLedger(executor, processor, lz4, transactionsFile);
     }
 
