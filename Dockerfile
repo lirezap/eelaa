@@ -2,6 +2,7 @@ FROM ghcr.io/graalvm/jdk-community:26
 
 RUN microdnf install dnf && \
     dnf install -y lz4 lz4-devel && \
+    dnf install -y lmdb lmdb-devel && \
     dnf clean all
 
 RUN mkdir /opt/app
