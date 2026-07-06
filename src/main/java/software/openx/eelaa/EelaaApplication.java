@@ -44,16 +44,21 @@ public final class EelaaApplication implements AutoCloseable {
         this.tcpServer = tcpServer;
     }
 
-    public static void main(final String... args) throws Exception {
+    public static void main(final String... args) {
         logger.info("Starting eelaa version: {}", EelaaApplication.class.getPackage().getImplementationVersion());
 
-        final var config = new Configuration();
-        final var lz4 = lz4(config);
-        final var ledger = ledger(config, lz4);
-        final var tcpServer = tcpServer(config, lz4, ledger);
-        addShutdownHook(new EelaaApplication(lz4, ledger, tcpServer));
+        try {
+            final var config = new Configuration();
+            final var lz4 = lz4(config);
+            final var ledger = ledger(config, lz4);
+            final var tcpServer = tcpServer(config, lz4, ledger);
+            addShutdownHook(new EelaaApplication(lz4, ledger, tcpServer));
 
-        tcpServer.start();
+            tcpServer.start();
+        } catch (final Exception ex) {
+            logger.error("{}", ex.getMessage(), ex);
+            System.exit(-1);
+        }
     }
 
     private static LZ4 lz4(final Configuration config) {
