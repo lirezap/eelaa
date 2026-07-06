@@ -51,9 +51,9 @@ public final class EelaaApplication implements AutoCloseable {
         final var lz4 = lz4(config);
         final var ledger = ledger(config, lz4);
         final var tcpServer = tcpServer(config, lz4, ledger);
+        addShutdownHook(new EelaaApplication(lz4, ledger, tcpServer));
 
         tcpServer.start();
-        addShutdownHook(new EelaaApplication(lz4, ledger, tcpServer));
     }
 
     private static LZ4 lz4(final Configuration config) {
