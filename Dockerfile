@@ -1,13 +1,19 @@
-FROM ghcr.io/graalvm/jdk-community:26
+FROM eclipse-temurin:26-jre
 
-RUN microdnf install dnf && \
-    dnf install -y lz4 lz4-devel && \
-    dnf install -y lmdb lmdb-devel && \
-    dnf clean all
+# Install only the runtime libraries required by the application
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends liblmdb0 liblz4-1 \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir /opt/app
+# Create a non-root user
+RUN groupadd --system app \
+    && useradd --system --gid app --create-home --home-dir /opt/app app
+
 WORKDIR /opt/app
+COPY --chown=app:app target/eelaa-*.jar app.jar
 
-COPY target/eelaa-*.jar eelaa.jar
+USER app
 
-CMD ["java", "-jar", "-Xmx8g", "-XX:+UseCompactObjectHeaders", "eelaa.jar"]
+EXPOSE 7178
+ENTRYPOINT ["java"]
+CMD ["-XX:+ExitOnOutOfMemoryError", "-Xms512m", "-Xmx8g", "-XX:+UseCompactObjectHeaders", "-jar","app.jar"]
