@@ -71,10 +71,10 @@ You are now ready to import the project into your IDE to test/develop further.
 
 ### Dockerize Project
 
-To dockerize the project you need Docker Engine (Docker Desktop); See https://www.docker.com to follow the installation
-instructions.
+To dockerize the project you need docker engine or docker desktop to be installed; See https://www.docker.com to follow
+the installation instructions.
 
-Then after run:
+Then after, run:
 
 ```./scripts/dockerize.sh```
 

@@ -11,9 +11,9 @@ RUN groupadd --system app \
 
 WORKDIR /opt/app
 COPY --chown=app:app target/eelaa-*.jar app.jar
-
 USER app
 
 EXPOSE 7178
+
 ENTRYPOINT ["java"]
 CMD ["-XX:+ExitOnOutOfMemoryError", "-Xms512m", "-Xmx8g", "-XX:+UseCompactObjectHeaders", "-jar","app.jar"]
