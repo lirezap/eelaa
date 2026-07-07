@@ -66,3 +66,16 @@ At final step run:
 ```
 
 You are now ready to import the project into your IDE to test/develop further.
+
+---
+
+### Dockerize Project
+
+To dockerize the project you need Docker Engine (Docker Desktop); See https://www.docker.com to follow the installation
+instructions.
+
+Then after run:
+
+```./scripts/dockerize.sh```
+
+The Dockerfile also includes installation steps for both required native libraries.
