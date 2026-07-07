@@ -113,8 +113,9 @@ public final class AtomicFile implements AutoCloseable {
         try (final var movedFile = openReadWrite(movePath)) {
             var bufferBytesWritten = 0;
             while (buffer.hasRemaining()) {
-                bufferBytesWritten =
-                        Math.addExact(bufferBytesWritten, movedFile.write(buffer, Math.addExact(position, bufferBytesWritten)));
+                bufferBytesWritten = Math.addExact(
+                        bufferBytesWritten,
+                        movedFile.write(buffer, Math.addExact(position, bufferBytesWritten)));
             }
 
             incrementDurabilitySize(bufferBytesWritten);

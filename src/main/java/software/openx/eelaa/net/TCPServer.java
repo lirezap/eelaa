@@ -62,9 +62,15 @@ public final class TCPServer implements AutoCloseable {
             ResourceLeakDetector.setLevel(Level.DISABLED);
         }
 
-        nativeServerBootstrap.configure();
-        nativeServerBootstrap.childHandler(new ClientSocketChannelInitializer(config, tlsContext(), cpuHeavyTaskExecutor, lz4, ledger));
-        nativeServerBootstrap.bind(config.getHost(), config.getPort()).sync();
+        nativeServerBootstrap
+                .configure();
+
+        nativeServerBootstrap
+                .childHandler(new ClientSocketChannelInitializer(config, tlsContext(), cpuHeavyTaskExecutor, lz4, ledger));
+
+        nativeServerBootstrap
+                .bind(config.getHost(), config.getPort()).sync();
+
         logger.info("Started TCP server using configuration: {}", config);
     }
 

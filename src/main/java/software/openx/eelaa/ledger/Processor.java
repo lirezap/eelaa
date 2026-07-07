@@ -95,11 +95,11 @@ final class Processor {
                 final var destinationWallet = putAndGetDestinationAccountWallet(destinationAccountWallets, transaction);
 
                 if (isAllowedTransaction(sourceWallet, destinationWallet, transaction)) {
-                    final var accumulation = sourceWallet.get_thisTurnAccumulatedOverdraft() + transaction.getAmount();
-                    if (isSafeToAdd(sourceWallet.get_thisTurnAccumulatedOverdraft(), transaction.getAmount(), accumulation)) {
+                    final var total = sourceWallet.get_thisTurnAccumulatedOverdraft() + transaction.getAmount();
+                    if (isSafeToAdd(sourceWallet.get_thisTurnAccumulatedOverdraft(), transaction.getAmount(), total)) {
                         // Update cache here, because we will do the transaction in later time.
                         succeededTransactionsCache.put(transaction, transaction);
-                        sourceWallet.set_thisTurnAccumulatedOverdraft(accumulation);
+                        sourceWallet.set_thisTurnAccumulatedOverdraft(total);
                         transaction.set_sourceWallet(sourceWallet);
                         transaction.set_destinationWallet(destinationWallet);
                     } else {
