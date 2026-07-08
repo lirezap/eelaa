@@ -393,6 +393,7 @@ public final class LMDBManager implements AutoCloseable {
     public void close() throws Exception {
         try {
             JITFriendlyLMDB.mdbEnvClose(env);
+            JITFriendlyLMDB.close();
             arena.close();
         } catch (final Throwable cause) {
             throw new Exception(cause);
