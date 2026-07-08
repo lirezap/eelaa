@@ -39,17 +39,15 @@ public final class LMDBManager implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(LMDBManager.class);
 
     private final Arena arena;
-    private final LMDB lmdb;
     private final MemorySegment env;
 
-    private LMDBManager(final Arena arena, final LMDB lmdb, final MemorySegment env) {
+    private LMDBManager(final Arena arena, final MemorySegment env) {
         this.arena = arena;
-        this.lmdb = lmdb;
         this.env = env;
     }
 
-    public static LMDBManager newInstance(final Path lmdbLibraryPath, final Path dataDirectoryPath, final long mapSize,
-                                          final int maxDbs, final int openFlags, final int openMode) {
+    public static LMDBManager newInstance(final Path dataDirectoryPath, final long mapSize, final int maxDbs,
+                                          final int openFlags, final int openMode) {
 
         final var arena = Arena.ofConfined();
         try {
@@ -57,38 +55,37 @@ public final class LMDBManager implements AutoCloseable {
                 throw new RuntimeException("invalid data directory path!");
             }
 
-            final var lmdb = LMDB.newInstance(new LMDBConfig.Builder(lmdbLibraryPath).arena(arena).build());
-            logger.info("Using LMDB version: {}", lmdb.mdbVersion());
+            logger.info("Using LMDB version: {}", JITFriendlyLMDB.mdbVersion());
 
             final var envPtr = arena.allocate(ADDRESS);
-            var error = lmdb.mdbEnvCreate(envPtr);
+            var error = JITFriendlyLMDB.mdbEnvCreate(envPtr);
             if (error != 0) {
                 throw new RuntimeException(String.format("LMDB env creation failed with error code: %s", error));
             }
 
             final var env = envPtr.get(ADDRESS, 0);
-            error = lmdb.mdbEnvSetMapSize(env, mapSize);
+            error = JITFriendlyLMDB.mdbEnvSetMapSize(env, mapSize);
             if (error != 0) {
-                lmdb.mdbEnvClose(env);
+                JITFriendlyLMDB.mdbEnvClose(env);
                 throw new RuntimeException(String.format("LMDB set map size failed with error code: %s", error));
             }
 
-            error = lmdb.mdbEnvSetMaxDbs(env, maxDbs);
+            error = JITFriendlyLMDB.mdbEnvSetMaxDbs(env, maxDbs);
             if (error != 0) {
-                lmdb.mdbEnvClose(env);
+                JITFriendlyLMDB.mdbEnvClose(env);
                 throw new RuntimeException(String.format("LMDB set max dbs failed with error code: %s", error));
             }
 
             try (final var shortLivedMemory = Arena.ofConfined()) {
                 final var path = shortLivedMemory.allocateFrom(dataDirectoryPath.toString());
-                error = lmdb.mdbEnvOpen(env, path, openFlags, openMode);
+                error = JITFriendlyLMDB.mdbEnvOpen(env, path, openFlags, openMode);
                 if (error != 0) {
-                    lmdb.mdbEnvClose(env);
+                    JITFriendlyLMDB.mdbEnvClose(env);
                     throw new RuntimeException(String.format("LMDB env open failed with error code: %s", error));
                 }
             }
 
-            return new LMDBManager(arena, lmdb, env);
+            return new LMDBManager(arena, env);
         } catch (final Throwable cause) {
             arena.close();
             throw new RuntimeException(cause);
@@ -98,7 +95,7 @@ public final class LMDBManager implements AutoCloseable {
     public MemorySegment newTxn(final Arena arena, final MemorySegment parent, final int flags) {
         try {
             final var txnPtr = arena.allocate(ADDRESS);
-            final var error = lmdb.mdbTxnBegin(env, parent, flags, txnPtr);
+            final var error = JITFriendlyLMDB.mdbTxnBegin(env, parent, flags, txnPtr);
             if (error != 0) {
                 throw new RuntimeException(String.format("LMDB txn begin failed with error code: %s", error));
             }
@@ -111,7 +108,7 @@ public final class LMDBManager implements AutoCloseable {
 
     public void commitTxn(final MemorySegment txn) {
         try {
-            final var error = lmdb.mdbTxnCommit(txn);
+            final var error = JITFriendlyLMDB.mdbTxnCommit(txn);
             if (error != 0) {
                 throw new RuntimeException(String.format("LMDB txn commit failed with error code: %s", error));
             }
@@ -122,7 +119,7 @@ public final class LMDBManager implements AutoCloseable {
 
     public void abortTxn(final MemorySegment txn) {
         try {
-            lmdb.mdbTxnAbort(txn);
+            JITFriendlyLMDB.mdbTxnAbort(txn);
         } catch (final Throwable cause) {
             throw new RuntimeException(cause);
         }
@@ -133,7 +130,7 @@ public final class LMDBManager implements AutoCloseable {
             try (final var arena = Arena.ofConfined()) {
                 final var txn = newTxn(arena, NULL, 0);
                 final var dbi = arena.allocate(ADDRESS);
-                final var error = lmdb.mdbDbiOpen(txn, arena.allocateFrom(dbName), MDB_CREATE, dbi);
+                final var error = JITFriendlyLMDB.mdbDbiOpen(txn, arena.allocateFrom(dbName), MDB_CREATE, dbi);
                 if (error != 0) {
                     abortTxn(txn);
                     throw new RuntimeException(String.format("LMDB dbi open failed with error code: %s", error));
@@ -152,7 +149,7 @@ public final class LMDBManager implements AutoCloseable {
             try (final var arena = Arena.ofConfined()) {
                 final var txn = newTxn(arena, NULL, 0);
                 final var dbi = arena.allocate(ADDRESS);
-                final var error = lmdb.mdbDbiOpen(txn, arena.allocateFrom(dbName), flags, dbi);
+                final var error = JITFriendlyLMDB.mdbDbiOpen(txn, arena.allocateFrom(dbName), flags, dbi);
                 if (error != 0) {
                     abortTxn(txn);
                     throw new RuntimeException(String.format("LMDB dbi open failed with error code: %s", error));
@@ -170,7 +167,7 @@ public final class LMDBManager implements AutoCloseable {
         try {
             try (final var arena = Arena.ofConfined()) {
                 final var txn = newTxn(arena, NULL, 0);
-                final var error = lmdb.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), MDB_NOOVERWRITE);
+                final var error = JITFriendlyLMDB.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), MDB_NOOVERWRITE);
                 if (error == 0) {
                     commitTxn(txn);
                     return true;
@@ -192,7 +189,7 @@ public final class LMDBManager implements AutoCloseable {
     public boolean put(final MemorySegment txn, final int dbi, final MemorySegment key, final MemorySegment value) {
         try {
             try (final var arena = Arena.ofConfined()) {
-                final var error = lmdb.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), MDB_NOOVERWRITE);
+                final var error = JITFriendlyLMDB.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), MDB_NOOVERWRITE);
                 if (error == 0) {
                     return true;
                 }
@@ -212,7 +209,7 @@ public final class LMDBManager implements AutoCloseable {
         try {
             try (final var arena = Arena.ofConfined()) {
                 final var txn = newTxn(arena, NULL, 0);
-                final var error = lmdb.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), 0);
+                final var error = JITFriendlyLMDB.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), 0);
                 if (error == 0) {
                     commitTxn(txn);
                     return;
@@ -229,7 +226,7 @@ public final class LMDBManager implements AutoCloseable {
     public void putOrReplace(final MemorySegment txn, final int dbi, final MemorySegment key, final MemorySegment value) {
         try {
             try (final var arena = Arena.ofConfined()) {
-                final var error = lmdb.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), 0);
+                final var error = JITFriendlyLMDB.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), 0);
                 if (error == 0) {
                     return;
                 }
@@ -245,7 +242,7 @@ public final class LMDBManager implements AutoCloseable {
         try {
             try (final var arena = Arena.ofConfined()) {
                 final var error =
-                        lmdb.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), MDB_APPEND | MDB_NOOVERWRITE);
+                        JITFriendlyLMDB.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), MDB_APPEND | MDB_NOOVERWRITE);
 
                 if (error == 0) {
                     return;
@@ -263,7 +260,7 @@ public final class LMDBManager implements AutoCloseable {
             try (final var arena = Arena.ofConfined()) {
                 final var txn = newTxn(arena, NULL, MDB_RDONLY);
                 final var lmdbVal = arena.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
-                final var error = lmdb.mdbGet(txn, dbi, asLMDBVal(arena, key), lmdbVal);
+                final var error = JITFriendlyLMDB.mdbGet(txn, dbi, asLMDBVal(arena, key), lmdbVal);
                 if (error == 0) {
                     final var size = lmdbVal.get(JAVA_LONG, 0);
                     final var value = valueArena.allocate(size);
@@ -290,7 +287,7 @@ public final class LMDBManager implements AutoCloseable {
         try {
             try (final var arena = Arena.ofConfined()) {
                 final var lmdbVal = arena.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
-                final var error = lmdb.mdbGet(txn, dbi, asLMDBVal(arena, key), lmdbVal);
+                final var error = JITFriendlyLMDB.mdbGet(txn, dbi, asLMDBVal(arena, key), lmdbVal);
                 if (error == 0) {
                     final var size = lmdbVal.get(JAVA_LONG, 0);
                     final var value = valueArena.allocate(size);
@@ -312,7 +309,7 @@ public final class LMDBManager implements AutoCloseable {
     public MemorySegment newCursor(final MemorySegment txn, final int dbi, final Arena arena) {
         try {
             final var cursorPtr = arena.allocate(ADDRESS);
-            final var error = lmdb.mdbCursorOpen(txn, dbi, cursorPtr);
+            final var error = JITFriendlyLMDB.mdbCursorOpen(txn, dbi, cursorPtr);
             if (error != 0) {
                 throw new RuntimeException(String.format("LMDB cursor open failed with error code: %s", error));
             }
@@ -325,7 +322,7 @@ public final class LMDBManager implements AutoCloseable {
 
     public void closeCursor(final MemorySegment cursor) {
         try {
-            lmdb.mdbCursorClose(cursor);
+            JITFriendlyLMDB.mdbCursorClose(cursor);
         } catch (final Throwable cause) {
             throw new RuntimeException(cause);
         }
@@ -337,7 +334,7 @@ public final class LMDBManager implements AutoCloseable {
                 final var keyVal = arena.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
                 final var dataVal = arena.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
 
-                final var error = lmdb.mdbCursorGet(cursor, keyVal, dataVal, MDB_NEXT);
+                final var error = JITFriendlyLMDB.mdbCursorGet(cursor, keyVal, dataVal, MDB_NEXT);
                 if (error == 0) {
                     final var size = dataVal.get(JAVA_LONG, 0);
                     final var value = valueArena.allocate(size);
@@ -363,7 +360,7 @@ public final class LMDBManager implements AutoCloseable {
                 final var keyVal = arena.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
                 final var dataVal = arena.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
 
-                final var error = lmdb.mdbCursorGet(cursor, keyVal, dataVal, MDB_LAST);
+                final var error = JITFriendlyLMDB.mdbCursorGet(cursor, keyVal, dataVal, MDB_LAST);
                 if (error == 0) {
                     final var size = keyVal.get(JAVA_LONG, 0);
                     final var key = arena.allocate(size);
@@ -395,7 +392,7 @@ public final class LMDBManager implements AutoCloseable {
     @Override
     public void close() throws Exception {
         try {
-            lmdb.mdbEnvClose(env);
+            JITFriendlyLMDB.mdbEnvClose(env);
             arena.close();
         } catch (final Throwable cause) {
             throw new Exception(cause);

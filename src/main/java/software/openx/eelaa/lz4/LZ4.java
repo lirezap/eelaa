@@ -100,7 +100,7 @@ public final class LZ4 implements AutoCloseable {
      *
      * @author Alireza Pourtaghi
      */
-    private enum FUNCTION {
+    public enum FUNCTION {
         LZ4_versionNumber(FunctionDescriptor.of(JAVA_INT)),
         LZ4_versionString(FunctionDescriptor.of(ADDRESS)),
         LZ4_compressBound(FunctionDescriptor.of(JAVA_INT, JAVA_INT)),

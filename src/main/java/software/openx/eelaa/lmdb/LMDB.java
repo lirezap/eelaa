@@ -45,14 +45,14 @@ public final class LMDB implements AutoCloseable {
     private final MethodHandle mdbCursorCloseHandle;
     private final MethodHandle mdbCursorGetHandle;
 
-    public LMDB(final Arena arena, final MethodHandle mdbVersionHandle, final MethodHandle mdbEnvCreateHandle,
-                final MethodHandle mdbEnvCloseHandle, final MethodHandle mdbEnvSetMapSizeHandle,
-                final MethodHandle mdbEnvSetMaxDbsHandle, final MethodHandle mdbEnvOpenHandle,
-                final MethodHandle mdbTxnBeginHandle, final MethodHandle mdbTxnCommitHandle,
-                final MethodHandle mdbTxnAbortHandle, final MethodHandle mdbDbiOpenHandle,
-                final MethodHandle mdbGetHandle, final MethodHandle mdbPutHandle,
-                final MethodHandle mdbCursorOpenHandle, final MethodHandle mdbCursorCloseHandle,
-                final MethodHandle mdbCursorGetHandle) {
+    private LMDB(final Arena arena, final MethodHandle mdbVersionHandle, final MethodHandle mdbEnvCreateHandle,
+                 final MethodHandle mdbEnvCloseHandle, final MethodHandle mdbEnvSetMapSizeHandle,
+                 final MethodHandle mdbEnvSetMaxDbsHandle, final MethodHandle mdbEnvOpenHandle,
+                 final MethodHandle mdbTxnBeginHandle, final MethodHandle mdbTxnCommitHandle,
+                 final MethodHandle mdbTxnAbortHandle, final MethodHandle mdbDbiOpenHandle,
+                 final MethodHandle mdbGetHandle, final MethodHandle mdbPutHandle,
+                 final MethodHandle mdbCursorOpenHandle, final MethodHandle mdbCursorCloseHandle,
+                 final MethodHandle mdbCursorGetHandle) {
 
         this.arena = arena;
         this.mdbVersionHandle = mdbVersionHandle;
@@ -183,7 +183,7 @@ public final class LMDB implements AutoCloseable {
      *
      * @author Alireza Pourtaghi
      */
-    private enum FUNCTION {
+    public enum FUNCTION {
         mdb_version(FunctionDescriptor.of(ADDRESS, ADDRESS, ADDRESS, ADDRESS)),
         mdb_env_create(FunctionDescriptor.of(JAVA_INT, ADDRESS)),
         mdb_env_close(FunctionDescriptor.ofVoid(ADDRESS)),

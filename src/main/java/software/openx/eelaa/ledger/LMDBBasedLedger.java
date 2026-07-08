@@ -66,7 +66,6 @@ final class LMDBBasedLedger extends Ledger {
         final var executor = new ThreadPoolExecutor(1, 1, 0L, SECONDS, queue);
         final var processor = Processor.newInstance(ledgerConfig);
         final var lmdbManager = executor.submit(() -> LMDBManager.newInstance(
-                lmdbLibraryPath,
                 ledgerConfig.getDataDirectoryPath(),
                 Math.max(1, databaseSizeGbs) * 1073741824L,
                 4,
