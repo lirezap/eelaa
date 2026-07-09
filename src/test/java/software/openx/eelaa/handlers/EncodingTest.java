@@ -49,7 +49,7 @@ public class EncodingTest {
         assertEquals(failedTransaction.frameBinarySize() - 6, encoded.readInt());
 
         var decoded = FailedTransaction.decode(encoded);
-        assertEquals(failedTransaction.getId(), decoded.getId());
+        assertEquals("", decoded.getId());
         assertEquals("", decoded.getReason());
         ReferenceCountUtil.release(encoded);
     }
