@@ -56,7 +56,7 @@ export LIBRARIES_NATIVE_LZ4_PATH="/opt/homebrew/Cellar/lz4/1.10.0/lib/liblz4.dyl
 ```
 
 ```bash
-export LIBRARIES_NATIVE_LZ4_PATH="/opt/homebrew/Cellar/lmdb/0.9.35/lib/liblmdb.dylib"
+export LIBRARIES_NATIVE_LMDB_PATH="/opt/homebrew/Cellar/lmdb/0.9.35/lib/liblmdb.dylib"
 ```
 
 At final step run:
