@@ -14,6 +14,8 @@ second. It can be used as a GL module of a core banking platform or as a wallet-
 - Automatic recovery mechanism
 - Source-destination accounting
 - Real-time balances
+- Idempotent services
+- Replay attack protection
 - TLS v1.3
 
 **Engineered around the best practices of designing high performance systems, like:**
