@@ -31,12 +31,12 @@ import static com.typesafe.config.ConfigFactory.load;
  *
  * @author Alireza Pourtaghi
  */
-public final class Configuration {
+final class Configuration {
     private static final Logger logger = LoggerFactory.getLogger(Configuration.class);
 
     private final Config config;
 
-    Configuration() {
+    public Configuration() {
         // Loads the following (first-listed are higher priority)
         // system properties
         // application.conf (all resources on classpath with this name)

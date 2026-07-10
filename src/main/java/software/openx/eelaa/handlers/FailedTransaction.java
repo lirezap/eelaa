@@ -24,11 +24,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * @author Alireza Pourtaghi
  */
-public final class FailedTransaction {
+final class FailedTransaction {
     private final String id;
     private final String reason;
 
-    FailedTransaction(final String id, final String reason) {
+    public FailedTransaction(final String id, final String reason) {
         this.id = id == null ? "" : id;
         this.reason = reason == null ? "" : reason;
     }

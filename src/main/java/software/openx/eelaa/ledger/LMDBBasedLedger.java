@@ -47,7 +47,7 @@ final class LMDBBasedLedger extends Ledger {
     private final int walletsDbi;
     private final int ledgersDbi;
 
-    public LMDBBasedLedger(final ExecutorService executor, final Processor processor, final LZ4 lz4,
+    private LMDBBasedLedger(final ExecutorService executor, final Processor processor, final LZ4 lz4,
                            final LMDBManager lmdbManager, final int transactionsDbi, final int walletsDbi,
                            final int ledgersDbi) {
 
