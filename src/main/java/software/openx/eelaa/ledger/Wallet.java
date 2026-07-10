@@ -58,22 +58,6 @@ public final class Wallet {
         return Math.addExact(6, binarySize());
     }
 
-    public MemorySegment encodeV1(final Arena arena) {
-        final var binarySize = binarySize();
-        final var memory = arena.allocate(6 + binarySize);
-
-        var position = putByteLE(memory, 0, (byte) 0b00000001);
-        position = putByteLE(memory, position, (byte) 0b00000000);
-        position = putIntLE(memory, position, binarySize);
-        position = putIntLE(memory, position, getLedger());
-        position = putLongLE(memory, position, getAccount());
-        position = putIntLE(memory, position, getWallet());
-        position = putString(memory, position, getCurrency());
-        putLongLE(memory, position, getBalance());
-
-        return memory;
-    }
-
     public ByteBuf encodeV1(final ByteBufAllocator allocator) {
         final var binarySize = binarySize();
         final var buffer = allocator.buffer(Math.addExact(6, binarySize));
@@ -98,6 +82,22 @@ public final class Wallet {
                 buf.readInt(),
                 StringUtil.readNullTerminatedUTF8String(buf),
                 buf.readLong());
+    }
+
+    public MemorySegment encodeV1(final Arena arena) {
+        final var binarySize = binarySize();
+        final var memory = arena.allocate(6 + binarySize);
+
+        var position = putByteLE(memory, 0, (byte) 0b00000001);
+        position = putByteLE(memory, position, (byte) 0b00000000);
+        position = putIntLE(memory, position, binarySize);
+        position = putIntLE(memory, position, getLedger());
+        position = putLongLE(memory, position, getAccount());
+        position = putIntLE(memory, position, getWallet());
+        position = putString(memory, position, getCurrency());
+        putLongLE(memory, position, getBalance());
+
+        return memory;
     }
 
     public static Wallet decode(final MemorySegment memory) {

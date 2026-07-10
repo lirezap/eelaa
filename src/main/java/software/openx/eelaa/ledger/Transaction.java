@@ -110,30 +110,6 @@ public final class Transaction {
         return Math.addExact(6, binarySize());
     }
 
-    public MemorySegment encodeV1(final Arena arena) {
-        final var binarySize = binarySize();
-        final var memory = arena.allocate(6 + binarySize);
-
-        var position = putByteLE(memory, 0, (byte) 0b00000001);
-        position = putByteLE(memory, position, (byte) 0b00000000);
-        position = putIntLE(memory, position, binarySize);
-        position = putIntLE(memory, position, getLedger());
-        position = putLongLE(memory, position, getSourceAccount());
-        position = putIntLE(memory, position, getSourceWallet());
-        position = putLongLE(memory, position, getDestinationAccount());
-        position = putIntLE(memory, position, getDestinationWallet());
-        position = putString(memory, position, getId());
-        position = putString(memory, position, getCurrency());
-        position = putLongLE(memory, position, getAmount());
-        position = putLongLE(memory, position, getMaxOverdraftAmount());
-        position = putString(memory, position, getMetadata());
-        position = putLongLE(memory, position, getSourceWalletNewBalance());
-        position = putLongLE(memory, position, getDestinationWalletNewBalance());
-        putLongLE(memory, position, getTs());
-
-        return memory;
-    }
-
     public ByteBuf encodeV1(final ByteBufAllocator allocator) {
         final var binarySize = binarySize();
         final var buffer = allocator.buffer(Math.addExact(6, binarySize));
@@ -176,6 +152,30 @@ public final class Transaction {
                 buf.readLong(),
                 buf.readLong(),
                 buf.readLong());
+    }
+
+    public MemorySegment encodeV1(final Arena arena) {
+        final var binarySize = binarySize();
+        final var memory = arena.allocate(6 + binarySize);
+
+        var position = putByteLE(memory, 0, (byte) 0b00000001);
+        position = putByteLE(memory, position, (byte) 0b00000000);
+        position = putIntLE(memory, position, binarySize);
+        position = putIntLE(memory, position, getLedger());
+        position = putLongLE(memory, position, getSourceAccount());
+        position = putIntLE(memory, position, getSourceWallet());
+        position = putLongLE(memory, position, getDestinationAccount());
+        position = putIntLE(memory, position, getDestinationWallet());
+        position = putString(memory, position, getId());
+        position = putString(memory, position, getCurrency());
+        position = putLongLE(memory, position, getAmount());
+        position = putLongLE(memory, position, getMaxOverdraftAmount());
+        position = putString(memory, position, getMetadata());
+        position = putLongLE(memory, position, getSourceWalletNewBalance());
+        position = putLongLE(memory, position, getDestinationWalletNewBalance());
+        putLongLE(memory, position, getTs());
+
+        return memory;
     }
 
     public static Transaction decode(final MemorySegment memory) {
