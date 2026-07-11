@@ -24,6 +24,7 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.timeout.IdleStateHandler;
 import software.openx.eelaa.ledger.Ledger;
 import software.openx.eelaa.lz4.LZ4;
+import software.openx.eelaa.net.http.HTTPRouter;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -70,7 +71,7 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
             addHttpContentDecompressor(channel);
             addHttpServerExpectContinueHandler(channel);
             addHttpObjectAggregator(channel);
-            // TODO: Add HTTP handler here.
+            addHttpRouter(channel);
             addHttpContentCompressor(channel);
         } else {
             addFrameDecoder(channel);
@@ -137,6 +138,10 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
 
     private void addHttpObjectAggregator(final SocketChannel channel) {
         channel.pipeline().addLast(new HttpObjectAggregator(config.getHttpServerConfig().getMaxContentLength()));
+    }
+
+    private void addHttpRouter(final SocketChannel channel) {
+        channel.pipeline().addLast(new HTTPRouter());
     }
 
     private void addHttpContentCompressor(final SocketChannel channel) {
