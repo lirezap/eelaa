@@ -19,8 +19,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.ReferenceCountUtil;
-import software.openx.eelaa.handlers.*;
 import software.openx.eelaa.ledger.Ledger;
+import software.openx.eelaa.net.handlers.*;
 
 /**
  * Dispatcher implementation that selects appropriate handler for incoming frame.
