@@ -19,6 +19,8 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.compression.StandardCompressionOptions;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.timeout.IdleStateHandler;
 import software.openx.eelaa.ledger.Ledger;
 import software.openx.eelaa.lz4.LZ4;
@@ -62,10 +64,21 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
         addTLSHandler(channel);              // Must be the first inbound handler.
         addIdleStateHandler(channel);
         addHeartbeatHandler(channel);
-        addFrameDecoder(channel);
-        addFrameHeaderLogger(channel);
-        addFrameHeaderProcessor(channel);
-        addDispatcher(channel);
+
+        if (config.getHttpServerConfig().isEnabled()) {
+            addHttpServerCodec(channel);
+            addHttpContentDecompressor(channel);
+            addHttpServerExpectContinueHandler(channel);
+            addHttpObjectAggregator(channel);
+            // TODO: Add HTTP handler here.
+            addHttpContentCompressor(channel);
+        } else {
+            addFrameDecoder(channel);
+            addFrameHeaderLogger(channel);
+            addFrameHeaderProcessor(channel);
+            addDispatcher(channel);
+        }
+
         addInboundExceptionHandler(channel); // Must be the last inbound handler.
     }
 
@@ -105,5 +118,42 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
 
     private void addInboundExceptionHandler(final SocketChannel channel) {
         channel.pipeline().addLast(inboundExceptionHandler);
+    }
+
+    private void addHttpServerCodec(final SocketChannel channel) {
+        channel.pipeline().addLast(new HttpServerCodec(
+                config.getHttpServerConfig().getMaxInitialLineLength(),
+                config.getHttpServerConfig().getMaxHeaderSize(),
+                config.getHttpServerConfig().getMaxChunkSize()));
+    }
+
+    private void addHttpContentDecompressor(final SocketChannel channel) {
+        channel.pipeline().addLast(new HttpContentDecompressor(0));
+    }
+
+    private void addHttpServerExpectContinueHandler(final SocketChannel channel) {
+        channel.pipeline().addLast(new HttpServerExpectContinueHandler());
+    }
+
+    private void addHttpObjectAggregator(final SocketChannel channel) {
+        channel.pipeline().addLast(new HttpObjectAggregator(config.getHttpServerConfig().getMaxContentLength()));
+    }
+
+    private void addHttpContentCompressor(final SocketChannel channel) {
+        final var contentSizeThreshold =
+                config.getHttpServerConfig().getHttpServerCompressionConfig().getContentSizeThreshold();
+
+        final var compressionLevel =
+                config.getHttpServerConfig().getHttpServerCompressionConfig().getCompressionLevel();
+
+        final var windowBits =
+                config.getHttpServerConfig().getHttpServerCompressionConfig().getWindowBits();
+
+        final var memLevel =
+                config.getHttpServerConfig().getHttpServerCompressionConfig().getMemLevel();
+
+        channel.pipeline().addLast(new HttpContentCompressor(
+                contentSizeThreshold,
+                StandardCompressionOptions.gzip(compressionLevel, windowBits, memLevel)));
     }
 }

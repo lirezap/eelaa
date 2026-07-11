@@ -125,6 +125,14 @@
             <scope>compile</scope>
         </dependency>
 
+        <!-- Source: https://mvnrepository.com/artifact/io.netty/netty-codec-http -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-codec-http</artifactId>
+            <version>${netty.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
         <!-- Source: https://mvnrepository.com/artifact/org.agrona/agrona -->
         <dependency>
             <groupId>org.agrona</groupId>

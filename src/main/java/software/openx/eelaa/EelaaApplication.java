@@ -25,6 +25,8 @@ import software.openx.eelaa.net.CPUHeavyTaskExecutorConfig;
 import software.openx.eelaa.net.TCPServer;
 import software.openx.eelaa.net.TCPServerConfig;
 import software.openx.eelaa.net.TLSContextConfig;
+import software.openx.eelaa.net.http.HTTPServerCompressionConfig;
+import software.openx.eelaa.net.http.HTTPServerConfig;
 
 /**
  * Main application class to be executed.
@@ -98,6 +100,22 @@ public final class EelaaApplication implements AutoCloseable {
                 .shutdownWaitTimeSeconds(config.loadInt("servers.tcp.cpuHeavyTaskExecutorConfig.shutdownWaitTimeSeconds"))
                 .build();
 
+        final var httpServerCompressionConfig = new HTTPServerCompressionConfig.Builder()
+                .contentSizeThreshold(config.loadInt("servers.tcp.httpServerConfig.httpServerCompressionConfig.contentSizeThreshold"))
+                .compressionLevel(config.loadInt("servers.tcp.httpServerConfig.httpServerCompressionConfig.compressionLevel"))
+                .windowBits(config.loadInt("servers.tcp.httpServerConfig.httpServerCompressionConfig.windowBits"))
+                .memLevel(config.loadInt("servers.tcp.httpServerConfig.httpServerCompressionConfig.memLevel"))
+                .build();
+
+        final var httpServerConfig = new HTTPServerConfig.Builder()
+                .enabled(config.loadBoolean("servers.tcp.httpServerConfig.enabled"))
+                .maxInitialLineLength(config.loadInt("servers.tcp.httpServerConfig.maxInitialLineLength"))
+                .maxHeaderSize(config.loadInt("servers.tcp.httpServerConfig.maxHeaderSize"))
+                .maxChunkSize(config.loadInt("servers.tcp.httpServerConfig.maxChunkSize"))
+                .maxContentLength(config.loadInt("servers.tcp.httpServerConfig.maxContentLength"))
+                .httpServerCompressionConfig(httpServerCompressionConfig)
+                .build();
+
         final var tcpServerConfig = new TCPServerConfig.Builder()
                 .host(config.loadString("servers.tcp.host"))
                 .port(config.loadInt("servers.tcp.port"))
@@ -113,6 +131,7 @@ public final class EelaaApplication implements AutoCloseable {
                 .shutdownQuietPeriodSeconds(config.loadInt("servers.tcp.shutdownQuietPeriodSeconds"))
                 .shutdownWaitTimeSeconds(config.loadInt("servers.tcp.shutdownWaitTimeSeconds"))
                 .detectResourceLeak(config.loadBoolean("servers.tcp.detectResourceLeak"))
+                .httpServerConfig(httpServerConfig)
                 .build();
 
         return TCPServer.newInstance(tcpServerConfig, lz4, ledger);

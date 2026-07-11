@@ -15,6 +15,8 @@
  */
 package software.openx.eelaa.net;
 
+import software.openx.eelaa.net.http.HTTPServerConfig;
+
 /**
  * TCP server configuration fields.
  *
@@ -35,6 +37,7 @@ public final class TCPServerConfig {
     private final int shutdownQuietPeriodSeconds;
     private final int shutdownWaitTimeSeconds;
     private final boolean detectResourceLeak;
+    private final HTTPServerConfig httpServerConfig;
 
     private TCPServerConfig(final Builder builder) {
         this.host = builder.host;
@@ -51,6 +54,7 @@ public final class TCPServerConfig {
         this.shutdownQuietPeriodSeconds = builder.shutdownQuietPeriodSeconds;
         this.shutdownWaitTimeSeconds = builder.shutdownWaitTimeSeconds;
         this.detectResourceLeak = builder.detectResourceLeak;
+        this.httpServerConfig = builder.httpServerConfig;
     }
 
     public String getHost() {
@@ -109,6 +113,10 @@ public final class TCPServerConfig {
         return detectResourceLeak;
     }
 
+    public HTTPServerConfig getHttpServerConfig() {
+        return httpServerConfig;
+    }
+
     @Override
     public String toString() {
         return "TCPServerConfig{" +
@@ -126,6 +134,7 @@ public final class TCPServerConfig {
                 ", shutdownQuietPeriodSeconds=" + shutdownQuietPeriodSeconds +
                 ", shutdownWaitTimeSeconds=" + shutdownWaitTimeSeconds +
                 ", detectResourceLeak=" + detectResourceLeak +
+                ", httpServerConfig=" + httpServerConfig +
                 '}';
     }
 
@@ -149,6 +158,7 @@ public final class TCPServerConfig {
         private int shutdownQuietPeriodSeconds = 1;
         private int shutdownWaitTimeSeconds = 30;
         private boolean detectResourceLeak = false;
+        private HTTPServerConfig httpServerConfig = new HTTPServerConfig.Builder().build();
 
         public Builder() {
         }
@@ -220,6 +230,11 @@ public final class TCPServerConfig {
 
         public Builder detectResourceLeak(final boolean detectResourceLeak) {
             this.detectResourceLeak = detectResourceLeak;
+            return this;
+        }
+
+        public Builder httpServerConfig(final HTTPServerConfig httpServerConfig) {
+            this.httpServerConfig = httpServerConfig;
             return this;
         }
 
