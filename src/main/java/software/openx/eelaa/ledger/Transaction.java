@@ -365,7 +365,8 @@ public final class Transaction {
         if (this == o) return true;
         if (!(o instanceof Transaction transaction)) return false;
 
-        return getLedger() == transaction.getLedger() && getId().equals(transaction.getId());
+        return getLedger() == transaction.getLedger() &&
+                getId().equals(transaction.getId());
     }
 
     @Override

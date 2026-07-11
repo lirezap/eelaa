@@ -167,7 +167,9 @@ public final class LMDBManager implements AutoCloseable {
         try {
             try (final var arena = Arena.ofConfined()) {
                 final var txn = newTxn(arena, NULL, 0);
-                final var error = JITFriendlyLMDB.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), MDB_NOOVERWRITE);
+                final var error =
+                        JITFriendlyLMDB.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), MDB_NOOVERWRITE);
+
                 if (error == 0) {
                     commitTxn(txn);
                     return true;
@@ -189,7 +191,9 @@ public final class LMDBManager implements AutoCloseable {
     public boolean put(final MemorySegment txn, final int dbi, final MemorySegment key, final MemorySegment value) {
         try {
             try (final var arena = Arena.ofConfined()) {
-                final var error = JITFriendlyLMDB.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), MDB_NOOVERWRITE);
+                final var error =
+                        JITFriendlyLMDB.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), MDB_NOOVERWRITE);
+
                 if (error == 0) {
                     return true;
                 }
@@ -223,7 +227,9 @@ public final class LMDBManager implements AutoCloseable {
         }
     }
 
-    public void putOrReplace(final MemorySegment txn, final int dbi, final MemorySegment key, final MemorySegment value) {
+    public void putOrReplace(final MemorySegment txn, final int dbi, final MemorySegment key,
+                             final MemorySegment value) {
+
         try {
             try (final var arena = Arena.ofConfined()) {
                 final var error = JITFriendlyLMDB.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), 0);
@@ -264,7 +270,8 @@ public final class LMDBManager implements AutoCloseable {
                 if (error == 0) {
                     final var size = lmdbVal.get(JAVA_LONG, 0);
                     final var value = valueArena.allocate(size);
-                    MemorySegmentUtil.putMemory(value, 0, lmdbVal.get(ADDRESS, JAVA_LONG.byteSize()).reinterpret(size));
+                    MemorySegmentUtil.putMemory(
+                            value, 0, lmdbVal.get(ADDRESS, JAVA_LONG.byteSize()).reinterpret(size));
 
                     commitTxn(txn);
                     return value;
@@ -291,7 +298,9 @@ public final class LMDBManager implements AutoCloseable {
                 if (error == 0) {
                     final var size = lmdbVal.get(JAVA_LONG, 0);
                     final var value = valueArena.allocate(size);
-                    MemorySegmentUtil.putMemory(value, 0, lmdbVal.get(ADDRESS, JAVA_LONG.byteSize()).reinterpret(size));
+                    MemorySegmentUtil.putMemory(
+                            value, 0, lmdbVal.get(ADDRESS, JAVA_LONG.byteSize()).reinterpret(size));
+
                     return value;
                 }
 
@@ -338,7 +347,9 @@ public final class LMDBManager implements AutoCloseable {
                 if (error == 0) {
                     final var size = dataVal.get(JAVA_LONG, 0);
                     final var value = valueArena.allocate(size);
-                    MemorySegmentUtil.putMemory(value, 0, dataVal.get(ADDRESS, JAVA_LONG.byteSize()).reinterpret(size));
+                    MemorySegmentUtil.putMemory(
+                            value, 0, dataVal.get(ADDRESS, JAVA_LONG.byteSize()).reinterpret(size));
+
                     return value;
                 }
 
@@ -364,7 +375,9 @@ public final class LMDBManager implements AutoCloseable {
                 if (error == 0) {
                     final var size = keyVal.get(JAVA_LONG, 0);
                     final var key = arena.allocate(size);
-                    MemorySegmentUtil.putMemory(key, 0, keyVal.get(ADDRESS, JAVA_LONG.byteSize()).reinterpret(size));
+                    MemorySegmentUtil.putMemory(
+                            key, 0, keyVal.get(ADDRESS, JAVA_LONG.byteSize()).reinterpret(size));
+
                     return key;
                 }
 

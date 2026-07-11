@@ -147,7 +147,9 @@ public final class Wallet {
         if (this == o) return true;
         if (!(o instanceof Wallet other)) return false;
 
-        return getLedger() == other.getLedger() && getAccount() == other.getAccount() && getWallet() == other.getWallet();
+        return getLedger() == other.getLedger() &&
+                getAccount() == other.getAccount() &&
+                getWallet() == other.getWallet();
     }
 
     @Override
