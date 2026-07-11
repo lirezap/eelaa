@@ -69,7 +69,6 @@ public final class EelaaApplication implements AutoCloseable {
     }
 
     private static Ledger ledger(final Configuration config, final LZ4 lz4) throws Exception {
-        final var lmdbLibraryPath = config.loadPath("libraries.native.lmdb.path");
         final var databaseSizeGBs = config.loadInt("ledgers.default.databaseSizeGBs");
         final var ledgerConfig = new LedgerConfig.Builder()
                 .dataDirectoryPath(config.loadPath("ledgers.default.dataDirectoryPath"))
@@ -79,7 +78,7 @@ public final class EelaaApplication implements AutoCloseable {
                 .initialWalletsPerAccountCap(config.loadInt("ledgers.default.initialWalletsPerAccountCap"))
                 .build();
 
-        return Ledger.newInstance(ledgerConfig, lz4, lmdbLibraryPath, databaseSizeGBs);
+        return Ledger.newInstance(ledgerConfig, lz4, databaseSizeGBs);
     }
 
     private static TCPServer tcpServer(final Configuration config, final LZ4 lz4, final Ledger ledger) {

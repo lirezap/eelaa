@@ -22,7 +22,6 @@ import software.openx.eelaa.lz4.LZ4;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -48,8 +47,8 @@ final class LMDBBasedLedger extends Ledger {
     private final int ledgersDbi;
 
     private LMDBBasedLedger(final ExecutorService executor, final Processor processor, final LZ4 lz4,
-                           final LMDBManager lmdbManager, final int transactionsDbi, final int walletsDbi,
-                           final int ledgersDbi) {
+                            final LMDBManager lmdbManager, final int transactionsDbi, final int walletsDbi,
+                            final int ledgersDbi) {
 
         super(executor, processor, lz4);
         this.lmdbManager = lmdbManager;
@@ -58,7 +57,7 @@ final class LMDBBasedLedger extends Ledger {
         this.ledgersDbi = ledgersDbi;
     }
 
-    public static Ledger newInstance(final LedgerConfig ledgerConfig, final LZ4 lz4, final Path lmdbLibraryPath,
+    public static Ledger newInstance(final LedgerConfig ledgerConfig, final LZ4 lz4,
                                      final int databaseSizeGbs) throws Exception {
 
         // Bounded queue executor with abort policy.

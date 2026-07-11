@@ -18,7 +18,6 @@ package software.openx.eelaa.ledger;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import software.openx.eelaa.lz4.LZ4;
 
-import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
@@ -40,10 +39,10 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
         this.lz4 = lz4;
     }
 
-    public static Ledger newInstance(final LedgerConfig ledgerConfig, final LZ4 lz4, final Path lmdbLibraryPath,
+    public static Ledger newInstance(final LedgerConfig ledgerConfig, final LZ4 lz4,
                                      final int databaseSizeGbs) throws Exception {
 
-        final var ledger = LMDBBasedLedger.newInstance(ledgerConfig, lz4, lmdbLibraryPath, databaseSizeGbs);
+        final var ledger = LMDBBasedLedger.newInstance(ledgerConfig, lz4, databaseSizeGbs);
         ledger.getExecutor().submit(ledger::loadWallets).get();
 
         return ledger;
