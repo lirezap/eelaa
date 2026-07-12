@@ -26,10 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.openx.eelaa.ledger.FailedTransaction;
 import software.openx.eelaa.ledger.Ledger;
-import software.openx.eelaa.net.http.FetchAccount;
-import software.openx.eelaa.net.http.FetchWallet;
-import software.openx.eelaa.net.http.Message;
-import software.openx.eelaa.net.http.Transaction;
+import software.openx.eelaa.net.http.*;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
@@ -55,6 +52,8 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
     private static final TypeReference<Message<FetchWallet>> FETCH_WALLET_TYPE = new TypeReference<>() {
     };
     private static final TypeReference<Message<ArrayList<Transaction>>> BATCH_TYPE = new TypeReference<>() {
+    };
+    private static final TypeReference<Message<FetchTransaction>> FETCH_TRANSACTION_TYPE = new TypeReference<>() {
     };
 
     private static final ByteBuf EMPTY = Unpooled.buffer();
@@ -116,6 +115,7 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
                 case FrameNumericType.FETCH_WALLET -> handleFetchWallet(ctx, request);
                 case FrameNumericType.BATCH -> handleBatch(ctx, request, false);
                 case FrameNumericType.ATOMIC_BATCH -> handleBatch(ctx, request, true);
+                case FrameNumericType.FETCH_TRANSACTION -> handleFetchTransaction(ctx, request);
 
                 case null, default -> respondHandlerNotFound(ctx);
             }
@@ -209,6 +209,22 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
                 respondInternalServerError(ctx);
             }
         }, cpuHeavyTaskExecutor);
+    }
+
+    private void handleFetchTransaction(final ChannelHandlerContext ctx, final FullHttpRequest request) {
+        // TODO: Handle null data.
+        final var message = MAPPER.readValue((InputStream) new ByteBufInputStream(request.content()), FETCH_TRANSACTION_TYPE);
+        ledger.fetchTransaction(message.getData().getLedger(), message.getData().getId())
+                .thenAcceptAsync(transaction -> {
+                    if (transaction == null) {
+                        respondResourceNotFound(ctx);
+                        return;
+                    }
+
+                    final var json = ctx.alloc().buffer(128);
+                    MAPPER.writeValue((OutputStream) new ByteBufOutputStream(json), transaction);
+                    respondJson(ctx, json);
+                }, cpuHeavyTaskExecutor);
     }
 
     private static void respondJson(final ChannelHandlerContext ctx, final ByteBuf json) {
