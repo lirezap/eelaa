@@ -107,7 +107,7 @@ final class LMDBBasedLedger extends Ledger {
                     var wallets = new ArrayList<Wallet>(100_000);
                     var wallet = lmdbManager.iterateFromFirst(cursor, arena);
                     while (wallet != NULL) {
-                        wallets.add(Wallet.decode(wallet));
+                        wallets.add(Wallet.decode(wallet.asSlice(6)));
                         if (wallets.size() == 100_000) {
                             getProcessor().loadWallets(wallets);
                             logger.info("Loaded {} wallets into ledger successfully", wallets.size());

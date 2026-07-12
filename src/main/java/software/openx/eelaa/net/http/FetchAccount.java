@@ -18,11 +18,11 @@ package software.openx.eelaa.net.http;
 /**
  * @author Alireza Pourtaghi
  */
-public final class FetchAccountMessage extends Message<FetchAccountMessage> {
+public final class FetchAccount extends Message<FetchAccount> {
     private int ledger;
     private long account;
 
-    public FetchAccountMessage() {
+    public FetchAccount() {
     }
 
     public int getLedger() {
@@ -35,7 +35,7 @@ public final class FetchAccountMessage extends Message<FetchAccountMessage> {
 
     @Override
     public String toString() {
-        return "FetchAccountMessage{" +
+        return "FetchAccount{" +
                 "ledger=" + ledger +
                 ", account=" + account +
                 '}';

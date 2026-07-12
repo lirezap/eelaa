@@ -30,7 +30,8 @@
         <agrona.version>2.4.1</agrona.version>
         <fastutil.version>8.5.18</fastutil.version>
         <caffeine.version>3.2.4</caffeine.version>
-        <jackson.version>3.2.0</jackson.version>
+        <jackson.databind.version>3.2.0</jackson.databind.version>
+        <jackson.annotations.version>2.22</jackson.annotations.version>
     </properties>
 
     <dependencies>
@@ -162,7 +163,15 @@
         <dependency>
             <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
+            <version>${jackson.databind.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson.annotations.version}</version>
             <scope>compile</scope>
         </dependency>
 
