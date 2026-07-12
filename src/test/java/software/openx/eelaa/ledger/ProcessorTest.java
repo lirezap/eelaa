@@ -916,7 +916,7 @@ public class ProcessorTest {
         var processor = Processor.newInstance(new LedgerConfig.Builder()
                 .initialAccountsCap(10_000_000)
                 .initialWalletsPerAccountCap(5)
-                .succeededTransactionsCacheTTLSeconds(30)
+                .succeededTransactionsCacheTTLSeconds(60)
                 .build());
 
         for (int i = 1; i <= 10_000_000; i++) {
