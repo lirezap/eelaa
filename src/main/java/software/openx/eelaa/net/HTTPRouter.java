@@ -61,15 +61,17 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
     private static final ByteBuf HANDLER_NOT_FOUND = Unpooled.buffer();
     private static final ByteBuf CONTENT_TYPE_NOT_SUPPORTED = Unpooled.buffer();
     private static final ByteBuf RESOURCE_NOT_FOUND = Unpooled.buffer();
+    private static final ByteBuf NULL_DATA_PROVIDED = Unpooled.buffer();
     private static final ByteBuf INTERNAL_SERVER_ERROR = Unpooled.buffer();
 
     private static final List<String> QUERY_PARAMETER_ZERO = new ArrayList<>(1);
 
     static {
-        METHOD_NOT_SUPPORTED.writeCharSequence("{\"code\":\"method.not_supported\",\"message\":\"method not supported\"}", UTF_8);
+        METHOD_NOT_SUPPORTED.writeCharSequence("{\"code\":\"method.not_supported\",\"message\":\"http method not supported\"}", UTF_8);
         HANDLER_NOT_FOUND.writeCharSequence("{\"code\":\"handler.not_found\",\"message\":\"handler not found\"}", UTF_8);
-        CONTENT_TYPE_NOT_SUPPORTED.writeCharSequence("{\"code\":\"content_type.not_supported\",\"message\":\"content not supported\"}", UTF_8);
+        CONTENT_TYPE_NOT_SUPPORTED.writeCharSequence("{\"code\":\"content_type.not_supported\",\"message\":\"content type not supported\"}", UTF_8);
         RESOURCE_NOT_FOUND.writeCharSequence("{\"code\":\"resource.not_found\",\"message\":\"requested resource not found\"}", UTF_8);
+        NULL_DATA_PROVIDED.writeCharSequence("{\"code\":\"null_data.provided\",\"message\":\"the data object in body is required\"}", UTF_8);
         INTERNAL_SERVER_ERROR.writeCharSequence("{\"code\":\"server.error\",\"message\":\"internal server error occurred\"}", UTF_8);
 
         QUERY_PARAMETER_ZERO.add("0");
@@ -126,8 +128,12 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
     }
 
     private void handleFetchAccount(final ChannelHandlerContext ctx, final FullHttpRequest request) throws Exception {
-        // TODO: Handle null data.
         final var message = MAPPER.readValue((InputStream) new ByteBufInputStream(request.content()), FETCH_ACCOUNT_TYPE);
+        if (message.getData() == null) {
+            respondNullDataProvided(ctx);
+            return;
+        }
+
         final var account = ledger.fetchAccount(
                 message.getData().getLedger(), message.getData().getAccount()).get();
 
@@ -143,8 +149,12 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
     }
 
     private void handleFetchWallet(final ChannelHandlerContext ctx, final FullHttpRequest request) throws Exception {
-        // TODO: Handle null data.
         final var message = MAPPER.readValue((InputStream) new ByteBufInputStream(request.content()), FETCH_WALLET_TYPE);
+        if (message.getData() == null) {
+            respondNullDataProvided(ctx);
+            return;
+        }
+
         final var wallet = ledger.fetchWallet(
                 message.getData().getLedger(), message.getData().getAccount(), message.getData().getWallet()).get();
 
@@ -160,10 +170,13 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
     }
 
     private void handleBatch(final ChannelHandlerContext ctx, final FullHttpRequest request, final boolean atomic) {
-        // TODO: Handle null/empty data.
         final var message = MAPPER.readValue((InputStream) new ByteBufInputStream(request.content()), BATCH_TYPE);
-        final var data = message.getData();
+        if (message.getData() == null) {
+            respondNullDataProvided(ctx);
+            return;
+        }
 
+        final var data = message.getData();
         final var batch = new software.openx.eelaa.ledger.Transaction[data.size()];
         for (int i = 0; i < data.size(); i++) {
             final var item = data.get(i);
@@ -212,8 +225,12 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
     }
 
     private void handleFetchTransaction(final ChannelHandlerContext ctx, final FullHttpRequest request) {
-        // TODO: Handle null data.
         final var message = MAPPER.readValue((InputStream) new ByteBufInputStream(request.content()), FETCH_TRANSACTION_TYPE);
+        if (message.getData() == null) {
+            respondNullDataProvided(ctx);
+            return;
+        }
+
         ledger.fetchTransaction(message.getData().getLedger(), message.getData().getId())
                 .thenAcceptAsync(transaction -> {
                     if (transaction == null) {
@@ -295,6 +312,18 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
 
         response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json; charset=UTF-8");
         response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, RESOURCE_NOT_FOUND.readableBytes());
+
+        ctx.writeAndFlush(response);
+    }
+
+    private static void respondNullDataProvided(final ChannelHandlerContext ctx) {
+        final var response = new DefaultFullHttpResponse(
+                HttpVersion.HTTP_1_1,
+                HttpResponseStatus.BAD_REQUEST,
+                NULL_DATA_PROVIDED.retainedDuplicate());
+
+        response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json; charset=UTF-8");
+        response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, NULL_DATA_PROVIDED.readableBytes());
 
         ctx.writeAndFlush(response);
     }
