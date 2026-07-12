@@ -30,6 +30,7 @@
         <agrona.version>2.4.1</agrona.version>
         <fastutil.version>8.5.18</fastutil.version>
         <caffeine.version>3.2.4</caffeine.version>
+        <jackson.version>3.2.0</jackson.version>
     </properties>
 
     <dependencies>
@@ -154,6 +155,14 @@
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
             <version>${caffeine.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/tools.jackson.core/jackson-databind -->
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
             <scope>compile</scope>
         </dependency>
 
