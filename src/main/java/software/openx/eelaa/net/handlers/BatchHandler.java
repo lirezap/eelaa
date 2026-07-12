@@ -17,6 +17,7 @@ package software.openx.eelaa.net.handlers;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import software.openx.eelaa.ledger.FailedTransaction;
 import software.openx.eelaa.ledger.Ledger;
 import software.openx.eelaa.ledger.Transaction;
 import software.openx.eelaa.net.Handler;

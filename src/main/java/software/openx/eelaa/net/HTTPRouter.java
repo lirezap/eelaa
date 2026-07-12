@@ -24,10 +24,12 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.openx.eelaa.ledger.FailedTransaction;
 import software.openx.eelaa.ledger.Ledger;
 import software.openx.eelaa.net.http.FetchAccount;
 import software.openx.eelaa.net.http.FetchWallet;
 import software.openx.eelaa.net.http.Message;
+import software.openx.eelaa.net.http.Transaction;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
@@ -35,6 +37,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -50,6 +53,8 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
     private static final TypeReference<Message<FetchAccount>> FETCH_ACCOUNT_TYPE = new TypeReference<>() {
     };
     private static final TypeReference<Message<FetchWallet>> FETCH_WALLET_TYPE = new TypeReference<>() {
+    };
+    private static final TypeReference<Message<ArrayList<Transaction>>> BATCH_TYPE = new TypeReference<>() {
     };
 
     private static final ByteBuf EMPTY = Unpooled.buffer();
@@ -109,6 +114,8 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
                 case FrameNumericType.PING -> respondEmpty(ctx);
                 case FrameNumericType.FETCH_ACCOUNT -> handleFetchAccount(ctx, request);
                 case FrameNumericType.FETCH_WALLET -> handleFetchWallet(ctx, request);
+                case FrameNumericType.BATCH -> handleBatch(ctx, request, false);
+                case FrameNumericType.ATOMIC_BATCH -> handleBatch(ctx, request, true);
 
                 case null, default -> respondHandlerNotFound(ctx);
             }
@@ -150,6 +157,58 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
         MAPPER.writeValue((OutputStream) new ByteBufOutputStream(json), wallet);
 
         respondJson(ctx, json);
+    }
+
+    private void handleBatch(final ChannelHandlerContext ctx, final FullHttpRequest request, final boolean atomic) {
+        // TODO: Handle null/empty data.
+        final var message = MAPPER.readValue((InputStream) new ByteBufInputStream(request.content()), BATCH_TYPE);
+        final var data = message.getData();
+
+        final var batch = new software.openx.eelaa.ledger.Transaction[data.size()];
+        for (int i = 0; i < data.size(); i++) {
+            final var item = data.get(i);
+            batch[i] = new software.openx.eelaa.ledger.Transaction(
+                    item.getLedger(),
+                    item.getSourceAccount(),
+                    item.getSourceWallet(),
+                    item.getDestinationAccount(),
+                    item.getDestinationWallet(),
+                    item.getId(),
+                    item.getCurrency(),
+                    item.getAmount(),
+                    item.getMaxOverdraftAmount(),
+                    item.getMetadata());
+        }
+
+        var result = new CompletableFuture<Boolean>();
+        if (atomic) {
+            result = ledger.processAtomically(batch);
+        } else {
+            result = ledger.process(batch);
+        }
+
+        result.thenAcceptAsync(successful -> {
+            if (successful) {
+                var failedCount = 0;
+                for (final var transaction : batch) {
+                    if (transaction.is_failed()) failedCount++;
+                }
+
+                final var failedList = new ArrayList<FailedTransaction>(failedCount);
+                for (final var transaction : batch) {
+                    if (transaction.is_failed()) {
+                        failedList.add(new FailedTransaction(transaction.getId(), transaction.get_failReason()));
+                    }
+                }
+
+                final var json = ctx.alloc().buffer(failedCount * 64);
+                MAPPER.writeValue((OutputStream) new ByteBufOutputStream(json), failedList);
+
+                respondJson(ctx, json);
+            } else {
+                respondInternalServerError(ctx);
+            }
+        }, cpuHeavyTaskExecutor);
     }
 
     private static void respondJson(final ChannelHandlerContext ctx, final ByteBuf json) {

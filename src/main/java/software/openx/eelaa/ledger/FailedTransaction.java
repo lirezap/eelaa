@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package software.openx.eelaa.net.handlers;
+package software.openx.eelaa.ledger;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -24,7 +24,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * @author Alireza Pourtaghi
  */
-final class FailedTransaction {
+public final class FailedTransaction {
     private final String id;
     private final String reason;
 
