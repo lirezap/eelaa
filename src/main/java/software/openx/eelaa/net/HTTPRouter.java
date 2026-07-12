@@ -64,7 +64,7 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
     protected void channelRead0(final ChannelHandlerContext ctx, final FullHttpRequest request) throws Exception {
         final var method = request.method();
         final var uri = new QueryStringDecoder(request.uri());
-        final var contentType = request.headers().get(HttpHeaderNames.CONTENT_TYPE);
+        final var contentType = request.headers().get(HttpHeaderNames.CONTENT_TYPE, "");
 
         if (method != HttpMethod.POST) {
             respondMethodNotSupported(ctx);
@@ -92,7 +92,7 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     private static int messageNumericType(final QueryStringDecoder uri) {
         try {
-            return Integer.parseInt(uri.parameters().getOrDefault("messageNumericType", QUERY_PARAMETER_ZERO).getFirst());
+            return Integer.parseInt(uri.parameters().getOrDefault("numericType", QUERY_PARAMETER_ZERO).getFirst());
         } catch (final NumberFormatException ex) {
             return 0;
         }
