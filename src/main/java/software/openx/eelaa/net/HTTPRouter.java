@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.openx.eelaa.ledger.Ledger;
 import software.openx.eelaa.net.http.FetchAccount;
+import software.openx.eelaa.net.http.FetchWallet;
 import software.openx.eelaa.net.http.Message;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
@@ -47,6 +48,8 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final TypeReference<Message<FetchAccount>> FETCH_ACCOUNT_TYPE = new TypeReference<>() {
+    };
+    private static final TypeReference<Message<FetchWallet>> FETCH_WALLET_TYPE = new TypeReference<>() {
     };
 
     private static final ByteBuf EMPTY = Unpooled.buffer();
@@ -105,6 +108,7 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
             switch (FrameNumericType.of(messageNumericType(uri))) {
                 case FrameNumericType.PING -> respondEmpty(ctx);
                 case FrameNumericType.FETCH_ACCOUNT -> handleFetchAccount(ctx, request);
+                case FrameNumericType.FETCH_WALLET -> handleFetchWallet(ctx, request);
 
                 case null, default -> respondHandlerNotFound(ctx);
             }
@@ -117,7 +121,9 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
     private void handleFetchAccount(final ChannelHandlerContext ctx, final FullHttpRequest request) throws Exception {
         // TODO: Handle null data.
         final var message = MAPPER.readValue((InputStream) new ByteBufInputStream(request.content()), FETCH_ACCOUNT_TYPE);
-        final var account = ledger.fetchAccount(message.getData().getLedger(), message.getData().getAccount()).get();
+        final var account = ledger.fetchAccount(
+                message.getData().getLedger(), message.getData().getAccount()).get();
+
         if (account == null) {
             respondResourceNotFound(ctx);
             return;
@@ -125,6 +131,23 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
 
         final var json = ctx.alloc().buffer(64);
         MAPPER.writeValue((OutputStream) new ByteBufOutputStream(json), account);
+
+        respondJson(ctx, json);
+    }
+
+    private void handleFetchWallet(final ChannelHandlerContext ctx, final FullHttpRequest request) throws Exception {
+        // TODO: Handle null data.
+        final var message = MAPPER.readValue((InputStream) new ByteBufInputStream(request.content()), FETCH_WALLET_TYPE);
+        final var wallet = ledger.fetchWallet(
+                message.getData().getLedger(), message.getData().getAccount(), message.getData().getWallet()).get();
+
+        if (wallet == null) {
+            respondResourceNotFound(ctx);
+            return;
+        }
+
+        final var json = ctx.alloc().buffer(64);
+        MAPPER.writeValue((OutputStream) new ByteBufOutputStream(json), wallet);
 
         respondJson(ctx, json);
     }
