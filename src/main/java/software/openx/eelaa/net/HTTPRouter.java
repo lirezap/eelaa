@@ -23,6 +23,9 @@ import io.netty.handler.codec.http.*;
 import software.openx.eelaa.ledger.Ledger;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -32,14 +35,19 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
     private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private static final ByteBuf EMPTY = Unpooled.buffer();
     private static final ByteBuf METHOD_NOT_SUPPORTED = Unpooled.buffer();
     private static final ByteBuf HANDLER_NOT_FOUND = Unpooled.buffer();
     private static final ByteBuf CONTENT_TYPE_NOT_SUPPORTED = Unpooled.buffer();
+
+    private static final List<String> QUERY_PARAMETER_ZERO = new ArrayList<>(1);
 
     static {
         METHOD_NOT_SUPPORTED.writeCharSequence("Method not supported!", UTF_8);
         HANDLER_NOT_FOUND.writeCharSequence("Handler not found!", UTF_8);
         CONTENT_TYPE_NOT_SUPPORTED.writeCharSequence("Content type not supported!", UTF_8);
+        QUERY_PARAMETER_ZERO.add("0");
     }
 
     private final CPUHeavyTaskExecutor cpuHeavyTaskExecutor;
@@ -55,7 +63,7 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final FullHttpRequest request) throws Exception {
         final var method = request.method();
-        final var uri = request.uri();
+        final var uri = new QueryStringDecoder(request.uri());
         final var contentType = request.headers().get(HttpHeaderNames.CONTENT_TYPE);
 
         if (method != HttpMethod.POST) {
@@ -63,7 +71,7 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
             return;
         }
 
-        if (!uri.equals("/messages")) {
+        if (!uri.path().equals("/messages")) {
             respondHandlerNotFound(ctx);
             return;
         }
@@ -75,7 +83,31 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
             return;
         }
 
-        // TODO: Complete implementation.
+        switch (FrameNumericType.of(messageNumericType(uri))) {
+            case FrameNumericType.PING -> respondEmpty(ctx);
+
+            case null, default -> respondHandlerNotFound(ctx);
+        }
+    }
+
+    private static int messageNumericType(final QueryStringDecoder uri) {
+        try {
+            return Integer.parseInt(uri.parameters().getOrDefault("messageNumericType", QUERY_PARAMETER_ZERO).getFirst());
+        } catch (final NumberFormatException ex) {
+            return 0;
+        }
+    }
+
+    private static void respondEmpty(final ChannelHandlerContext ctx) {
+        final var response = new DefaultFullHttpResponse(
+                HttpVersion.HTTP_1_1,
+                HttpResponseStatus.OK,
+                EMPTY.retainedDuplicate());
+
+        response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain; charset=UTF-8");
+        response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, EMPTY.readableBytes());
+
+        ctx.writeAndFlush(response);
     }
 
     private static void respondMethodNotSupported(final ChannelHandlerContext ctx) {
