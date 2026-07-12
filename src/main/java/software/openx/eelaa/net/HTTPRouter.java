@@ -84,7 +84,7 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
         }
 
         switch (FrameNumericType.of(messageNumericType(uri))) {
-            case FrameNumericType.PING -> respondEmpty(ctx);
+            case FrameNumericType.PING -> handlePing(ctx);
 
             case null, default -> respondHandlerNotFound(ctx);
         }
@@ -98,7 +98,7 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
         }
     }
 
-    private static void respondEmpty(final ChannelHandlerContext ctx) {
+    private static void handlePing(final ChannelHandlerContext ctx) {
         final var response = new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
                 HttpResponseStatus.OK,
