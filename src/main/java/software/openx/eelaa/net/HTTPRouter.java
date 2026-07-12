@@ -34,10 +34,12 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final ByteBuf METHOD_NOT_SUPPORTED = Unpooled.buffer();
     private static final ByteBuf HANDLER_NOT_FOUND = Unpooled.buffer();
+    private static final ByteBuf CONTENT_TYPE_NOT_SUPPORTED = Unpooled.buffer();
 
     static {
         METHOD_NOT_SUPPORTED.writeCharSequence("Method not supported!", UTF_8);
         HANDLER_NOT_FOUND.writeCharSequence("Handler not found!", UTF_8);
+        CONTENT_TYPE_NOT_SUPPORTED.writeCharSequence("Content type not supported!", UTF_8);
     }
 
     private final CPUHeavyTaskExecutor cpuHeavyTaskExecutor;
@@ -52,24 +54,28 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final FullHttpRequest request) throws Exception {
-        if (request.method() == HttpMethod.POST) {
-            if (request.uri().equals("/messages")) {
-                // TODO: Complete implementation.
-                final var response = new DefaultFullHttpResponse(
-                        HttpVersion.HTTP_1_1,
-                        HttpResponseStatus.OK,
-                        Unpooled.EMPTY_BUFFER);
+        final var method = request.method();
+        final var uri = request.uri();
+        final var contentType = request.headers().get(HttpHeaderNames.CONTENT_TYPE);
 
-                response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain; charset=UTF-8");
-                response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, 0);
-
-                ctx.writeAndFlush(response);
-            } else {
-                respondHandlerNotFound(ctx);
-            }
-        } else {
+        if (method != HttpMethod.POST) {
             respondMethodNotSupported(ctx);
+            return;
         }
+
+        if (!uri.equals("/messages")) {
+            respondHandlerNotFound(ctx);
+            return;
+        }
+
+        if (!contentType.equals("application/json") &&
+                !contentType.equalsIgnoreCase("application/json; charset=UTF-8")) {
+
+            respondContentTypeNotSupported(ctx);
+            return;
+        }
+
+        // TODO: Complete implementation.
     }
 
     private static void respondMethodNotSupported(final ChannelHandlerContext ctx) {
@@ -92,6 +98,18 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
 
         response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain; charset=UTF-8");
         response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, HANDLER_NOT_FOUND.readableBytes());
+
+        ctx.writeAndFlush(response);
+    }
+
+    private static void respondContentTypeNotSupported(final ChannelHandlerContext ctx) {
+        final var response = new DefaultFullHttpResponse(
+                HttpVersion.HTTP_1_1,
+                HttpResponseStatus.BAD_REQUEST,
+                CONTENT_TYPE_NOT_SUPPORTED.retainedDuplicate());
+
+        response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain; charset=UTF-8");
+        response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, CONTENT_TYPE_NOT_SUPPORTED.readableBytes());
 
         ctx.writeAndFlush(response);
     }
