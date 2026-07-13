@@ -6,8 +6,8 @@ second. It can be used as a GL module of a core banking platform or as a wallet-
 **Features included:**
 
 - Includes two types of ledgers, both are crash-safe and ACID compliant
-    - WAL based: Very fast GL with compression enabled for handling more than a million of transactions per second
-    - LMDB based: Fast and safe memory mapped GL able to handle 500k transactions per second (default)
+    - Fast: WAL-based, NTP-dependent and very fast GL able to handle a million of transactions per second.
+    - Default: Fast and safe memory mapped GL able to handle 500k transactions per second.
 - Multiple independent ledger instances in a single eelaa process
 - Single and batch transactions processing
 - Atomic (all or none) batch transactions processing
@@ -22,6 +22,7 @@ second. It can be used as a GL module of a core banking platform or as a wallet-
 
 - Custom frame-based binary protocol
 - Asynchronous and event driven TCP network stack using native transports with a batch-aware network protocol/triggers
+- Custom, efficient and very fast micro HTTP server based on pure netty
 - Custom atomic and crash-safe WAL implementation
 - FFM and off-heap memory management to decrease GC pressure
 - Fast compression mechanism
