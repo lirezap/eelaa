@@ -70,8 +70,8 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
             addHttpContentDecompressor(channel);
             addHttpServerExpectContinueHandler(channel);
             addHttpObjectAggregator(channel);
-            addHttpRouter(channel);
             addHttpContentCompressor(channel);
+            addHttpRouter(channel);
         } else {
             addFrameDecoder(channel);
             addFrameHeaderLogger(channel);
