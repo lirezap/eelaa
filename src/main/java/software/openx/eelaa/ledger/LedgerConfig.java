@@ -23,7 +23,7 @@ import java.nio.file.Path;
  * @author Alireza Pourtaghi
  */
 public final class LedgerConfig {
-    static final long TRANSACTION_ID_REQUIRED_BACKOFF_MS = 5000;
+    static final long TRANSACTION_ID_REQUIRED_BACKOFF_MS = 10000;
 
     private final Path dataDirectoryPath;
     private final int executorMaxWaitQueueSize;
