@@ -193,7 +193,7 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
                     item.getMetadata());
         }
 
-        var result = new CompletableFuture<Boolean>();
+        CompletableFuture<Boolean> result;
         if (atomic) {
             result = ledger.processAtomically(batch);
         } else {
