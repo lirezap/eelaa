@@ -114,6 +114,8 @@ public final class EelaaApplication implements AutoCloseable {
                 .maxChunkSize(config.loadInt("servers.tcp.httpServerConfig.maxChunkSize"))
                 .maxContentLength(config.loadInt("servers.tcp.httpServerConfig.maxContentLength"))
                 .httpServerCompressionConfig(httpServerCompressionConfig)
+                .forceConnectionSequenceId(config.loadBoolean("servers.tcp.httpServerConfig.forceConnectionSequenceId"))
+                .forceRequestTimestamp(config.loadBoolean("servers.tcp.httpServerConfig.forceRequestTimestamp"))
                 .build();
 
         final var tcpServerConfig = new TCPServerConfig.Builder()
