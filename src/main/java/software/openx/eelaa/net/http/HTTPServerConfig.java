@@ -27,6 +27,8 @@ public final class HTTPServerConfig {
     private final int maxChunkSize;
     private final int maxContentLength;
     private final HTTPServerCompressionConfig httpServerCompressionConfig;
+    private final boolean forceConnectionSequenceId;
+    private final boolean forceRequestTimestamp;
 
     private HTTPServerConfig(final Builder builder) {
         this.enabled = builder.enabled;
@@ -35,6 +37,8 @@ public final class HTTPServerConfig {
         this.maxChunkSize = builder.maxChunkSize;
         this.maxContentLength = builder.maxContentLength;
         this.httpServerCompressionConfig = builder.httpServerCompressionConfig;
+        this.forceConnectionSequenceId = builder.forceConnectionSequenceId;
+        this.forceRequestTimestamp = builder.forceRequestTimestamp;
     }
 
     public boolean isEnabled() {
@@ -61,6 +65,14 @@ public final class HTTPServerConfig {
         return httpServerCompressionConfig;
     }
 
+    public boolean isForceConnectionSequenceId() {
+        return forceConnectionSequenceId;
+    }
+
+    public boolean isForceRequestTimestamp() {
+        return forceRequestTimestamp;
+    }
+
     @Override
     public String toString() {
         return "HTTPServerConfig{" +
@@ -70,6 +82,8 @@ public final class HTTPServerConfig {
                 ", maxChunkSize=" + maxChunkSize +
                 ", maxContentLength=" + maxContentLength +
                 ", httpServerCompressionConfig=" + httpServerCompressionConfig +
+                ", forceConnectionSequenceId=" + forceConnectionSequenceId +
+                ", forceRequestTimestamp=" + forceRequestTimestamp +
                 '}';
     }
 
@@ -85,6 +99,8 @@ public final class HTTPServerConfig {
         private int maxChunkSize = 8192;
         private int maxContentLength = 5242880;
         private HTTPServerCompressionConfig httpServerCompressionConfig = new HTTPServerCompressionConfig.Builder().build();
+        private boolean forceConnectionSequenceId = true;
+        private boolean forceRequestTimestamp = true;
 
         public Builder() {
         }
@@ -116,6 +132,16 @@ public final class HTTPServerConfig {
 
         public Builder httpServerCompressionConfig(final HTTPServerCompressionConfig httpServerCompressionConfig) {
             this.httpServerCompressionConfig = httpServerCompressionConfig;
+            return this;
+        }
+
+        public Builder forceConnectionSequenceId(final boolean forceConnectionSequenceId) {
+            this.forceConnectionSequenceId = forceConnectionSequenceId;
+            return this;
+        }
+
+        public Builder forceRequestTimestamp(final boolean forceRequestTimestamp) {
+            this.forceRequestTimestamp = forceRequestTimestamp;
             return this;
         }
 

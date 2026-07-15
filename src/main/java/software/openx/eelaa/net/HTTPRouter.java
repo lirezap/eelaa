@@ -40,11 +40,17 @@ final class HTTPRouter extends AbstractHTTPRouter {
     private final CPUHeavyTaskExecutor cpuHeavyTaskExecutor;
     private final Ledger ledger;
     private final SequenceIdsHolder sequenceIdsHolder;
+    private final boolean forceConnectionSequenceId;
+    private final boolean forceRequestTimestamp;
 
-    public HTTPRouter(final CPUHeavyTaskExecutor cpuHeavyTaskExecutor, final Ledger ledger) {
+    public HTTPRouter(final CPUHeavyTaskExecutor cpuHeavyTaskExecutor, final Ledger ledger,
+                      final boolean forceConnectionSequenceId, final boolean forceRequestTimestamp) {
+
         this.cpuHeavyTaskExecutor = cpuHeavyTaskExecutor;
         this.ledger = ledger;
         this.sequenceIdsHolder = new SequenceIdsHolder();
+        this.forceConnectionSequenceId = forceConnectionSequenceId;
+        this.forceRequestTimestamp = forceRequestTimestamp;
     }
 
     @Override
@@ -198,12 +204,12 @@ final class HTTPRouter extends AbstractHTTPRouter {
     }
 
     private <T> boolean isValidMessage(final ChannelHandlerContext ctx, final Message<T> message) {
-        if (!addSequenceId(message.getSequenceId())) {
+        if (forceConnectionSequenceId && !addSequenceId(message.getSequenceId())) {
             respondInvalidSequenceId(ctx);
             return false;
         }
 
-        if (!isValidTimestamp(message.getTs())) {
+        if (forceRequestTimestamp && !isValidTimestamp(message.getTs())) {
             respondInvalidTs(ctx);
             return false;
         }
