@@ -143,7 +143,8 @@ final class ClientSocketChannelInitializer extends ChannelInitializer<SocketChan
         final var forceConnectionSequenceId = config.getHttpServerConfig().isForceConnectionSequenceId();
         final var forceRequestTimestamp = config.getHttpServerConfig().isForceRequestTimestamp();
 
-        channel.pipeline().addLast(new HTTPRouter(cpuHeavyTaskExecutor, ledger, forceConnectionSequenceId, forceRequestTimestamp));
+        channel.pipeline().addLast(
+                new HTTPRouter(cpuHeavyTaskExecutor, ledger, forceConnectionSequenceId, forceRequestTimestamp));
     }
 
     private void addHttpContentCompressor(final SocketChannel channel) {
