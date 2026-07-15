@@ -15,67 +15,27 @@
  */
 package software.openx.eelaa.net;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.ByteBufOutputStream;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.QueryStringDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.openx.eelaa.ledger.FailedTransaction;
 import software.openx.eelaa.ledger.Ledger;
-import software.openx.eelaa.net.http.*;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.ObjectMapper;
+import software.openx.eelaa.net.http.Message;
 
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * HTTP router implementation.
  *
  * @author Alireza Pourtaghi
  */
-final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
+final class HTTPRouter extends AbstractHTTPRouter {
     private static final Logger logger = LoggerFactory.getLogger(HTTPRouter.class);
-
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final TypeReference<Message<FetchAccount>> FETCH_ACCOUNT_TYPE = new TypeReference<>() {
-    };
-    private static final TypeReference<Message<FetchWallet>> FETCH_WALLET_TYPE = new TypeReference<>() {
-    };
-    private static final TypeReference<Message<ArrayList<Transaction>>> BATCH_TYPE = new TypeReference<>() {
-    };
-    private static final TypeReference<Message<FetchTransaction>> FETCH_TRANSACTION_TYPE = new TypeReference<>() {
-    };
-
-    private static final ByteBuf EMPTY = Unpooled.buffer();
-    private static final ByteBuf METHOD_NOT_SUPPORTED = Unpooled.buffer();
-    private static final ByteBuf HANDLER_NOT_FOUND = Unpooled.buffer();
-    private static final ByteBuf CONTENT_TYPE_NOT_SUPPORTED = Unpooled.buffer();
-    private static final ByteBuf RESOURCE_NOT_FOUND = Unpooled.buffer();
-    private static final ByteBuf NULL_DATA_PROVIDED = Unpooled.buffer();
-    private static final ByteBuf INTERNAL_SERVER_ERROR = Unpooled.buffer();
-
-    private static final List<String> QUERY_PARAMETER_ZERO = new ArrayList<>(1);
-
-    static {
-        METHOD_NOT_SUPPORTED.writeCharSequence("{\"code\":\"method.not_supported\",\"message\":\"http method not supported\"}", UTF_8);
-        HANDLER_NOT_FOUND.writeCharSequence("{\"code\":\"handler.not_found\",\"message\":\"http handler not found\"}", UTF_8);
-        CONTENT_TYPE_NOT_SUPPORTED.writeCharSequence("{\"code\":\"content_type.invalid\",\"message\":\"empty or invalid content type header\"}", UTF_8);
-        RESOURCE_NOT_FOUND.writeCharSequence("{\"code\":\"resource.not_found\",\"message\":\"requested resource not found\"}", UTF_8);
-        NULL_DATA_PROVIDED.writeCharSequence("{\"code\":\"data.required\",\"message\":\"the data object in json body is required\"}", UTF_8);
-        INTERNAL_SERVER_ERROR.writeCharSequence("{\"code\":\"server.error\",\"message\":\"internal server error occurred\"}", UTF_8);
-
-        QUERY_PARAMETER_ZERO.add("0");
-    }
 
     private final CPUHeavyTaskExecutor cpuHeavyTaskExecutor;
     private final Ledger ledger;
@@ -88,7 +48,7 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
     }
 
     @Override
-    protected void channelRead0(final ChannelHandlerContext ctx, final FullHttpRequest request) throws Exception {
+    protected void channelRead0(final ChannelHandlerContext ctx, final FullHttpRequest request) {
         try {
             final var method = request.method();
             final var uri = new QueryStringDecoder(request.uri());
@@ -107,11 +67,11 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
             if (!contentType.equals("application/json") &&
                     !contentType.equalsIgnoreCase("application/json; charset=UTF-8")) {
 
-                respondContentTypeNotSupported(ctx);
+                respondInvalidContentType(ctx);
                 return;
             }
 
-            switch (FrameNumericType.of(messageNumericType(uri))) {
+            switch (FrameNumericType.of(intValuePathParameter(uri, "numericType"))) {
                 case FrameNumericType.PING -> respondEmpty(ctx);
                 case FrameNumericType.FETCH_ACCOUNT -> handleFetchAccount(ctx, request);
                 case FrameNumericType.FETCH_WALLET -> handleFetchWallet(ctx, request);
@@ -122,15 +82,14 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
                 case null, default -> respondHandlerNotFound(ctx);
             }
         } catch (final Exception ex) {
-            respondInternalServerError(ctx);
+            respondServerError(ctx);
             logger.error("{}", ex.getMessage(), ex);
         }
     }
 
     private void handleFetchAccount(final ChannelHandlerContext ctx, final FullHttpRequest request) throws Exception {
-        final var message = MAPPER.readValue((InputStream) new ByteBufInputStream(request.content()), FETCH_ACCOUNT_TYPE);
-        if (message.getData() == null) {
-            respondNullDataProvided(ctx);
+        final var message = fetchAccountMessage(request);
+        if (!isValidMessage(ctx, message)) {
             return;
         }
 
@@ -142,16 +101,14 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
             return;
         }
 
-        final var json = ctx.alloc().buffer(64);
-        MAPPER.writeValue((OutputStream) new ByteBufOutputStream(json), account);
-
-        respondJson(ctx, json);
+        final var buf = ctx.alloc().buffer(64);
+        writeJsonValue(buf, account);
+        respondJson(ctx, buf);
     }
 
     private void handleFetchWallet(final ChannelHandlerContext ctx, final FullHttpRequest request) throws Exception {
-        final var message = MAPPER.readValue((InputStream) new ByteBufInputStream(request.content()), FETCH_WALLET_TYPE);
-        if (message.getData() == null) {
-            respondNullDataProvided(ctx);
+        final var message = fetchWalletMessage(request);
+        if (!isValidMessage(ctx, message)) {
             return;
         }
 
@@ -163,16 +120,14 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
             return;
         }
 
-        final var json = ctx.alloc().buffer(64);
-        MAPPER.writeValue((OutputStream) new ByteBufOutputStream(json), wallet);
-
-        respondJson(ctx, json);
+        final var buf = ctx.alloc().buffer(32);
+        writeJsonValue(buf, wallet);
+        respondJson(ctx, buf);
     }
 
     private void handleBatch(final ChannelHandlerContext ctx, final FullHttpRequest request, final boolean atomic) {
-        final var message = MAPPER.readValue((InputStream) new ByteBufInputStream(request.content()), BATCH_TYPE);
-        if (message.getData() == null) {
-            respondNullDataProvided(ctx);
+        final var message = batchMessage(request);
+        if (!isValidMessage(ctx, message)) {
             return;
         }
 
@@ -214,20 +169,18 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
                     }
                 }
 
-                final var json = ctx.alloc().buffer(failedCount * 64);
-                MAPPER.writeValue((OutputStream) new ByteBufOutputStream(json), failedList);
-
-                respondJson(ctx, json);
+                final var buf = ctx.alloc().buffer(failedCount * 64);
+                writeJsonValue(buf, failedList);
+                respondJson(ctx, buf);
             } else {
-                respondInternalServerError(ctx);
+                respondServerError(ctx);
             }
         }, cpuHeavyTaskExecutor);
     }
 
     private void handleFetchTransaction(final ChannelHandlerContext ctx, final FullHttpRequest request) {
-        final var message = MAPPER.readValue((InputStream) new ByteBufInputStream(request.content()), FETCH_TRANSACTION_TYPE);
-        if (message.getData() == null) {
-            respondNullDataProvided(ctx);
+        final var message = fetchTransactionMessage(request);
+        if (!isValidMessage(ctx, message)) {
             return;
         }
 
@@ -238,113 +191,37 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
                         return;
                     }
 
-                    final var json = ctx.alloc().buffer(128);
-                    MAPPER.writeValue((OutputStream) new ByteBufOutputStream(json), transaction);
-                    respondJson(ctx, json);
+                    final var buf = ctx.alloc().buffer(128);
+                    writeJsonValue(buf, transaction);
+                    respondJson(ctx, buf);
                 }, cpuHeavyTaskExecutor);
     }
 
-    private static void respondJson(final ChannelHandlerContext ctx, final ByteBuf json) {
-        final var response = new DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1,
-                HttpResponseStatus.OK,
-                json);
-
-        response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json; charset=UTF-8");
-        response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, json.readableBytes());
-
-        ctx.writeAndFlush(response);
-    }
-
-    private static void respondEmpty(final ChannelHandlerContext ctx) {
-        final var response = new DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1,
-                HttpResponseStatus.OK,
-                EMPTY.retainedDuplicate());
-
-        response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json; charset=UTF-8");
-        response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, EMPTY.readableBytes());
-
-        ctx.writeAndFlush(response);
-    }
-
-    private static void respondMethodNotSupported(final ChannelHandlerContext ctx) {
-        final var response = new DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1,
-                HttpResponseStatus.BAD_REQUEST,
-                METHOD_NOT_SUPPORTED.retainedDuplicate());
-
-        response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json; charset=UTF-8");
-        response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, METHOD_NOT_SUPPORTED.readableBytes());
-
-        ctx.writeAndFlush(response);
-    }
-
-    private static void respondHandlerNotFound(final ChannelHandlerContext ctx) {
-        final var response = new DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1,
-                HttpResponseStatus.NOT_FOUND,
-                HANDLER_NOT_FOUND.retainedDuplicate());
-
-        response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json; charset=UTF-8");
-        response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, HANDLER_NOT_FOUND.readableBytes());
-
-        ctx.writeAndFlush(response);
-    }
-
-    private static void respondContentTypeNotSupported(final ChannelHandlerContext ctx) {
-        final var response = new DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1,
-                HttpResponseStatus.BAD_REQUEST,
-                CONTENT_TYPE_NOT_SUPPORTED.retainedDuplicate());
-
-        response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json; charset=UTF-8");
-        response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, CONTENT_TYPE_NOT_SUPPORTED.readableBytes());
-
-        ctx.writeAndFlush(response);
-    }
-
-    private static void respondResourceNotFound(final ChannelHandlerContext ctx) {
-        final var response = new DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1,
-                HttpResponseStatus.NOT_FOUND,
-                RESOURCE_NOT_FOUND.retainedDuplicate());
-
-        response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json; charset=UTF-8");
-        response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, RESOURCE_NOT_FOUND.readableBytes());
-
-        ctx.writeAndFlush(response);
-    }
-
-    private static void respondNullDataProvided(final ChannelHandlerContext ctx) {
-        final var response = new DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1,
-                HttpResponseStatus.BAD_REQUEST,
-                NULL_DATA_PROVIDED.retainedDuplicate());
-
-        response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json; charset=UTF-8");
-        response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, NULL_DATA_PROVIDED.readableBytes());
-
-        ctx.writeAndFlush(response);
-    }
-
-    private static void respondInternalServerError(final ChannelHandlerContext ctx) {
-        final var response = new DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1,
-                HttpResponseStatus.INTERNAL_SERVER_ERROR,
-                INTERNAL_SERVER_ERROR.retainedDuplicate());
-
-        response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json; charset=UTF-8");
-        response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, INTERNAL_SERVER_ERROR.readableBytes());
-
-        ctx.writeAndFlush(response);
-    }
-
-    private static int messageNumericType(final QueryStringDecoder uri) {
-        try {
-            return Integer.parseInt(uri.parameters().getOrDefault("numericType", QUERY_PARAMETER_ZERO).getFirst());
-        } catch (final NumberFormatException ex) {
-            return 0;
+    private <T> boolean isValidMessage(final ChannelHandlerContext ctx, final Message<T> message) {
+        if (!addSequenceId(message.getSequenceId())) {
+            respondInvalidSequenceId(ctx);
+            return false;
         }
+
+        if (!isValidTimestamp(message.getTs())) {
+            respondInvalidTs(ctx);
+            return false;
+        }
+
+        if (message.getData() == null) {
+            respondDataIsRequired(ctx);
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean addSequenceId(final int sequenceId) {
+        return sequenceIdsHolder.addSequenceId(sequenceId);
+    }
+
+    private boolean isValidTimestamp(final long ts) {
+        final var now = System.currentTimeMillis();
+        return (now - 5000) < ts && ts < (now + 5000);
     }
 }
