@@ -65,7 +65,7 @@ public final class HTTPServerCompressionConfig {
      * @author Alireza Pourtaghi
      */
     public static final class Builder {
-        private int contentSizeThreshold = 0;
+        private int contentSizeThreshold = 512;
         private int compressionLevel = 6;
         private int windowBits = 15;
         private int memLevel = 8;
