@@ -68,10 +68,10 @@ final class HTTPRouter extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     static {
         METHOD_NOT_SUPPORTED.writeCharSequence("{\"code\":\"method.not_supported\",\"message\":\"http method not supported\"}", UTF_8);
-        HANDLER_NOT_FOUND.writeCharSequence("{\"code\":\"handler.not_found\",\"message\":\"handler not found\"}", UTF_8);
-        CONTENT_TYPE_NOT_SUPPORTED.writeCharSequence("{\"code\":\"content_type.not_supported\",\"message\":\"content type not supported\"}", UTF_8);
+        HANDLER_NOT_FOUND.writeCharSequence("{\"code\":\"handler.not_found\",\"message\":\"http handler not found\"}", UTF_8);
+        CONTENT_TYPE_NOT_SUPPORTED.writeCharSequence("{\"code\":\"content_type.invalid\",\"message\":\"empty or invalid content type header\"}", UTF_8);
         RESOURCE_NOT_FOUND.writeCharSequence("{\"code\":\"resource.not_found\",\"message\":\"requested resource not found\"}", UTF_8);
-        NULL_DATA_PROVIDED.writeCharSequence("{\"code\":\"null_data.provided\",\"message\":\"the data object in body is required\"}", UTF_8);
+        NULL_DATA_PROVIDED.writeCharSequence("{\"code\":\"data.required\",\"message\":\"the data object in json body is required\"}", UTF_8);
         INTERNAL_SERVER_ERROR.writeCharSequence("{\"code\":\"server.error\",\"message\":\"internal server error occurred\"}", UTF_8);
 
         QUERY_PARAMETER_ZERO.add("0");
