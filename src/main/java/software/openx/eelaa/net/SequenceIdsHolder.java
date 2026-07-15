@@ -33,7 +33,6 @@ final class SequenceIdsHolder {
     }
 
     public boolean addSequenceId(final int sequenceId) {
-        // TODO: This design only works for single instance eelaa, should we care about it?
         // Provided sequence id must be greater than zero.
         if (sequenceId <= 0) {
             return false;

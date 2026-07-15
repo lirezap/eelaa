@@ -71,9 +71,14 @@ final class LMDBBasedLedger extends Ledger {
                 MDB_NORDAHEAD,
                 0644)).get();
 
-        final var transactionsDbi = executor.submit(() -> lmdbManager.openDb("transactions")).get();
-        final var walletsDbi = executor.submit(() -> lmdbManager.openDb("wallets")).get();
-        final var ledgersDbi = executor.submit(() -> lmdbManager.openDb("ledgers", MDB_CREATE | MDB_INTEGERKEY)).get();
+        final var transactionsDbi = executor.submit(() -> lmdbManager
+                .openDb("transactions")).get();
+
+        final var walletsDbi = executor.submit(() -> lmdbManager
+                .openDb("wallets")).get();
+
+        final var ledgersDbi = executor.submit(() -> lmdbManager
+                .openDb("ledgers", MDB_CREATE | MDB_INTEGERKEY)).get();
 
         return new LMDBBasedLedger(executor, processor, lz4, lmdbManager, transactionsDbi, walletsDbi, ledgersDbi);
     }
