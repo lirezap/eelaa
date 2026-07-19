@@ -16,6 +16,7 @@
 package software.openx.eelaa;
 
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,8 +24,6 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
-
-import static com.typesafe.config.ConfigFactory.load;
 
 /**
  * Configuration loading component.
@@ -43,7 +42,7 @@ final class Configuration {
         // application.json (all resources on classpath with this name)
         // application.properties (all resources on classpath with this name)
         // reference.conf (all resources on classpath with this name)
-        this.config = load();
+        this.config = ConfigFactory.load();
     }
 
     public boolean loadBoolean(final String key) {
@@ -109,11 +108,11 @@ final class Configuration {
         return value;
     }
 
-    public Config loadConfig(final String key) {
-        return config.getConfig(key);
-    }
-
     public ConfigObject loadObject(final String key) {
         return config.getObject(key);
+    }
+
+    public Config loadConfig(final String key) {
+        return config.getConfig(key);
     }
 }
