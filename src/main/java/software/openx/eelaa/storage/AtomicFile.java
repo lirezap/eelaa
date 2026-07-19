@@ -97,7 +97,10 @@ public final class AtomicFile implements AutoCloseable {
             }
             if (!IS_MAC) movedFile.force(false);
         } finally {
-            Files.move(movePath, filePath, ATOMIC_MOVE);
+            try {
+                Files.move(movePath, filePath, ATOMIC_MOVE);
+            } catch (final Exception _) {
+            }
         }
     }
 
@@ -131,7 +134,10 @@ public final class AtomicFile implements AutoCloseable {
                 // Let current write to be success.
             }
         } finally {
-            Files.move(movePath, filePath, ATOMIC_MOVE);
+            try {
+                Files.move(movePath, filePath, ATOMIC_MOVE);
+            } catch (final Exception _) {
+            }
         }
     }
 
@@ -144,8 +150,7 @@ public final class AtomicFile implements AutoCloseable {
         final var buffer = segment.asByteBuffer();
 
         while (buffer.hasRemaining()) {
-            final var bytesRead = file.read(buffer, position + buffer.position());
-            if (bytesRead <= 0) {
+            if (file.read(buffer, position + buffer.position()) <= 0) {
                 break;
             }
         }
@@ -157,8 +162,7 @@ public final class AtomicFile implements AutoCloseable {
         final var buffer = segment.asByteBuffer();
 
         while (buffer.hasRemaining()) {
-            final var bytesRead = file.read(buffer, position + buffer.position());
-            if (bytesRead <= 0) {
+            if (file.read(buffer, position + buffer.position()) <= 0) {
                 break;
             }
         }
