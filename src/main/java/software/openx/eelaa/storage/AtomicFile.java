@@ -97,10 +97,7 @@ public final class AtomicFile implements AutoCloseable {
             }
             if (!IS_MAC) movedFile.force(false);
         } finally {
-            try {
-                Files.move(movePath, filePath, ATOMIC_MOVE);
-            } catch (final Exception _) {
-            }
+            Files.move(movePath, filePath, ATOMIC_MOVE);
         }
     }
 
@@ -134,10 +131,7 @@ public final class AtomicFile implements AutoCloseable {
                 // Let current write to be success.
             }
         } finally {
-            try {
-                Files.move(movePath, filePath, ATOMIC_MOVE);
-            } catch (final Exception _) {
-            }
+            Files.move(movePath, filePath, ATOMIC_MOVE);
         }
     }
 
@@ -147,12 +141,27 @@ public final class AtomicFile implements AutoCloseable {
 
     public MemorySegment read(final Arena arena, final long position, final long size) throws IOException {
         final var segment = arena.allocate(size);
-        file.read(segment.asByteBuffer().clear(), position);
+        final var buffer = segment.asByteBuffer();
+
+        while (buffer.hasRemaining()) {
+            final var bytesRead = file.read(buffer, position + buffer.position());
+            if (bytesRead <= 0) {
+                break;
+            }
+        }
+
         return segment;
     }
 
     public void read(final MemorySegment segment, final long position) throws IOException {
-        file.read(segment.asByteBuffer().clear(), position);
+        final var buffer = segment.asByteBuffer();
+
+        while (buffer.hasRemaining()) {
+            final var bytesRead = file.read(buffer, position + buffer.position());
+            if (bytesRead <= 0) {
+                break;
+            }
+        }
     }
 
     public long size() throws IOException {
