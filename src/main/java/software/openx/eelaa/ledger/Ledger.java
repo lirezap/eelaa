@@ -24,7 +24,7 @@ import java.util.concurrent.ExecutorService;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Lock-free, high performance and in-memory monetary ledger implementation.
+ * Lock-free, high performance and in-memory monetary general ledger implementation.
  *
  * @author Alireza Pourtaghi
  */

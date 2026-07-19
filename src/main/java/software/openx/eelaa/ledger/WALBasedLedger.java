@@ -30,7 +30,7 @@ import static software.openx.eelaa.ledger.LedgerConfig.TRANSACTION_ID_REQUIRED_B
 import static software.openx.eelaa.memory.MemorySegmentUtil.*;
 
 /**
- * WAL based crash-safe monetary ledger implementation.
+ * WAL based crash-safe monetary general ledger implementation.
  *
  * @author Alireza Pourtaghi
  */

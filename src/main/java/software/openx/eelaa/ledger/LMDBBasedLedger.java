@@ -34,7 +34,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static software.openx.eelaa.lmdb.LMDBFlags.*;
 
 /**
- * LMDB based crash-safe monetary ledger implementation.
+ * LMDB based crash-safe monetary general ledger implementation.
  *
  * @author Alireza Pourtaghi
  */
