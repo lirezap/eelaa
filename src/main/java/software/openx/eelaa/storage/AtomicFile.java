@@ -17,6 +17,7 @@ package software.openx.eelaa.storage;
 
 import org.agrona.SystemUtil;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -87,6 +88,7 @@ public final class AtomicFile implements AutoCloseable {
                 bytesWritten =
                         Math.addExact(bytesWritten, movedFile.write(buffer, Math.addExact(position, bytesWritten)));
             }
+            if (!IS_MAC) movedFile.force(true);
 
             incrementDurabilitySize(bytesWritten);
             final var fileHeaderAsBuffer = fileHeaderMemory.asByteBuffer();
@@ -95,7 +97,7 @@ public final class AtomicFile implements AutoCloseable {
                 bytesWritten =
                         Math.addExact(bytesWritten, movedFile.write(fileHeaderAsBuffer, bytesWritten));
             }
-            if (!IS_MAC) movedFile.force(false);
+            if (!IS_MAC) movedFile.force(true);
         } finally {
             try {
                 Files.move(movePath, filePath, ATOMIC_MOVE);
@@ -117,6 +119,7 @@ public final class AtomicFile implements AutoCloseable {
                         bufferBytesWritten,
                         movedFile.write(buffer, Math.addExact(position, bufferBytesWritten)));
             }
+            if (!IS_MAC) movedFile.force(true);
 
             incrementDurabilitySize(bufferBytesWritten);
             final var fileHeaderAsBuffer = fileHeaderMemory.asByteBuffer();
@@ -125,7 +128,7 @@ public final class AtomicFile implements AutoCloseable {
                 headerBytesWritten =
                         Math.addExact(headerBytesWritten, movedFile.write(fileHeaderAsBuffer, headerBytesWritten));
             }
-            if (!IS_MAC) movedFile.force(false);
+            if (!IS_MAC) movedFile.force(true);
 
             try {
                 position = Math.addExact(position, bufferBytesWritten);
@@ -155,6 +158,10 @@ public final class AtomicFile implements AutoCloseable {
             }
         }
 
+        if (buffer.hasRemaining()) {
+            throw new EOFException();
+        }
+
         return segment;
     }
 
@@ -165,6 +172,10 @@ public final class AtomicFile implements AutoCloseable {
             if (file.read(buffer, position + buffer.position()) <= 0) {
                 break;
             }
+        }
+
+        if (buffer.hasRemaining()) {
+            throw new EOFException();
         }
     }
 
@@ -182,7 +193,7 @@ public final class AtomicFile implements AutoCloseable {
             bytesWritten = Math.addExact(bytesWritten, file.write(buffer, Math.addExact(position, bytesWritten)));
         }
 
-        if (!IS_MAC) file.force(false);
+        if (!IS_MAC) file.force(true);
     }
 
     private void incrementDurabilitySize(final long incrementValue) {
