@@ -52,8 +52,8 @@ final class WALBasedLedger extends Ledger {
         final var executor = new ThreadPoolExecutor(1, 1, 0L, SECONDS, queue);
         final var processor = Processor.newInstance(ledgerConfig);
         final var transactionsFile = executor.submit(() -> AtomicFile.newInstance(
-                // EELAAWAL magic number: 0x45454C414157414CL
-                ledgerConfig.getDataDirectoryPath().resolve("transactions.gl"), 0x45454C414157414CL)).get();
+                // EELAAWAL magic number: 0x4C415741414C4545L
+                ledgerConfig.getDataDirectoryPath().resolve("transactions.gl"), 0x4C415741414C4545L)).get();
 
         // For safety.
         Thread.sleep(TRANSACTION_ID_REQUIRED_BACKOFF_MS + 1000);
