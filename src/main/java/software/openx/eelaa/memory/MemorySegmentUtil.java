@@ -17,6 +17,7 @@ package software.openx.eelaa.memory;
 
 import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.zip.CRC32C;
 
 import static java.lang.foreign.ValueLayout.*;
 import static java.nio.ByteOrder.BIG_ENDIAN;
@@ -106,5 +107,15 @@ public final class MemorySegmentUtil {
     public static long putMemory(final MemorySegment memory, final long position, final MemorySegment value) {
         MemorySegment.copy(value, 0, memory, position, value.byteSize());
         return Math.addExact(position, value.byteSize());
+    }
+
+    public static long computeCRC32C(final MemorySegment memory) {
+        final var crc = new CRC32C();
+        crc.update(memory.asByteBuffer());
+        return crc.getValue();
+    }
+
+    public static boolean isComputedCRC32CValid(final MemorySegment memory, final long computedValue) {
+        return computeCRC32C(memory) == computedValue;
     }
 }

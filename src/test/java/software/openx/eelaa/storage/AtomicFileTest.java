@@ -39,7 +39,7 @@ public class AtomicFileTest {
         try (var executor = Executors.newSingleThreadExecutor();
              var arena = Arena.ofShared()) {
 
-            var file = executor.submit(() -> AtomicFile.newInstance(path)).get();
+            var file = executor.submit(() -> AtomicFile.newInstance(path, 0x45454C414157414CL)).get();
             var segment = arena.allocate(bufferSize);
             for (int i = 1; i <= 50000; i++) {
                 executor.submit(() -> {
@@ -54,7 +54,7 @@ public class AtomicFileTest {
             executor.shutdownNow();
         }
 
-        try (var file = AtomicFile.newInstance(path)) {
+        try (var file = AtomicFile.newInstance(path, 0x45454C414157414CL)) {
             assertEquals(0, (file.size() - 256) % bufferSize);
         }
     }

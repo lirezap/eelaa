@@ -29,7 +29,6 @@ import java.util.Objects;
 
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 import static java.nio.file.StandardOpenOption.*;
-import static software.openx.eelaa.memory.MemorySegmentUtil.LONG_LE;
 
 /**
  * An atomic file implementation based on {@link FileChannel}. The implementation holds the position value itself.
@@ -37,42 +36,33 @@ import static software.openx.eelaa.memory.MemorySegmentUtil.LONG_LE;
  * @author Alireza Pourtaghi
  */
 public final class AtomicFile implements AutoCloseable {
-    private static final boolean IS_MAC = SystemUtil.isMac();
+    public static final boolean IS_MAC = SystemUtil.isMac();
 
     private final Path filePath;
     private final Path movePath;
-    private final Arena fileHeaderMemoryAllocator;
-    private final MemorySegment fileHeaderMemory;
+    private final AtomicFileHeader header;
     private final FileChannel file;
     private long position;
 
-    private AtomicFile(final Path filePath, final Path movePath, final Arena fileHeaderMemoryAllocator,
-                       final MemorySegment fileHeaderMemory, final FileChannel file, final long position) {
+    private AtomicFile(final Path filePath, final Path movePath, final AtomicFileHeader header,
+                       final FileChannel file, final long position) {
 
         this.filePath = filePath;
         this.movePath = movePath;
-        this.fileHeaderMemoryAllocator = fileHeaderMemoryAllocator;
-        this.fileHeaderMemory = fileHeaderMemory;
+        this.header = header;
         this.file = file;
         this.position = position;
     }
 
-    public static AtomicFile newInstance(final Path filePath) throws IOException {
+    public static AtomicFile newInstance(final Path filePath, final long magic) throws IOException {
         requireNonNull(filePath);
         requireNonDirectory(filePath);
 
         final var movePath = filePath.resolveSibling(filePath.getFileName() + ".mv");
-        recoverIfNeeded(filePath, movePath);
+        recoverIfNeeded(filePath, movePath, magic);
 
-        final var fileHeaderMemoryAllocator = Arena.ofConfined();
-        final var fileHeaderMemory = fileHeaderMemoryAllocator.allocate(256);
-        final var instance = new AtomicFile(
-                filePath,
-                movePath,
-                fileHeaderMemoryAllocator,
-                fileHeaderMemory,
-                openCreateReadWrite(filePath),
-                -1);
+        final var header = AtomicFileHeader.newInstance(magic);
+        final var instance = new AtomicFile(filePath, movePath, header, openCreateReadWrite(filePath), -1);
 
         instance.prepareFileHeader();
         instance.adjustPosition();
@@ -89,18 +79,11 @@ public final class AtomicFile implements AutoCloseable {
                         Math.addExact(bytesWritten, movedFile.write(buffer, Math.addExact(position, bytesWritten)));
             }
             if (!IS_MAC) movedFile.force(true);
-
-            incrementDurabilitySize(bytesWritten);
-            final var fileHeaderAsBuffer = fileHeaderMemory.asByteBuffer();
-            bytesWritten = 0;
-            while (fileHeaderAsBuffer.hasRemaining()) {
-                bytesWritten =
-                        Math.addExact(bytesWritten, movedFile.write(fileHeaderAsBuffer, bytesWritten));
-            }
-            if (!IS_MAC) movedFile.force(true);
+            header.incrementDurabilitySize(movedFile, bytesWritten);
         } finally {
             try {
                 Files.move(movePath, filePath, ATOMIC_MOVE);
+                syncDirectory(filePath);
             } catch (final Exception _) {
             }
         }
@@ -113,25 +96,16 @@ public final class AtomicFile implements AutoCloseable {
     public void append(final ByteBuffer buffer) throws IOException {
         Files.move(filePath, movePath, ATOMIC_MOVE);
         try (final var movedFile = openReadWrite(movePath)) {
-            var bufferBytesWritten = 0;
+            var bytesWritten = 0;
             while (buffer.hasRemaining()) {
-                bufferBytesWritten = Math.addExact(
-                        bufferBytesWritten,
-                        movedFile.write(buffer, Math.addExact(position, bufferBytesWritten)));
+                bytesWritten =
+                        Math.addExact(bytesWritten, movedFile.write(buffer, Math.addExact(position, bytesWritten)));
             }
             if (!IS_MAC) movedFile.force(true);
-
-            incrementDurabilitySize(bufferBytesWritten);
-            final var fileHeaderAsBuffer = fileHeaderMemory.asByteBuffer();
-            var headerBytesWritten = 0;
-            while (fileHeaderAsBuffer.hasRemaining()) {
-                headerBytesWritten =
-                        Math.addExact(headerBytesWritten, movedFile.write(fileHeaderAsBuffer, headerBytesWritten));
-            }
-            if (!IS_MAC) movedFile.force(true);
+            header.incrementDurabilitySize(movedFile, bytesWritten);
 
             try {
-                position = Math.addExact(position, bufferBytesWritten);
+                position = Math.addExact(position, bytesWritten);
             } catch (final ArithmeticException _) {
                 // Noop! Next write operation will fail because of previous Math.addExact(position, bufferBytesWritten).
                 // Let current write to be success.
@@ -139,6 +113,7 @@ public final class AtomicFile implements AutoCloseable {
         } finally {
             try {
                 Files.move(movePath, filePath, ATOMIC_MOVE);
+                syncDirectory(filePath);
             } catch (final Exception _) {
             }
         }
@@ -183,31 +158,12 @@ public final class AtomicFile implements AutoCloseable {
         return file.size();
     }
 
-    private void writeAllBytes(final MemorySegment segment, final long position) throws IOException {
-        writeAllBytes(segment.asByteBuffer(), position);
-    }
-
-    private void writeAllBytes(final ByteBuffer buffer, final long position) throws IOException {
-        var bytesWritten = 0;
-        while (buffer.hasRemaining()) {
-            bytesWritten = Math.addExact(bytesWritten, file.write(buffer, Math.addExact(position, bytesWritten)));
-        }
-
-        if (!IS_MAC) file.force(true);
-    }
-
-    private void incrementDurabilitySize(final long incrementValue) {
-        final var newValue = Math.addExact(fileHeaderMemory.get(LONG_LE, 0), incrementValue);
-        fileHeaderMemory.set(LONG_LE, 0, newValue);
-    }
-
     private void prepareFileHeader() throws IOException {
         try (final var _ = file.lock()) {
             if (file.size() == 0) {
-                fileHeaderMemory.set(LONG_LE, 0, fileHeaderMemory.byteSize());
-                writeAllBytes(fileHeaderMemory, 0);
+                header.persistHeader(file);
             } else {
-                read(fileHeaderMemory, 0);
+                header.restoreHeader(file);
             }
         }
     }
@@ -228,23 +184,26 @@ public final class AtomicFile implements AutoCloseable {
         }
     }
 
-    private static void recoverIfNeeded(final Path filePath, final Path movePath) throws IOException {
+    private static void recoverIfNeeded(final Path filePath, final Path movePath, final long magic) throws IOException {
         if (!Files.exists(filePath) && Files.exists(movePath)) {
             // System crash or non-graceful shutdown?!
             try (final var movedFile = openReadWriteSync(movePath)) {
                 try (final var _ = movedFile.lock()) {
-                    try (final var arena = Arena.ofConfined()) {
-                        // 256 bytes file header.
-                        final var header = arena.allocate(256);
-                        if (header.byteSize() == movedFile.read(header.asByteBuffer().clear(), 0)) {
-                            movedFile.truncate(header.get(LONG_LE, 0));
-                            Files.move(movePath, filePath, ATOMIC_MOVE);
-                        } else {
-                            throw new IOException("incomplete read or file corrupted!");
-                        }
+                    try (final var header = AtomicFileHeader.newInstance(magic)) {
+                        header.restoreHeader(movedFile);
+                        movedFile.truncate(header.getDurabilitySize());
+
+                        Files.move(movePath, filePath, ATOMIC_MOVE);
+                        syncDirectory(filePath.getParent());
                     }
                 }
             }
+        }
+    }
+
+    private static void syncDirectory(final Path path) throws IOException {
+        try (final var directory = FileChannel.open(path, READ)) {
+            directory.force(true);
         }
     }
 
@@ -271,6 +230,6 @@ public final class AtomicFile implements AutoCloseable {
     @Override
     public void close() throws Exception {
         if (file.isOpen()) file.close();
-        fileHeaderMemoryAllocator.close();
+        header.close();
     }
 }

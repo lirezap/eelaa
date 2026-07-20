@@ -48,7 +48,7 @@ public final class ThreadConfinedAtomicFile implements AutoCloseable {
         this.closeMethodRunnable = closeMethodRunnable;
     }
 
-    public static CompletableFuture<ThreadConfinedAtomicFile> newInstance(final Path filePath,
+    public static CompletableFuture<ThreadConfinedAtomicFile> newInstance(final Path filePath, final long magic,
                                                                           final int maxWaitQueueSize) {
 
         // Bounded queue executor with abort policy.
@@ -57,7 +57,7 @@ public final class ThreadConfinedAtomicFile implements AutoCloseable {
 
         return CompletableFuture.supplyAsync(() -> {
             try {
-                final var file = AtomicFile.newInstance(filePath);
+                final var file = AtomicFile.newInstance(filePath, magic);
                 final var sizeMethodSupplier = sizeMethodSupplier(file);
                 final var closeMethodRunnable = closeMethodRunnable(file);
 
