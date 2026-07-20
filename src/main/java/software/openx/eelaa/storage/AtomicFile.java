@@ -31,7 +31,8 @@ import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 import static java.nio.file.StandardOpenOption.*;
 
 /**
- * An atomic file implementation based on {@link FileChannel}. The implementation holds the position value itself.
+ * An atomic and crash-safe file implementation based on {@link FileChannel}. The implementation holds the position
+ * value itself. This implementation is not thread safe and must be used in a single threaded context (executor).
  *
  * @author Alireza Pourtaghi
  */

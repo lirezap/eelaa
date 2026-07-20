@@ -44,7 +44,7 @@ final class AtomicFileHeader implements AutoCloseable {
 
     public static AtomicFileHeader newInstance(final long magic) {
         final var allocator = Arena.ofConfined();
-        final var header = allocator.allocate(256, 8);
+        final var header = allocator.allocate(256, 64);
 
         // Magic
         header.set(LONG_LE, 0, magic);
@@ -96,30 +96,26 @@ final class AtomicFileHeader implements AutoCloseable {
 
         if (firstRecordGeneration <= secondRecordGeneration) {
             // First record is older.
-            final var currentDurabilitySize = header.get(LONG_LE, 16);
-            header.set(LONG_LE, 8, secondRecordGeneration + 1);
-            header.set(LONG_LE, 16, currentDurabilitySize + incrementSize);
+            final var secondRecordDurabilitySize = header.get(LONG_LE, 144);
+            header.set(LONG_LE, 8, Math.addExact(secondRecordGeneration, 1));
+            header.set(LONG_LE, 16, Math.addExact(secondRecordDurabilitySize, incrementSize));
             header.set(LONG_LE, 24, MemorySegmentUtil.computeCRC32C(header.asSlice(0, 24)));
+            persistFirstRecord(file);
         } else {
             // Second record is older.
-            final var currentDurabilitySize = header.get(LONG_LE, 144);
-            header.set(LONG_LE, 136, firstRecordGeneration + 1);
-            header.set(LONG_LE, 144, currentDurabilitySize + incrementSize);
+            final var firstRecordDurabilitySize = header.get(LONG_LE, 16);
+            header.set(LONG_LE, 136, Math.addExact(firstRecordGeneration, 1));
+            header.set(LONG_LE, 144, Math.addExact(firstRecordDurabilitySize, incrementSize));
             header.set(LONG_LE, 152, MemorySegmentUtil.computeCRC32C(header.asSlice(128, 24)));
+            persistSecondRecord(file);
         }
-
-        persistHeader(file);
     }
 
     public long getDurabilitySize() throws IOException {
-        if (magic != header.get(LONG_LE, 0)) {
-            throw new IOException("wrong magic number in the header of examined file!");
-        }
-
-        final var isFirstRecordValid =
+        final var isFirstRecordValid = (magic == header.get(LONG_LE, 0)) &&
                 MemorySegmentUtil.isComputedCRC32CValid(header.asSlice(0, 24), header.get(LONG_LE, 24));
 
-        final var isSecondRecordValid =
+        final var isSecondRecordValid = (magic == header.get(LONG_LE, 128)) &&
                 MemorySegmentUtil.isComputedCRC32CValid(header.asSlice(128, 24), header.get(LONG_LE, 152));
 
         if (isFirstRecordValid && isSecondRecordValid) {
@@ -139,6 +135,26 @@ final class AtomicFileHeader implements AutoCloseable {
         } else {
             throw new IOException("file header corrupted!");
         }
+    }
+
+    private void persistFirstRecord(final FileChannel file) throws IOException {
+        final var firstRecordByteBuffer = header.asSlice(0, 128).asByteBuffer();
+        var bytesWritten = 0;
+        while (firstRecordByteBuffer.hasRemaining()) {
+            bytesWritten = Math.addExact(bytesWritten, file.write(firstRecordByteBuffer, bytesWritten));
+        }
+
+        if (!IS_MAC) file.force(true);
+    }
+
+    private void persistSecondRecord(final FileChannel file) throws IOException {
+        final var secondRecordByteBuffer = header.asSlice(128, 128).asByteBuffer();
+        var bytesWritten = 128;
+        while (secondRecordByteBuffer.hasRemaining()) {
+            bytesWritten = Math.addExact(bytesWritten, file.write(secondRecordByteBuffer, bytesWritten));
+        }
+
+        if (!IS_MAC) file.force(true);
     }
 
     @Override
