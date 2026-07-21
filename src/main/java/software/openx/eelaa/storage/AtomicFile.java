@@ -76,7 +76,7 @@ public final class AtomicFile implements AutoCloseable {
     public void write(final ByteBuffer buffer, final long position) throws IOException {
         Files.move(filePath, movePath, ATOMIC_MOVE);
         try (final var movedFile = openReadWrite(movePath)) {
-            var _ = writeAndIncrementDurabilitySize(movedFile, buffer, position);
+            final var _ = writeAndIncrementDurabilitySize(movedFile, buffer, position);
         } finally {
             try {
                 Files.move(movePath, filePath, ATOMIC_MOVE);
@@ -96,7 +96,7 @@ public final class AtomicFile implements AutoCloseable {
     public void append(final ByteBuffer buffer) throws IOException {
         Files.move(filePath, movePath, ATOMIC_MOVE);
         try (final var movedFile = openReadWrite(movePath)) {
-            var bytesWritten = writeAndIncrementDurabilitySize(movedFile, buffer, position);
+            final var bytesWritten = writeAndIncrementDurabilitySize(movedFile, buffer, position);
             try {
                 position = Math.addExact(position, bytesWritten);
             } catch (final ArithmeticException _) {
