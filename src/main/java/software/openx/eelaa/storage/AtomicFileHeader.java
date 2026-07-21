@@ -44,25 +44,24 @@ final class AtomicFileHeader implements AutoCloseable {
 
     public static AtomicFileHeader newInstance(final long magic) {
         final var allocator = Arena.ofConfined();
-        final var header = allocator.allocate(256, 64);
+        final var header = allocator.allocate(256, 8);
 
+        var position = 0L;
         // Magic
-        header.set(LONG_LE, 0, magic);
-
+        position = MemorySegmentUtil.putLongLE(header, position, magic);
         // Generation
-        header.set(LONG_LE, 8, 0);
-
+        position = MemorySegmentUtil.putLongLE(header, position, 0);
         // Durability Size
-        header.set(LONG_LE, 16, header.byteSize());
-
+        position = MemorySegmentUtil.putLongLE(header, position, header.byteSize());
         // CRC
-        header.set(LONG_LE, 24, MemorySegmentUtil.computeCRC32C(header.asSlice(0, 24)));
+        MemorySegmentUtil.putLongLE(header, position, MemorySegmentUtil.computeCRC32C(header.asSlice(0, 24)));
 
         // Second Record
-        header.set(LONG_LE, 128, magic);
-        header.set(LONG_LE, 136, 0);
-        header.set(LONG_LE, 144, header.byteSize());
-        header.set(LONG_LE, 152, MemorySegmentUtil.computeCRC32C(header.asSlice(128, 24)));
+        position = 128;
+        position = MemorySegmentUtil.putLongLE(header, position, magic);
+        position = MemorySegmentUtil.putLongLE(header, position, 0);
+        position = MemorySegmentUtil.putLongLE(header, position, header.byteSize());
+        MemorySegmentUtil.putLongLE(header, position, MemorySegmentUtil.computeCRC32C(header.asSlice(128, 24)));
 
         return new AtomicFileHeader(allocator, header, magic);
     }
