@@ -63,29 +63,28 @@ public final class AtomicFile implements AutoCloseable {
         recoverIfNeeded(filePath, movePath, magic);
 
         final var header = AtomicFileHeader.newInstance(magic);
-        final var instance = new AtomicFile(filePath, movePath, header, openCreateReadWrite(filePath), -1);
+        final var file = new AtomicFile(filePath, movePath, header, openCreateReadWrite(filePath), -1);
 
-        instance.prepareFileHeader();
-        instance.adjustPosition();
+        // For safety
+        syncParentDirectory(filePath);
+        file.prepareHeader();
+        file.adjustPosition();
 
-        return instance;
+        return file;
     }
 
     public void write(final ByteBuffer buffer, final long position) throws IOException {
         Files.move(filePath, movePath, ATOMIC_MOVE);
         try (final var movedFile = openReadWrite(movePath)) {
-            var bytesWritten = 0;
-            while (buffer.hasRemaining()) {
-                bytesWritten =
-                        Math.addExact(bytesWritten, movedFile.write(buffer, Math.addExact(position, bytesWritten)));
-            }
-            if (!IS_MAC) movedFile.force(true);
-            header.incrementDurabilitySize(movedFile, bytesWritten);
+            var _ = writeAndIncrementDurabilitySize(movedFile, buffer, position);
         } finally {
             try {
                 Files.move(movePath, filePath, ATOMIC_MOVE);
-                syncDirectory(filePath);
             } catch (final Exception _) {
+                // Noop! Because we already finished durable write and the moved file contains data and the recovery
+                // mechanism will truncate to safe size.
+            } finally {
+                syncParentDirectory(filePath);
             }
         }
     }
@@ -97,14 +96,7 @@ public final class AtomicFile implements AutoCloseable {
     public void append(final ByteBuffer buffer) throws IOException {
         Files.move(filePath, movePath, ATOMIC_MOVE);
         try (final var movedFile = openReadWrite(movePath)) {
-            var bytesWritten = 0;
-            while (buffer.hasRemaining()) {
-                bytesWritten =
-                        Math.addExact(bytesWritten, movedFile.write(buffer, Math.addExact(position, bytesWritten)));
-            }
-            if (!IS_MAC) movedFile.force(true);
-            header.incrementDurabilitySize(movedFile, bytesWritten);
-
+            var bytesWritten = writeAndIncrementDurabilitySize(movedFile, buffer, position);
             try {
                 position = Math.addExact(position, bytesWritten);
             } catch (final ArithmeticException _) {
@@ -114,8 +106,11 @@ public final class AtomicFile implements AutoCloseable {
         } finally {
             try {
                 Files.move(movePath, filePath, ATOMIC_MOVE);
-                syncDirectory(filePath);
             } catch (final Exception _) {
+                // Noop! Because we already finished durable write and the moved file contains data and the recovery
+                // mechanism will truncate to safe size.
+            } finally {
+                syncParentDirectory(filePath);
             }
         }
     }
@@ -124,28 +119,11 @@ public final class AtomicFile implements AutoCloseable {
         append(segment.asByteBuffer());
     }
 
-    public MemorySegment read(final Arena arena, final long position, final long size) throws IOException {
-        final var segment = arena.allocate(size);
-        final var buffer = segment.asByteBuffer();
-
-        while (buffer.hasRemaining()) {
-            if (file.read(buffer, position + buffer.position()) <= 0) {
-                break;
-            }
-        }
-
-        if (buffer.hasRemaining()) {
-            throw new EOFException();
-        }
-
-        return segment;
-    }
-
     public void read(final MemorySegment segment, final long position) throws IOException {
         final var buffer = segment.asByteBuffer();
 
         while (buffer.hasRemaining()) {
-            if (file.read(buffer, position + buffer.position()) <= 0) {
+            if (file.read(buffer, Math.addExact(position, buffer.position())) <= 0) {
                 break;
             }
         }
@@ -153,13 +131,20 @@ public final class AtomicFile implements AutoCloseable {
         if (buffer.hasRemaining()) {
             throw new EOFException();
         }
+    }
+
+    public MemorySegment read(final Arena arena, final long position, final long size) throws IOException {
+        final var segment = arena.allocate(size);
+        read(segment, position);
+
+        return segment;
     }
 
     public long size() throws IOException {
         return file.size();
     }
 
-    private void prepareFileHeader() throws IOException {
+    private void prepareHeader() throws IOException {
         try (final var _ = file.lock()) {
             if (file.size() == 0) {
                 header.persistHeader(file);
@@ -173,6 +158,20 @@ public final class AtomicFile implements AutoCloseable {
         try (final var _ = file.lock()) {
             position = file.size();
         }
+    }
+
+    private int writeAndIncrementDurabilitySize(final FileChannel file, final ByteBuffer buffer,
+                                                final long position) throws IOException {
+
+        var bytesWritten = 0;
+        while (buffer.hasRemaining()) {
+            bytesWritten =
+                    Math.addExact(bytesWritten, file.write(buffer, Math.addExact(position, bytesWritten)));
+        }
+        if (!IS_MAC) file.force(true);
+        header.incrementDurabilitySize(file, bytesWritten);
+
+        return bytesWritten;
     }
 
     private static void requireNonNull(final Path filePath) {
@@ -195,16 +194,16 @@ public final class AtomicFile implements AutoCloseable {
                         movedFile.truncate(header.getDurabilitySize());
 
                         Files.move(movePath, filePath, ATOMIC_MOVE);
-                        syncDirectory(filePath.getParent());
+                        syncParentDirectory(filePath.getParent());
                     }
                 }
             }
         }
     }
 
-    private static void syncDirectory(final Path path) throws IOException {
-        try (final var directory = FileChannel.open(path, READ)) {
-            directory.force(true);
+    private static void syncParentDirectory(final Path path) throws IOException {
+        try (final var parentDirectory = FileChannel.open(path.getParent(), READ)) {
+            parentDirectory.force(true);
         }
     }
 
