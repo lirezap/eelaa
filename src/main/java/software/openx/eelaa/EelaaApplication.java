@@ -71,16 +71,36 @@ public final class EelaaApplication implements AutoCloseable {
     }
 
     private static Ledger ledger(final Configuration config, final LZ4 lz4) throws Exception {
-        final var databaseSizeGBs = config.loadInt("ledgers.default.databaseSizeGBs");
-        final var ledgerConfig = new LedgerConfig.Builder()
-                .dataDirectoryPath(config.loadPath("ledgers.default.dataDirectoryPath"))
-                .executorMaxWaitQueueSize(config.loadInt("ledgers.default.executorMaxWaitQueueSize"))
-                .succeededTransactionsCacheTTLSeconds(config.loadInt("ledgers.default.succeededTransactionsCacheTTLSeconds"))
-                .initialAccountsCap(config.loadInt("ledgers.default.initialAccountsCap"))
-                .initialWalletsPerAccountCap(config.loadInt("ledgers.default.initialWalletsPerAccountCap"))
-                .build();
+        final var defaultEnabled = config.loadBoolean("ledgers.default.enabled");
+        final var fastEnabled = config.loadBoolean("ledgers.fast.enabled");
 
-        return Ledger.newInstance(ledgerConfig, lz4, databaseSizeGBs);
+        if (defaultEnabled == fastEnabled) {
+            throw new RuntimeException("one and only one of ledgers must be enabled");
+        }
+
+        if (defaultEnabled) {
+            final var databaseSizeGBs = config.loadInt("ledgers.default.databaseSizeGBs");
+            final var ledgerConfig = new LedgerConfig.Builder()
+                    .dataDirectoryPath(config.loadPath("ledgers.default.dataDirectoryPath"))
+                    .executorMaxWaitQueueSize(config.loadInt("ledgers.default.executorMaxWaitQueueSize"))
+                    .succeededTransactionsCacheTTLSeconds(config.loadInt("ledgers.default.succeededTransactionsCacheTTLSeconds"))
+                    .initialAccountsCap(config.loadInt("ledgers.default.initialAccountsCap"))
+                    .initialWalletsPerAccountCap(config.loadInt("ledgers.default.initialWalletsPerAccountCap"))
+                    .build();
+
+            return Ledger.newInstance(ledgerConfig, lz4, databaseSizeGBs);
+        } else {
+            final var databaseSizeGBs = config.loadInt("ledgers.fast.databaseSizeGBs");
+            final var ledgerConfig = new LedgerConfig.Builder()
+                    .dataDirectoryPath(config.loadPath("ledgers.fast.dataDirectoryPath"))
+                    .executorMaxWaitQueueSize(config.loadInt("ledgers.fast.executorMaxWaitQueueSize"))
+                    .succeededTransactionsCacheTTLSeconds(config.loadInt("ledgers.fast.succeededTransactionsCacheTTLSeconds"))
+                    .initialAccountsCap(config.loadInt("ledgers.fast.initialAccountsCap"))
+                    .initialWalletsPerAccountCap(config.loadInt("ledgers.fast.initialWalletsPerAccountCap"))
+                    .build();
+
+            return Ledger.newFastInstance(ledgerConfig, lz4, databaseSizeGBs);
+        }
     }
 
     private static TCPServer tcpServer(final Configuration config, final LZ4 lz4, final Ledger ledger) {

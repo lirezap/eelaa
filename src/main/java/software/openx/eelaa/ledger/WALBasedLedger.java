@@ -38,15 +38,19 @@ final class WALBasedLedger extends Ledger {
     private static final Logger logger = LoggerFactory.getLogger(WALBasedLedger.class);
 
     private final AtomicFile transactionsFile;
+    private final GLFileSynchronizer glFileSynchronizer;
 
     private WALBasedLedger(final ExecutorService executor, final Processor processor, final LZ4 lz4,
-                           final AtomicFile transactionsFile) {
+                           final AtomicFile transactionsFile, final GLFileSynchronizer glFileSynchronizer) {
 
         super(executor, processor, lz4);
         this.transactionsFile = transactionsFile;
+        this.glFileSynchronizer = glFileSynchronizer;
     }
 
-    public static Ledger newInstance(final LedgerConfig ledgerConfig, final LZ4 lz4) throws Exception {
+    public static Ledger newInstance(final LedgerConfig ledgerConfig, final LZ4 lz4,
+                                     final int databaseSizeGbs) throws Exception {
+
         // Bounded queue executor with abort policy.
         final var queue = new ArrayBlockingQueue<Runnable>(ledgerConfig.getExecutorMaxWaitQueueSize());
         final var executor = new ThreadPoolExecutor(1, 1, 0L, SECONDS, queue);
@@ -54,10 +58,12 @@ final class WALBasedLedger extends Ledger {
         final var transactionsFile = executor.submit(() -> AtomicFile.newInstance(
                 // EELAAWAL magic number: 0x4C415741414C4545L
                 ledgerConfig.getDataDirectoryPath().resolve("transactions.gl"), 0x4C415741414C4545L)).get();
+        final var glFileSynchronizer = GLFileSynchronizer.newInstance(ledgerConfig, lz4, databaseSizeGbs);
+        glFileSynchronizer.start();
 
         // For safety.
         Thread.sleep(TRANSACTION_ID_REQUIRED_BACKOFF_MS + 1000);
-        return new WALBasedLedger(executor, processor, lz4, transactionsFile);
+        return new WALBasedLedger(executor, processor, lz4, transactionsFile, glFileSynchronizer);
     }
 
     @Override
@@ -118,6 +124,8 @@ final class WALBasedLedger extends Ledger {
 
     @Override
     public void close() throws Exception {
+        glFileSynchronizer.close();
+
         getExecutor().submit(() -> {
             try {
                 transactionsFile.close();
