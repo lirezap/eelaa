@@ -35,7 +35,7 @@ second. It can be used as a GL module of a core banking platform or as wallet in
 
 - JDK 26
     - ```curl -s "https://get.sdkman.io" | bash```
-    - ```sdk install java 26.ea.13-graal```
+    - ```sdk install java 26.0.2-oracle```
 - LZ4 Compression Library
     - ```/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"```
     - ```brew install lz4```
