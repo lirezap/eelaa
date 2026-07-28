@@ -31,7 +31,6 @@ import static software.openx.eelaa.std.CString.strlen;
  * @author Alireza Pourtaghi
  */
 final class JITFriendlyLMDB {
-    private static final Arena arena;
     private static final MethodHandle mdbVersionHandle;
     private static final MethodHandle mdbEnvCreateHandle;
     private static final MethodHandle mdbEnvCloseHandle;
@@ -49,13 +48,9 @@ final class JITFriendlyLMDB {
     private static final MethodHandle mdbCursorGetHandle;
 
     static {
-        arena = Arena.global();
-    }
-
-    static {
         final var libraryPath = Path.of(System.getenv("LIBRARIES_NATIVE_LMDB_PATH"));
         final var linker = Linker.nativeLinker();
-        final var lib = SymbolLookup.libraryLookup(libraryPath, arena);
+        final var lib = SymbolLookup.libraryLookup(libraryPath, Arena.global());
 
         mdbVersionHandle = linker.downcallHandle(lib.find(LMDB.FUNCTION.mdb_version.name()).orElseThrow(), LMDB.FUNCTION.mdb_version.fd);
         mdbEnvCreateHandle = linker.downcallHandle(lib.find(LMDB.FUNCTION.mdb_env_create.name()).orElseThrow(), LMDB.FUNCTION.mdb_env_create.fd);

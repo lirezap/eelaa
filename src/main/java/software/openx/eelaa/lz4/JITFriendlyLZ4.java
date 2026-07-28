@@ -30,7 +30,6 @@ import static software.openx.eelaa.std.CString.strlen;
  * @author Alireza Pourtaghi
  */
 public final class JITFriendlyLZ4 {
-    private static final Arena arena;
     private static final MethodHandle versionNumberHandle;
     private static final MethodHandle versionStringHandle;
     private static final MethodHandle compressBoundHandle;
@@ -38,13 +37,9 @@ public final class JITFriendlyLZ4 {
     private static final MethodHandle decompressSafeHandle;
 
     static {
-        arena = Arena.global();
-    }
-
-    static {
         final var libraryPath = Path.of(System.getenv("LIBRARIES_NATIVE_LZ4_PATH"));
         final var linker = Linker.nativeLinker();
-        final var lib = SymbolLookup.libraryLookup(libraryPath, arena);
+        final var lib = SymbolLookup.libraryLookup(libraryPath, Arena.global());
 
         versionNumberHandle = linker.downcallHandle(lib.find(LZ4.FUNCTION.LZ4_versionNumber.name()).orElseThrow(), LZ4.FUNCTION.LZ4_versionNumber.fd);
         versionStringHandle = linker.downcallHandle(lib.find(LZ4.FUNCTION.LZ4_versionString.name()).orElseThrow(), LZ4.FUNCTION.LZ4_versionString.fd);
