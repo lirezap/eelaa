@@ -38,7 +38,7 @@ public final class JITFriendlyLZ4 {
     private static final MethodHandle decompressSafeHandle;
 
     static {
-        arena = Arena.ofConfined();
+        arena = Arena.global();
     }
 
     static {
@@ -76,9 +76,5 @@ public final class JITFriendlyLZ4 {
                                      final int dstCapacity) throws Throwable {
 
         return (int) decompressSafeHandle.invokeExact(src, dst, compressedSize, dstCapacity);
-    }
-
-    public static void close() {
-        arena.close();
     }
 }

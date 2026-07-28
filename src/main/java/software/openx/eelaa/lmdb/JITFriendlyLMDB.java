@@ -49,7 +49,7 @@ final class JITFriendlyLMDB {
     private static final MethodHandle mdbCursorGetHandle;
 
     static {
-        arena = Arena.ofConfined();
+        arena = Arena.global();
     }
 
     static {
@@ -147,9 +147,5 @@ final class JITFriendlyLMDB {
                                    final int op) throws Throwable {
 
         return (int) mdbCursorGetHandle.invokeExact(cursor, key, data, op);
-    }
-
-    public static void close() {
-        arena.close();
     }
 }
