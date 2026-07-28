@@ -15,7 +15,6 @@
  */
 package software.openx.eelaa.storage;
 
-import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
@@ -108,12 +107,24 @@ public final class ThreadConfinedAtomicFile implements AutoCloseable {
         }, executor);
     }
 
-    public MemorySegment read(final Arena arena, final long position, final long size) throws IOException {
-        return file.read(arena, position, size);
+    public CompletableFuture<MemorySegment> read(final Arena arena, final long position, final long size) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return file.read(arena, position, size);
+            } catch (final Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        }, executor);
     }
 
-    public void read(final MemorySegment segment, final long position) throws IOException {
-        file.read(segment, position);
+    public CompletableFuture<Void> read(final MemorySegment segment, final long position) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                file.read(segment, position);
+            } catch (final Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        }, executor);
     }
 
     public CompletableFuture<Long> size() {
