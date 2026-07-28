@@ -26,11 +26,11 @@ import static java.lang.foreign.MemorySegment.NULL;
 import static software.openx.eelaa.std.CString.strlen;
 
 /**
- * JIT friendly java FFM wrapper of the LMDB C library functions.
+ * Global and JIT friendly java FFM wrapper of the LMDB C library functions.
  *
  * @author Alireza Pourtaghi
  */
-final class JITFriendlyLMDB {
+final class GlobalLMDB {
     private static final MethodHandle mdbVersionHandle;
     private static final MethodHandle mdbEnvCreateHandle;
     private static final MethodHandle mdbEnvCloseHandle;

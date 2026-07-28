@@ -25,11 +25,11 @@ import java.nio.file.Path;
 import static software.openx.eelaa.std.CString.strlen;
 
 /**
- * JIT friendly java FFM wrapper of the LZ4 C library functions.
+ * Global and JIT friendly java FFM wrapper of the LZ4 C library functions.
  *
  * @author Alireza Pourtaghi
  */
-public final class JITFriendlyLZ4 {
+public final class GlobalLZ4 {
     private static final MethodHandle versionNumberHandle;
     private static final MethodHandle versionStringHandle;
     private static final MethodHandle compressBoundHandle;
