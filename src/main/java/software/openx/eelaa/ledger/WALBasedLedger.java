@@ -18,7 +18,7 @@ package software.openx.eelaa.ledger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.openx.eelaa.lz4.LZ4;
-import software.openx.eelaa.storage.AtomicFile;
+import software.openx.eelaa.storage.ThreadConfinedAtomicFile;
 
 import java.lang.foreign.Arena;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -37,11 +37,12 @@ import static software.openx.eelaa.memory.MemorySegmentUtil.*;
 final class WALBasedLedger extends Ledger {
     private static final Logger logger = LoggerFactory.getLogger(WALBasedLedger.class);
 
-    private final AtomicFile transactionsFile;
+    private final ThreadConfinedAtomicFile transactionsFile;
     private final GLFileSynchronizer glFileSynchronizer;
 
     private WALBasedLedger(final ExecutorService executor, final Processor processor, final LZ4 lz4,
-                           final AtomicFile transactionsFile, final GLFileSynchronizer glFileSynchronizer) {
+                           final ThreadConfinedAtomicFile transactionsFile,
+                           final GLFileSynchronizer glFileSynchronizer) {
 
         super(executor, processor, lz4);
         this.transactionsFile = transactionsFile;
@@ -55,9 +56,9 @@ final class WALBasedLedger extends Ledger {
         final var queue = new ArrayBlockingQueue<Runnable>(ledgerConfig.getExecutorMaxWaitQueueSize());
         final var executor = new ThreadPoolExecutor(1, 1, 0L, SECONDS, queue);
         final var processor = Processor.newInstance(ledgerConfig);
-        final var transactionsFile = executor.submit(() -> AtomicFile.newInstance(
+        final var transactionsFile = ThreadConfinedAtomicFile.newInstance(
                 // EELAAWAL magic number: 0x4C415741414C4545L
-                ledgerConfig.getDataDirectoryPath().resolve("transactions.gl"), 0x4C415741414C4545L)).get();
+                ledgerConfig.getDataDirectoryPath().resolve("transactions.gl"), 0x4C415741414C4545L, 10000).get();
         final var glFileSynchronizer = GLFileSynchronizer.newInstance(ledgerConfig, lz4, databaseSizeGbs);
         glFileSynchronizer.start();
 
@@ -73,7 +74,7 @@ final class WALBasedLedger extends Ledger {
 
     @Override
     boolean persist(final Transaction... transactions) {
-        try (final var arena = Arena.ofConfined()) {
+        try (final var arena = Arena.ofShared()) {
             var allocationSize = 0L;
             for (final var transaction : transactions) {
                 if (transaction != null && !transaction.is_failed()) {
@@ -111,7 +112,7 @@ final class WALBasedLedger extends Ledger {
                     (int) memory.byteSize(),
                     requiredCompressionSpace);
 
-            transactionsFile.append(compressionMemory.asByteBuffer());
+            transactionsFile.append(compressionMemory.asByteBuffer()).get();
             return true;
         } catch (final Throwable cause) {
             // We must return back the transferred balances of in-memory wallets.
@@ -125,15 +126,7 @@ final class WALBasedLedger extends Ledger {
     @Override
     public void close() throws Exception {
         glFileSynchronizer.close();
-
-        getExecutor().submit(() -> {
-            try {
-                transactionsFile.close();
-            } catch (final Exception ex) {
-                logger.error("{}", ex.getMessage(), ex);
-            }
-        }).get();
-
+        transactionsFile.close();
         super.close();
     }
 }
