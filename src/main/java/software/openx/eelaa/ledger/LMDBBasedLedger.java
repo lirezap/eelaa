@@ -58,7 +58,7 @@ final class LMDBBasedLedger extends Ledger {
     }
 
     public static Ledger newInstance(final LedgerConfig ledgerConfig, final LZ4 lz4,
-                                     final int databaseSizeGbs) throws Exception {
+                                     final int databaseSizeGBs) throws Exception {
 
         // Bounded queue executor with abort policy.
         final var queue = new ArrayBlockingQueue<Runnable>(ledgerConfig.getExecutorMaxWaitQueueSize());
@@ -66,7 +66,7 @@ final class LMDBBasedLedger extends Ledger {
         final var processor = Processor.newInstance(ledgerConfig);
         final var lmdbManager = executor.submit(() -> LMDBManager.newInstance(
                 ledgerConfig.getDataDirectoryPath(),
-                Math.max(1, databaseSizeGbs) * 1073741824L,
+                Math.max(1, databaseSizeGBs) * 1073741824L,
                 4,
                 MDB_NORDAHEAD,
                 0644)).get();

@@ -50,7 +50,7 @@ final class WALBasedLedger extends Ledger {
     }
 
     public static Ledger newInstance(final LedgerConfig ledgerConfig, final LZ4 lz4,
-                                     final int databaseSizeGbs) throws Exception {
+                                     final int databaseSizeGBs) throws Exception {
 
         // Bounded queue executor with abort policy.
         final var queue = new ArrayBlockingQueue<Runnable>(ledgerConfig.getExecutorMaxWaitQueueSize());
@@ -59,7 +59,10 @@ final class WALBasedLedger extends Ledger {
         final var transactionsFile = ThreadConfinedAtomicFile.newInstance(
                 // EELAAWAL magic number: 0x4C415741414C4545L
                 ledgerConfig.getDataDirectoryPath().resolve("transactions.gl"), 0x4C415741414C4545L, 10000).get();
-        final var glFileSynchronizer = GLFileSynchronizer.newInstance(ledgerConfig, lz4, databaseSizeGbs);
+
+        final var glFileSynchronizer = GLFileSynchronizer.newInstance(
+                ledgerConfig, lz4, transactionsFile, databaseSizeGBs);
+
         glFileSynchronizer.start();
 
         // For safety.

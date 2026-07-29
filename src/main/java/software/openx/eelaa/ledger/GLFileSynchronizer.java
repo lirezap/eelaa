@@ -19,16 +19,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.openx.eelaa.lmdb.LMDBManager;
 import software.openx.eelaa.lz4.LZ4;
+import software.openx.eelaa.storage.ThreadConfinedAtomicFile;
 
+import java.lang.foreign.Arena;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 
+import static java.lang.foreign.MemorySegment.NULL;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static software.openx.eelaa.lmdb.LMDBFlags.*;
 
 /**
- * Synchronizer implementation class that transfers transactions from GL file to LMDB storage engine.
+ * Synchronizer implementation that syncs transactions from GL file to LMDB storage engine.
  *
  * @author Alireza Pourtaghi
  */
@@ -37,32 +41,42 @@ final class GLFileSynchronizer implements Runnable, AutoCloseable {
 
     private final ExecutorService executor;
     private final LZ4 lz4;
+    private final ThreadConfinedAtomicFile transactionsFile;
     private final LMDBManager lmdbManager;
+    private final int metadataDbi;
     private final int transactionsDbi;
     private final int walletsDbi;
     private final int ledgersDbi;
 
-    private GLFileSynchronizer(final ExecutorService executor, final LZ4 lz4, final LMDBManager lmdbManager,
-                               final int transactionsDbi, final int walletsDbi, final int ledgersDbi) {
+    private GLFileSynchronizer(final ExecutorService executor, final LZ4 lz4,
+                               final ThreadConfinedAtomicFile transactionsFile, final LMDBManager lmdbManager,
+                               final int metadataDbi, final int transactionsDbi, final int walletsDbi,
+                               final int ledgersDbi) {
 
         this.executor = executor;
         this.lz4 = lz4;
+        this.transactionsFile = transactionsFile;
         this.lmdbManager = lmdbManager;
+        this.metadataDbi = metadataDbi;
         this.transactionsDbi = transactionsDbi;
         this.walletsDbi = walletsDbi;
         this.ledgersDbi = ledgersDbi;
     }
 
     public static GLFileSynchronizer newInstance(final LedgerConfig ledgerConfig, final LZ4 lz4,
-                                                 final int databaseSizeGbs) throws Exception {
+                                                 final ThreadConfinedAtomicFile transactionsFile,
+                                                 final int databaseSizeGBs) throws Exception {
 
         final var executor = Executors.newSingleThreadExecutor();
         final var lmdbManager = executor.submit(() -> LMDBManager.newInstance(
                 ledgerConfig.getDataDirectoryPath(),
-                Math.max(1, databaseSizeGbs) * 1073741824L,
+                Math.max(1, databaseSizeGBs) * 1073741824L,
                 4,
                 MDB_NORDAHEAD,
                 0644)).get();
+
+        final var metadataDbi = executor.submit(() -> lmdbManager
+                .openDb("metadata")).get();
 
         final var transactionsDbi = executor.submit(() -> lmdbManager
                 .openDb("synced_transactions")).get();
@@ -73,7 +87,8 @@ final class GLFileSynchronizer implements Runnable, AutoCloseable {
         final var ledgersDbi = executor.submit(() -> lmdbManager
                 .openDb("synced_ledgers", MDB_CREATE | MDB_INTEGERKEY)).get();
 
-        return new GLFileSynchronizer(executor, lz4, lmdbManager, transactionsDbi, walletsDbi, ledgersDbi);
+        return new GLFileSynchronizer(
+                executor, lz4, transactionsFile, lmdbManager, metadataDbi, transactionsDbi, walletsDbi, ledgersDbi);
     }
 
     public void start() {
@@ -83,9 +98,24 @@ final class GLFileSynchronizer implements Runnable, AutoCloseable {
     @Override
     public void run() {
         try {
-            // TODO: Complete implementation.
-        } catch (final Exception ex) {
-            logger.error("{}", ex.getMessage(), ex);
+            if (transactionsFile.size().get() > 256) {
+                // We have some data to sync.
+                try (final var arena = Arena.ofShared()) {
+                    final var latestSyncedPositionSegment =
+                            lmdbManager.get(metadataDbi, arena.allocateFrom("gl_file_latest_synced_position"), arena);
+
+                    if (latestSyncedPositionSegment == NULL) {
+                        syncForFirstTime(arena);
+                    } else {
+                        final var latestSyncedPosition = latestSyncedPositionSegment.get(JAVA_LONG, 0);
+                        if (transactionsFile.size().get() > latestSyncedPosition) {
+                            syncFrom(latestSyncedPosition);
+                        }
+                    }
+                }
+            }
+        } catch (final Throwable cause) {
+            logger.error("{}", cause.getMessage(), cause);
         } finally {
             try {
                 executor.execute(this);
@@ -93,6 +123,14 @@ final class GLFileSynchronizer implements Runnable, AutoCloseable {
                 logger.warn("Rejected task because of closing executor!");
             }
         }
+    }
+
+    private void syncForFirstTime(final Arena arena) throws Throwable {
+        // TODO: Complete implementation.
+    }
+
+    private void syncFrom(final long latestSyncedPosition) {
+        // TODO: Complete implementation.
     }
 
     @Override

@@ -40,18 +40,18 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
     }
 
     public static Ledger newInstance(final LedgerConfig ledgerConfig, final LZ4 lz4,
-                                     final int databaseSizeGbs) throws Exception {
+                                     final int databaseSizeGBs) throws Exception {
 
-        final var ledger = LMDBBasedLedger.newInstance(ledgerConfig, lz4, databaseSizeGbs);
+        final var ledger = LMDBBasedLedger.newInstance(ledgerConfig, lz4, databaseSizeGBs);
         ledger.getExecutor().submit(ledger::loadWallets).get();
 
         return ledger;
     }
 
     public static Ledger newFastInstance(final LedgerConfig ledgerConfig, final LZ4 lz4,
-                                         final int databaseSizeGbs) throws Exception {
+                                         final int databaseSizeGBs) throws Exception {
 
-        final var ledger = WALBasedLedger.newInstance(ledgerConfig, lz4, databaseSizeGbs);
+        final var ledger = WALBasedLedger.newInstance(ledgerConfig, lz4, databaseSizeGBs);
         ledger.getExecutor().submit(ledger::loadWallets).get();
 
         return ledger;
