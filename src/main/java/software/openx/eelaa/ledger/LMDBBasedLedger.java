@@ -154,8 +154,11 @@ final class LMDBBasedLedger extends Ledger {
 
                         final var key = arena.allocateFrom(transaction.getLedger() + ":" + transaction.getId());
                         if (lmdbManager.put(txn, transactionsDbi, key, transaction.encodeV1(arena))) {
-                            lmdbManager.putOrReplace(txn, walletsDbi, sourceWallet.asSlice(6, 16), sourceWallet);
-                            lmdbManager.putOrReplace(txn, walletsDbi, destinationWallet.asSlice(6, 16), destinationWallet);
+                            lmdbManager.putOrReplace(
+                                    txn, walletsDbi, sourceWallet.asSlice(6, 16), sourceWallet);
+
+                            lmdbManager.putOrReplace(
+                                    txn, walletsDbi, destinationWallet.asSlice(6, 16), destinationWallet);
 
                             lastIntegerKey.set(JAVA_LONG, 0, lastIntegerKey.get(JAVA_LONG, 0) + 1);
                             lmdbManager.append(txn, ledgersDbi, lastIntegerKey, key);

@@ -167,8 +167,8 @@ public final class LMDBManager implements AutoCloseable {
         try {
             try (final var arena = Arena.ofConfined()) {
                 final var txn = newTxn(arena, NULL, 0);
-                final var error =
-                        GlobalLMDB.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), MDB_NOOVERWRITE);
+                final var error = GlobalLMDB
+                        .mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), MDB_NOOVERWRITE);
 
                 if (error == 0) {
                     commitTxn(txn);
@@ -191,8 +191,8 @@ public final class LMDBManager implements AutoCloseable {
     public boolean put(final MemorySegment txn, final int dbi, final MemorySegment key, final MemorySegment value) {
         try {
             try (final var arena = Arena.ofConfined()) {
-                final var error =
-                        GlobalLMDB.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), MDB_NOOVERWRITE);
+                final var error = GlobalLMDB
+                        .mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), MDB_NOOVERWRITE);
 
                 if (error == 0) {
                     return true;
@@ -247,8 +247,8 @@ public final class LMDBManager implements AutoCloseable {
     public void append(final MemorySegment txn, final int dbi, final MemorySegment key, final MemorySegment value) {
         try {
             try (final var arena = Arena.ofConfined()) {
-                final var error =
-                        GlobalLMDB.mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), MDB_APPEND | MDB_NOOVERWRITE);
+                final var error = GlobalLMDB
+                        .mdbPut(txn, dbi, asLMDBVal(arena, key), asLMDBVal(arena, value), MDB_APPEND | MDB_NOOVERWRITE);
 
                 if (error == 0) {
                     return;
