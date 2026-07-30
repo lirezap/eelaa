@@ -22,6 +22,8 @@ import software.openx.eelaa.lz4.LZ4;
 import software.openx.eelaa.storage.ThreadConfinedAtomicFile;
 
 import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.nio.ByteOrder;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -30,6 +32,7 @@ import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static software.openx.eelaa.lmdb.LMDBFlags.*;
+import static software.openx.eelaa.memory.MemorySegmentUtil.INT_LE;
 
 /**
  * Synchronizer implementation that syncs transactions from GL file to LMDB storage engine.
@@ -92,24 +95,24 @@ final class GLFileSynchronizer implements Runnable, AutoCloseable {
     }
 
     public void start() {
-        executor.submit(this);
+        executor.execute(this);
     }
 
     @Override
     public void run() {
         try {
-            if (transactionsFile.size().get() > 256) {
+            if (transactionsFile.durabilitySize().get() > 256) {
                 // We have some data to sync.
                 try (final var arena = Arena.ofShared()) {
-                    final var latestSyncedPositionSegment =
-                            lmdbManager.get(metadataDbi, arena.allocateFrom("gl_file_latest_synced_position"), arena);
+                    final var latestSyncedSizeSegment =
+                            lmdbManager.get(metadataDbi, arena.allocateFrom("gl_file_latest_synced_size"), arena);
 
-                    if (latestSyncedPositionSegment == NULL) {
-                        syncForFirstTime(arena);
+                    if (latestSyncedSizeSegment == NULL) {
+                        syncFrom(256, arena);
                     } else {
-                        final var latestSyncedPosition = latestSyncedPositionSegment.get(JAVA_LONG, 0);
-                        if (transactionsFile.size().get() > latestSyncedPosition) {
-                            syncFrom(latestSyncedPosition);
+                        final var latestSyncedSize = latestSyncedSizeSegment.get(JAVA_LONG, 0);
+                        if (transactionsFile.durabilitySize().get() > latestSyncedSize) {
+                            syncFrom(latestSyncedSize, arena);
                         }
                     }
                 }
@@ -125,12 +128,51 @@ final class GLFileSynchronizer implements Runnable, AutoCloseable {
         }
     }
 
-    private void syncForFirstTime(final Arena arena) throws Throwable {
+    private void syncFrom(final long latestSyncedPosition, final Arena arena) throws Throwable {
+        final var batchHeader = transactionsFile.read(arena, latestSyncedPosition, 10).get();
+
+        final var length = batchHeader.get(INT_LE, 2);
+        final var actualSize = batchHeader.get(INT_LE, 6);
+        final var compressedSize = length - INT_LE.byteSize();
+
+        final var compressedBatch =
+                transactionsFile.read(arena, latestSyncedPosition + batchHeader.byteSize(), compressedSize).get();
+
+        final var batch =
+                arena.allocate(actualSize);
+
+        lz4.decompressSafe(compressedBatch, batch, (int) compressedSize, actualSize);
+        final var transactions = decodeBatch(batch);
         // TODO: Complete implementation.
     }
 
-    private void syncFrom(final long latestSyncedPosition) {
-        // TODO: Complete implementation.
+    private Transaction[] decodeBatch(final MemorySegment batch) {
+        final var buffer = batch.asByteBuffer().order(ByteOrder.LITTLE_ENDIAN);
+
+        var count = 0;
+        // Counting number of items.
+        while (buffer.remaining() > 0) {
+            buffer.get();
+            buffer.get();
+
+            final var length = buffer.getInt();
+            buffer.position(Math.addExact(buffer.position(), length));
+            count++;
+        }
+
+        buffer.position(0);
+        final var transactions = new Transaction[count];
+        var index = 0;
+        while (buffer.remaining() > 0) {
+            final var version = buffer.get();
+            final var flags = buffer.get();
+            final var length = buffer.getInt();
+
+            transactions[index++] = Transaction.decode(batch.asSlice(buffer.position(), length));
+            buffer.position(Math.addExact(buffer.position(), length));
+        }
+
+        return transactions;
     }
 
     @Override
