@@ -36,14 +36,18 @@ public final class ThreadConfinedAtomicFile implements AutoCloseable {
     private final ExecutorService executor;
     private final AtomicFile file;
     private final Supplier<Long> sizeMethodSupplier;
+    private final Supplier<Long> durabilitySizeMethodSupplier;
     private final Runnable closeMethodRunnable;
 
     private ThreadConfinedAtomicFile(final ExecutorService executor, final AtomicFile file,
-                                     final Supplier<Long> sizeMethodSupplier, final Runnable closeMethodRunnable) {
+                                     final Supplier<Long> sizeMethodSupplier,
+                                     final Supplier<Long> durabilitySizeMethodSupplier,
+                                     final Runnable closeMethodRunnable) {
 
         this.executor = executor;
         this.file = file;
         this.sizeMethodSupplier = sizeMethodSupplier;
+        this.durabilitySizeMethodSupplier = durabilitySizeMethodSupplier;
         this.closeMethodRunnable = closeMethodRunnable;
     }
 
@@ -58,9 +62,11 @@ public final class ThreadConfinedAtomicFile implements AutoCloseable {
             try {
                 final var file = AtomicFile.newInstance(filePath, magic);
                 final var sizeMethodSupplier = sizeMethodSupplier(file);
+                final var durabilitySizeMethodSupplier = durabilitySizeMethodSupplier(file);
                 final var closeMethodRunnable = closeMethodRunnable(file);
 
-                return new ThreadConfinedAtomicFile(executor, file, sizeMethodSupplier, closeMethodRunnable);
+                return new ThreadConfinedAtomicFile(
+                        executor, file, sizeMethodSupplier, durabilitySizeMethodSupplier, closeMethodRunnable);
             } catch (final Exception ex) {
                 throw new RuntimeException(ex);
             }
@@ -131,10 +137,24 @@ public final class ThreadConfinedAtomicFile implements AutoCloseable {
         return CompletableFuture.supplyAsync(sizeMethodSupplier, executor);
     }
 
+    public CompletableFuture<Long> durabilitySize() {
+        return CompletableFuture.supplyAsync(durabilitySizeMethodSupplier, executor);
+    }
+
     private static Supplier<Long> sizeMethodSupplier(final AtomicFile file) {
         return () -> {
             try {
                 return file.size();
+            } catch (final Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        };
+    }
+
+    private static Supplier<Long> durabilitySizeMethodSupplier(final AtomicFile file) {
+        return () -> {
+            try {
+                return file.durabilitySize();
             } catch (final Exception ex) {
                 throw new RuntimeException(ex);
             }

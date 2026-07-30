@@ -144,6 +144,10 @@ public final class AtomicFile implements AutoCloseable {
         return file.size();
     }
 
+    public long durabilitySize() throws IOException {
+        return header.getDurabilitySize();
+    }
+
     private void prepareHeader() throws IOException {
         try (final var _ = file.lock()) {
             if (file.size() == 0) {
