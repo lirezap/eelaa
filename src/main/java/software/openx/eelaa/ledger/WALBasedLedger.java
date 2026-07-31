@@ -111,7 +111,7 @@ final class WALBasedLedger extends Ledger {
                 if (transaction != null && !transaction.is_failed()) {
                     final var encoded = transaction.encodeV1(arena);
                     transaction.set_memoryPointer(encoded);
-                    allocationSize += encoded.byteSize();
+                    allocationSize = Math.addExact(allocationSize, encoded.byteSize());
                 }
             }
 

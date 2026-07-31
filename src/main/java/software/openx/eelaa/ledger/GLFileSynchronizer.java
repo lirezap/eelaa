@@ -155,14 +155,14 @@ final class GLFileSynchronizer implements Runnable, AutoCloseable {
 
         final var length = batchHeader.get(INT_LE, 2);
         final var actualSize = batchHeader.get(INT_LE, 6);
-        final var compressedSize = length - INT_LE.byteSize();
+        final var compressedSize = Math.subtractExact(length, INT_LE.byteSize());
 
         final var compressedBatch =
-                transactionsFile.read(arena, latestSyncedSize + batchHeader.byteSize(), compressedSize).get();
+                transactionsFile.read(arena, Math.addExact(latestSyncedSize, batchHeader.byteSize()), compressedSize).get();
 
         final var batch = arena.allocate(actualSize);
         lz4.decompressSafe(compressedBatch, batch, (int) compressedSize, actualSize);
-        sync(arena, latestSyncedSize + 6 + length, decodeBatch(batch));
+        sync(arena, Math.addExact(latestSyncedSize, Math.addExact(6, length)), decodeBatch(batch));
     }
 
     private Transaction[] decodeBatch(final MemorySegment batch) {
@@ -226,7 +226,7 @@ final class GLFileSynchronizer implements Runnable, AutoCloseable {
                     lmdbManager.putOrReplace(txn, walletsDbi, sourceWallet.asSlice(6, 16), sourceWallet);
                     lmdbManager.putOrReplace(txn, walletsDbi, destinationWallet.asSlice(6, 16), destinationWallet);
 
-                    lastIntegerKey.set(JAVA_LONG, 0, lastIntegerKey.get(JAVA_LONG, 0) + 1);
+                    lastIntegerKey.set(JAVA_LONG, 0, Math.addExact(lastIntegerKey.get(JAVA_LONG, 0), 1));
                     lmdbManager.append(txn, ledgersDbi, lastIntegerKey, key);
 
                     lmdbManager.putOrReplace(

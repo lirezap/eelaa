@@ -130,7 +130,7 @@ final class LMDBBasedLedger extends Ledger {
                             lmdbManager.putOrReplace(
                                     txn, walletsDbi, destinationWallet.asSlice(6, 16), destinationWallet);
 
-                            lastIntegerKey.set(JAVA_LONG, 0, lastIntegerKey.get(JAVA_LONG, 0) + 1);
+                            lastIntegerKey.set(JAVA_LONG, 0, Math.addExact(lastIntegerKey.get(JAVA_LONG, 0), 1));
                             lmdbManager.append(txn, ledgersDbi, lastIntegerKey, key);
                         } else {
                             throw new RuntimeException("duplicate transaction key provided!");
