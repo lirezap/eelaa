@@ -106,21 +106,21 @@ final class WALBasedLedger extends Ledger {
             }
 
             final var headerSize = 10;
-            final var requiredCompressionSpace = getLz4().compressBound((int) memory.byteSize());
-            final var compressionMemory = arena.allocate(headerSize + requiredCompressionSpace);
+            final var requiredCompressionSize = getLz4().compressBound((int) memory.byteSize());
+            final var compressionMemory = arena.allocate(headerSize + requiredCompressionSize);
 
-            position = putByteLE(compressionMemory, 0, (byte) 0b00000001);
-            position = putByteLE(compressionMemory, position, (byte) 0b00000001);
-            position = putIntLE(compressionMemory, position, Math.addExact(4, requiredCompressionSpace));
-            putIntLE(compressionMemory, position, (int) memory.byteSize());
-
-            getLz4().compressDefault(
+            final var compressionSize = getLz4().compressDefault(
                     memory,
                     compressionMemory.asSlice(headerSize),
                     (int) memory.byteSize(),
-                    requiredCompressionSpace);
+                    requiredCompressionSize);
 
-            transactionsFile.append(compressionMemory).get();
+            position = putByteLE(compressionMemory, 0, (byte) 0b00000001);
+            position = putByteLE(compressionMemory, position, (byte) 0b00000001);
+            position = putIntLE(compressionMemory, position, Math.addExact(4, compressionSize));
+            putIntLE(compressionMemory, position, (int) memory.byteSize());
+
+            transactionsFile.append(compressionMemory.asSlice(0, headerSize + compressionSize)).get();
             return true;
         } catch (final Throwable cause) {
             // We must return back the transferred balances of in-memory wallets.
