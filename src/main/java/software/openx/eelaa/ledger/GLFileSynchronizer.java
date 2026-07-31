@@ -231,14 +231,13 @@ final class GLFileSynchronizer implements Runnable, AutoCloseable {
 
                     lmdbManager.putOrReplace(
                             txn, metadataDbi, glFileLatestSyncedSizeKey, arena.allocateFrom(JAVA_LONG, newLatestSyncedSize));
-
-                    logger.info("Syncing (not committed) {} transactions with storage engine ...", transactions.length);
                 } else {
                     // TODO: Decide about duplication.
                     throw new RuntimeException("duplicate transaction key provided!");
                 }
             }
 
+            logger.info("Synced (but not yet committed) {} transactions with storage engine ...", transactions.length);
             commit = true;
         } finally {
             finalize(txn, commit);
