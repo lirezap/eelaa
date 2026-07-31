@@ -128,22 +128,19 @@ final class GLFileSynchronizer implements Runnable, AutoCloseable {
         }
     }
 
-    private void syncFrom(final long latestSyncedPosition, final Arena arena) throws Throwable {
-        final var batchHeader = transactionsFile.read(arena, latestSyncedPosition, 10).get();
+    private void syncFrom(final long latestSyncedSize, final Arena arena) throws Throwable {
+        final var batchHeader = transactionsFile.read(arena, latestSyncedSize, 10).get();
 
         final var length = batchHeader.get(INT_LE, 2);
         final var actualSize = batchHeader.get(INT_LE, 6);
         final var compressedSize = length - INT_LE.byteSize();
 
         final var compressedBatch =
-                transactionsFile.read(arena, latestSyncedPosition + batchHeader.byteSize(), compressedSize).get();
+                transactionsFile.read(arena, latestSyncedSize + batchHeader.byteSize(), compressedSize).get();
 
-        final var batch =
-                arena.allocate(actualSize);
-
+        final var batch = arena.allocate(actualSize);
         lz4.decompressSafe(compressedBatch, batch, (int) compressedSize, actualSize);
-        final var transactions = decodeBatch(batch);
-        // TODO: Complete implementation.
+        sync(arena, latestSyncedSize + 6 + length, decodeBatch(batch));
     }
 
     private Transaction[] decodeBatch(final MemorySegment batch) {
@@ -173,6 +170,68 @@ final class GLFileSynchronizer implements Runnable, AutoCloseable {
         }
 
         return transactions;
+    }
+
+    private void sync(final Arena arena, final long newLatestSyncedSize, final Transaction... transactions) {
+        var commit = false;
+
+        final var txn = lmdbManager.newTxn(arena, NULL, 0);
+        try { // Atomic or exception code block!
+            var lastIntegerKey = lmdbManager.lastIntegerKey(txn, ledgersDbi, arena);
+            if (lastIntegerKey == NULL) {
+                lastIntegerKey = arena.allocateFrom(JAVA_LONG, 0);
+            }
+
+            for (final var transaction : transactions) {
+                final var sourceWallet = new Wallet(
+                        transaction.getLedger(),
+                        transaction.getSourceAccount(),
+                        transaction.getSourceWallet(),
+                        transaction.getCurrency(),
+                        transaction.getSourceWalletNewBalance()
+                ).encodeV1(arena);
+
+                final var destinationWallet = new Wallet(
+                        transaction.getLedger(),
+                        transaction.getDestinationAccount(),
+                        transaction.getDestinationWallet(),
+                        transaction.getCurrency(),
+                        transaction.getDestinationWalletNewBalance()
+                ).encodeV1(arena);
+
+                final var key = arena.allocateFrom(transaction.getLedger() + ":" + transaction.getId());
+                if (lmdbManager.put(txn, transactionsDbi, key, transaction.encodeV1(arena))) {
+                    lmdbManager.putOrReplace(txn, walletsDbi, sourceWallet.asSlice(6, 16), sourceWallet);
+                    lmdbManager.putOrReplace(txn, walletsDbi, destinationWallet.asSlice(6, 16), destinationWallet);
+
+                    lastIntegerKey.set(JAVA_LONG, 0, lastIntegerKey.get(JAVA_LONG, 0) + 1);
+                    lmdbManager.append(txn, ledgersDbi, lastIntegerKey, key);
+
+                    lmdbManager.putOrReplace(
+                            txn,
+                            metadataDbi,
+                            arena.allocateFrom("gl_file_latest_synced_size"),
+                            arena.allocateFrom(JAVA_LONG, newLatestSyncedSize));
+
+                    logger.info("Syncing (not committed) {} transactions with storage engine ...", transactions.length);
+                } else {
+                    // TODO: Decide about duplication.
+                    throw new RuntimeException("duplicate transaction key provided!");
+                }
+            }
+
+            commit = true;
+        } finally {
+            finalize(txn, commit);
+        }
+    }
+
+    private void finalize(final MemorySegment txn, final boolean commit) {
+        if (commit) {
+            lmdbManager.commitTxn(txn);
+        } else {
+            lmdbManager.abortTxn(txn);
+        }
     }
 
     @Override
