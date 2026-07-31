@@ -22,9 +22,11 @@ import software.openx.eelaa.storage.ThreadConfinedAtomicFile;
 
 import java.lang.foreign.Arena;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import static java.lang.foreign.MemorySegment.NULL;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static software.openx.eelaa.ledger.LedgerConfig.TRANSACTION_ID_REQUIRED_BACKOFF_MS;
 import static software.openx.eelaa.memory.MemorySegmentUtil.*;
@@ -73,6 +75,27 @@ final class WALBasedLedger extends Ledger {
         // For safety.
         Thread.sleep(TRANSACTION_ID_REQUIRED_BACKOFF_MS + 1000);
         return new WALBasedLedger(executor, processor, lz4, transactionsFile, glFileSynchronizer);
+    }
+
+    @Override
+    public CompletableFuture<Transaction> fetchTransaction(final int ledger, final String id) {
+        return super.fetchTransaction(ledger, id).thenApplyAsync(fetchedTransaction -> {
+            if (fetchedTransaction == null) {
+                try (final var arena = Arena.ofConfined()) {
+                    final var lmdbManager = glFileSynchronizer.getLmdbManager();
+                    final var transactionsDbi = glFileSynchronizer.getTransactionsDbi();
+
+                    final var storedTransaction =
+                            lmdbManager.get(transactionsDbi, arena.allocateFrom(ledger + ":" + id), arena);
+
+                    if (storedTransaction != NULL) {
+                        return Transaction.decode(storedTransaction.asSlice(6));
+                    }
+                }
+            }
+
+            return fetchedTransaction;
+        }, getExecutor());
     }
 
     @Override
