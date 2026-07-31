@@ -77,7 +77,7 @@ final class WALBasedLedger extends Ledger {
 
     @Override
     void loadWallets() {
-        // TODO: Complete implementation.
+        super.loadWallets(logger, glFileSynchronizer.getLmdbManager(), glFileSynchronizer.getWalletsDbi());
     }
 
     @Override

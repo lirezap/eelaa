@@ -31,7 +31,7 @@ import static software.openx.eelaa.lmdb.CursorOperations.MDB_NEXT;
 import static software.openx.eelaa.lmdb.LMDBFlags.*;
 
 /**
- * {@link LMDB} manager. Must be used by a single thread.
+ * {@link LMDB} manager. Must be closed by the thread that created the instance.
  *
  * @author Alireza Pourtaghi
  */

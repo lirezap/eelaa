@@ -22,7 +22,6 @@ import software.openx.eelaa.lz4.LZ4;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -103,36 +102,7 @@ final class LMDBBasedLedger extends Ledger {
 
     @Override
     void loadWallets() {
-        logger.info("Loading wallets into ledger ...");
-        try (final var arena = Arena.ofConfined()) {
-            final var txn = lmdbManager.newTxn(arena, NULL, MDB_RDONLY);
-            try {
-                final var cursor = lmdbManager.newCursor(txn, walletsDbi, arena);
-                try {
-                    var wallets = new ArrayList<Wallet>(100_000);
-                    var wallet = lmdbManager.iterateFromFirst(cursor, arena);
-                    while (wallet != NULL) {
-                        wallets.add(Wallet.decode(wallet.asSlice(6)));
-                        if (wallets.size() == 100_000) {
-                            getProcessor().loadWallets(wallets);
-                            logger.info("Loaded {} wallets into ledger successfully", wallets.size());
-                            wallets = new ArrayList<>(100_000);
-                        }
-
-                        wallet = lmdbManager.iterateFromFirst(cursor, arena);
-                    }
-
-                    if (!wallets.isEmpty()) {
-                        getProcessor().loadWallets(wallets);
-                        logger.info("Loaded {} wallets into ledger successfully", wallets.size());
-                    }
-                } finally {
-                    lmdbManager.closeCursor(cursor);
-                }
-            } finally {
-                lmdbManager.commitTxn(txn);
-            }
-        }
+        super.loadWallets(logger, lmdbManager, walletsDbi);
     }
 
     @Override

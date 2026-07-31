@@ -252,6 +252,14 @@ final class GLFileSynchronizer implements Runnable, AutoCloseable {
         }
     }
 
+    public LMDBManager getLmdbManager() {
+        return lmdbManager;
+    }
+
+    public int getWalletsDbi() {
+        return walletsDbi;
+    }
+
     @Override
     public void close() throws Exception {
         executor.submit(() -> {

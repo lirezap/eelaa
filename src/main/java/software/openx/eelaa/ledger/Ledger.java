@@ -16,12 +16,18 @@
 package software.openx.eelaa.ledger;
 
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import org.slf4j.Logger;
+import software.openx.eelaa.lmdb.LMDBManager;
 import software.openx.eelaa.lz4.LZ4;
 
+import java.lang.foreign.Arena;
+import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
+import static java.lang.foreign.MemorySegment.NULL;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static software.openx.eelaa.lmdb.LMDBFlags.MDB_RDONLY;
 
 /**
  * Lock-free, high performance and in-memory monetary general ledger implementation.
@@ -43,7 +49,7 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
                                      final int databaseSizeGBs) throws Exception {
 
         final var ledger = LMDBBasedLedger.newInstance(ledgerConfig, lz4, databaseSizeGBs);
-        ledger.getExecutor().submit(ledger::loadWallets).get();
+        ledger.getExecutor().submit(() -> ledger.loadWallets()).get();
 
         return ledger;
     }
@@ -52,7 +58,7 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
                                          final int databaseSizeGBs) throws Exception {
 
         final var ledger = WALBasedLedger.newInstance(ledgerConfig, lz4, databaseSizeGBs);
-        ledger.getExecutor().submit(ledger::loadWallets).get();
+        ledger.getExecutor().submit(() -> ledger.loadWallets()).get();
 
         return ledger;
     }
@@ -84,6 +90,39 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
 
     public CompletableFuture<Transaction> fetchTransaction(final int ledger, final String id) {
         return CompletableFuture.supplyAsync(() -> processor.fetchTransaction(ledger, id), executor);
+    }
+
+    final void loadWallets(final Logger logger, final LMDBManager lmdbManager, final int walletsDbi) {
+        logger.info("Loading wallets into ledger ...");
+        try (final var arena = Arena.ofConfined()) {
+            final var txn = lmdbManager.newTxn(arena, NULL, MDB_RDONLY);
+            try {
+                final var cursor = lmdbManager.newCursor(txn, walletsDbi, arena);
+                try {
+                    var wallets = new ArrayList<Wallet>(100_000);
+                    var wallet = lmdbManager.iterateFromFirst(cursor, arena);
+                    while (wallet != NULL) {
+                        wallets.add(Wallet.decode(wallet.asSlice(6)));
+                        if (wallets.size() == 100_000) {
+                            getProcessor().loadWallets(wallets);
+                            logger.info("Loaded {} wallets into ledger successfully", wallets.size());
+                            wallets = new ArrayList<>(100_000);
+                        }
+
+                        wallet = lmdbManager.iterateFromFirst(cursor, arena);
+                    }
+
+                    if (!wallets.isEmpty()) {
+                        getProcessor().loadWallets(wallets);
+                        logger.info("Loaded {} wallets into ledger successfully", wallets.size());
+                    }
+                } finally {
+                    lmdbManager.closeCursor(cursor);
+                }
+            } finally {
+                lmdbManager.commitTxn(txn);
+            }
+        }
     }
 
     abstract void loadWallets();
