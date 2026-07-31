@@ -237,7 +237,7 @@ final class GLFileSynchronizer implements Runnable, AutoCloseable {
                 }
             }
 
-            logger.info("Synced (but not yet committed) {} transactions with storage engine ...", transactions.length);
+            logger.info("Synced (but not yet committed) {} transactions with storage engine", transactions.length);
             commit = true;
         } finally {
             finalize(txn, commit);
