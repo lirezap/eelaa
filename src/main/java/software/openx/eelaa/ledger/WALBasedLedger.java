@@ -115,6 +115,10 @@ final class WALBasedLedger extends Ledger {
                     (int) memory.byteSize(),
                     requiredCompressionSize);
 
+            if (compressionSize == 0) {
+                throw new RuntimeException("compression failed!");
+            }
+
             position = putByteLE(compressionMemory, 0, (byte) 0b00000001);
             position = putByteLE(compressionMemory, position, (byte) 0b00000001);
             position = putIntLE(compressionMemory, position, Math.addExact(4, compressionSize));
