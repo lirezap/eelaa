@@ -120,7 +120,7 @@ final class WALBasedLedger extends Ledger {
                     (int) memory.byteSize(),
                     requiredCompressionSpace);
 
-            transactionsFile.append(compressionMemory.asByteBuffer()).get();
+            transactionsFile.append(compressionMemory).get();
             return true;
         } catch (final Throwable cause) {
             // We must return back the transferred balances of in-memory wallets.
