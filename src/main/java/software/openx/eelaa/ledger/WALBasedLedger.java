@@ -65,6 +65,11 @@ final class WALBasedLedger extends Ledger {
 
         glFileSynchronizer.start();
 
+        while (!glFileSynchronizer.isInSync().get()) {
+            logger.info("Syncing GL file ...");
+            Thread.sleep(500);
+        }
+
         // For safety.
         Thread.sleep(TRANSACTION_ID_REQUIRED_BACKOFF_MS + 1000);
         return new WALBasedLedger(executor, processor, lz4, transactionsFile, glFileSynchronizer);

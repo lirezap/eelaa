@@ -24,6 +24,7 @@ import software.openx.eelaa.storage.ThreadConfinedAtomicFile;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteOrder;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -41,6 +42,9 @@ import static software.openx.eelaa.memory.MemorySegmentUtil.INT_LE;
  */
 final class GLFileSynchronizer implements Runnable, AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(GLFileSynchronizer.class);
+
+    private static final MemorySegment glFileLatestSyncedSizeKey =
+            Arena.global().allocateFrom("gl_file_latest_synced_size");
 
     private final ExecutorService executor;
     private final LZ4 lz4;
@@ -98,15 +102,33 @@ final class GLFileSynchronizer implements Runnable, AutoCloseable {
         executor.execute(this);
     }
 
+    public CompletableFuture<Boolean> isInSync() {
+        return CompletableFuture.supplyAsync(() -> {
+            try (final var arena = Arena.ofShared()) {
+                final var latestSyncedSizeSegment = lmdbManager.get(metadataDbi, glFileLatestSyncedSizeKey, arena);
+                if (latestSyncedSizeSegment == NULL) {
+                    return true;
+                } else {
+                    final var latestSyncedSize = latestSyncedSizeSegment.get(JAVA_LONG, 0);
+                    if (transactionsFile.durabilitySize().get() == latestSyncedSize) {
+                        return true;
+                    }
+                }
+            } catch (final Exception ex) {
+                throw new RuntimeException(ex);
+            }
+
+            return false;
+        }, executor);
+    }
+
     @Override
     public void run() {
         try {
             if (transactionsFile.durabilitySize().get() > 256) {
                 // We have some data to sync.
                 try (final var arena = Arena.ofShared()) {
-                    final var latestSyncedSizeSegment =
-                            lmdbManager.get(metadataDbi, arena.allocateFrom("gl_file_latest_synced_size"), arena);
-
+                    final var latestSyncedSizeSegment = lmdbManager.get(metadataDbi, glFileLatestSyncedSizeKey, arena);
                     if (latestSyncedSizeSegment == NULL) {
                         syncFrom(256, arena);
                     } else {
@@ -208,10 +230,7 @@ final class GLFileSynchronizer implements Runnable, AutoCloseable {
                     lmdbManager.append(txn, ledgersDbi, lastIntegerKey, key);
 
                     lmdbManager.putOrReplace(
-                            txn,
-                            metadataDbi,
-                            arena.allocateFrom("gl_file_latest_synced_size"),
-                            arena.allocateFrom(JAVA_LONG, newLatestSyncedSize));
+                            txn, metadataDbi, glFileLatestSyncedSizeKey, arena.allocateFrom(JAVA_LONG, newLatestSyncedSize));
 
                     logger.info("Syncing (not committed) {} transactions with storage engine ...", transactions.length);
                 } else {
