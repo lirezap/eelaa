@@ -31,6 +31,26 @@ second. It can be used as a GL module of a core banking platform or as wallet in
 
 ---
 
+### Replication
+
+Eelaa is designed to be a simple and maintainable GL server, and because of this reason, it does not have an internal
+clustering or replication mechanism yet. However, It is designed to be compatible with **DRBD** for distributed storage
+and overcome hardware failure and HA related issues.
+
+---
+
+### REST APIs
+
+Documentation in progress.
+
+---
+
+### Binary Protocol Specification
+
+Documentation in progress.
+
+---
+
 ### Test & Development Setup (macOS)
 
 - JDK 26
