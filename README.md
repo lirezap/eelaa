@@ -31,11 +31,10 @@ second. It can be used as a GL module of a core banking platform or as wallet in
 
 ---
 
-### Replication
+### Clustering & Replication
 
-Eelaa is designed to be a simple and maintainable GL server, and because of this reason, it does not have an internal
-clustering or replication mechanism yet. However, It is designed to be compatible with **DRBD** for distributed storage
-and overcome hardware failure and HA related issues.
+Eelaa focuses on being a fast, single-node ledger engine. High availability and storage replication are intentionally
+delegated to mature infrastructure such as DRBD instead of implementing distributed consensus within the server.
 
 ---
 
