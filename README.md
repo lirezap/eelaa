@@ -40,7 +40,7 @@ delegated to mature infrastructure such as DRBD instead of implementing distribu
 
 ### REST APIs
 
-Documentation in progress.
+Documentation can be found at [REST APIs Documentation](REST_APIs_DOC.md).
 
 ---
 
