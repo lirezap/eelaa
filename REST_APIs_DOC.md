@@ -104,9 +104,9 @@ Fetches an account and all of its related wallets.
 
 ### Notes
 
-- All requests sent by an HTTP client's connection must include a unique `sequenceId`
-- All requests sent by an HTTP client must include a valid current timestamp in `ts` field
-- Two previous mentioned fields exists for security/idempotency reasons and can be disabled using environment variables
+- All requests sent by an HTTP client's connection must include a unique `sequenceId`.
+- All requests sent by an HTTP client must include a valid current timestamp in `ts` field.
+- Two previous mentioned fields exists for security/idempotency reasons and can be disabled using environment variables.
 - A `ledger` is a collection of accounts. A ledger has a positive integer identifier.
 - An `account` is a collection of wallets. An account has a positive integer identifier.
 - A wallet is a currency/balance pair. A wallet has a non-zero integer identifier.
