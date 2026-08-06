@@ -113,6 +113,59 @@ Fetches an account and all of its related wallets.
 
 ---
 
+## Fetch Wallet
+
+### Endpoint
+
+`POST /messages?numericType=200`
+
+### Description
+
+Fetches a specific wallet of an account.
+
+### Headers
+
+| Header       | Required | Description      |
+|--------------|----------|------------------|
+| Content-Type | Yes      | application/json |
+
+### Request Body
+
+```json
+{
+  "sequenceId": 5,
+  "ts": "1786005152532",
+  "data": {
+    "ledger": 1,
+    "account": 1,
+    "wallet": 1
+  }
+}
+```
+
+### Success Response (200)
+
+```json
+{
+  "ledger": 1,
+  "account": 1,
+  "wallet": 1,
+  "balance": -2000,
+  "currency": "USD"
+}
+```
+
+### Notes
+
+- All requests sent by an HTTP client's connection must include a unique `sequenceId`.
+- All requests sent by an HTTP client must include a valid current timestamp in `ts` field.
+- Two previous mentioned fields exists for security/idempotency reasons and can be disabled using environment variables.
+- A `ledger` is a collection of accounts. A ledger has a positive integer identifier.
+- An `account` is a collection of wallets. An account has a positive integer identifier.
+- A `wallet` is a currency/balance pair. A wallet has a non-zero integer identifier.
+
+---
+
 ## Possible Errors
 
 | code                 | message                                       |
