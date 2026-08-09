@@ -166,6 +166,179 @@ Fetches a specific wallet of an account.
 
 ---
 
+## Submit a Batch of Transfers
+
+### Endpoint
+
+`POST /messages?numericType=300`
+
+### Description
+
+Submits a batch of transfers, should include at least a single transfer.
+
+### Headers
+
+| Header       | Required | Description      |
+|--------------|----------|------------------|
+| Content-Type | Yes      | application/json |
+
+### Request Body
+
+```json
+{
+  "sequenceId": 1,
+  "ts": "1786269247957",
+  "data": [
+    {
+      "ledger": 1,
+      "sourceAccount": 1,
+      "sourceWallet": 1,
+      "destinationAccount": 1,
+      "destinationWallet": 2,
+      "id": "1786269247998:1",
+      "currency": "USD",
+      "amount": 1000,
+      "maxOverdraftAmount": 10000,
+      "metadata": "{\"key\":\"value\"}"
+    },
+    {
+      "ledger": 1,
+      "sourceAccount": 1,
+      "sourceWallet": 1,
+      "destinationAccount": 1,
+      "destinationWallet": 2,
+      "id": "1786269248923:2",
+      "currency": "USD",
+      "amount": 5000,
+      "maxOverdraftAmount": 10000,
+      "metadata": "{\"anotherKey\":\"anotherValue\"}"
+    }
+  ]
+}
+```
+
+### Success Response (200)
+
+```json
+[]
+```
+
+### Notes
+
+- All requests sent by an HTTP client's connection must include a unique `sequenceId`.
+- All requests sent by an HTTP client must include a valid current timestamp in `ts` field.
+- Two previous mentioned fields exists for security/idempotency reasons and can be disabled using environment variables.
+- `ledger` is the ledger id that a specific transfer belongs to.
+- `sourceAccount` is the source account id of the transfer.
+- `sourceWallet` is the source wallet id of the source account.
+- `destinationAccount` is the destination account id of the transfer.
+- `destinationWallet` is the destination wallet id of the destination account.
+- `id` is a two part transfer id, should be built using `timestamp:string` pattern. This field can be used for inquiry.
+- `currency` is the currency of the wallets.
+- `amount` is the amount of the transfer.
+- `maxOverdraftAmount` determines the maximum amount of overdraft value of the sourceWallet after processing the
+  transfer.
+- `metadata` extra informational data attached to this transfer in raw string format.
+- If one or more items in the batch failed, the response includes the fail reason of failed transfers; like in:
+
+```json
+[
+  {
+    "id": "1786269458479:1",
+    "reason": "balance.not_enough"
+  }
+]
+```
+
+---
+
+## Submit an Atomic (All-or-None) Batch of Transfers
+
+### Endpoint
+
+`POST /messages?numericType=301`
+
+### Description
+
+Submits an atomic batch of transfers, that means all items in a batch must be succeeded or failed.
+
+### Headers
+
+| Header       | Required | Description      |
+|--------------|----------|------------------|
+| Content-Type | Yes      | application/json |
+
+### Request Body
+
+```json
+{
+  "sequenceId": 1,
+  "ts": "1786269247957",
+  "data": [
+    {
+      "ledger": 1,
+      "sourceAccount": 1,
+      "sourceWallet": 1,
+      "destinationAccount": 1,
+      "destinationWallet": 2,
+      "id": "1786269247998:1",
+      "currency": "USD",
+      "amount": 1000,
+      "maxOverdraftAmount": 10000,
+      "metadata": "{\"key\":\"value\"}"
+    },
+    {
+      "ledger": 1,
+      "sourceAccount": 1,
+      "sourceWallet": 1,
+      "destinationAccount": 1,
+      "destinationWallet": 2,
+      "id": "1786269248923:2",
+      "currency": "USD",
+      "amount": 5000,
+      "maxOverdraftAmount": 10000,
+      "metadata": "{\"anotherKey\":\"anotherValue\"}"
+    }
+  ]
+}
+```
+
+### Success Response (200)
+
+```json
+[]
+```
+
+### Notes
+
+- All requests sent by an HTTP client's connection must include a unique `sequenceId`.
+- All requests sent by an HTTP client must include a valid current timestamp in `ts` field.
+- Two previous mentioned fields exists for security/idempotency reasons and can be disabled using environment variables.
+- `ledger` is the ledger id that a specific transfer belongs to.
+- `sourceAccount` is the source account id of the transfer.
+- `sourceWallet` is the source wallet id of the source account.
+- `destinationAccount` is the destination account id of the transfer.
+- `destinationWallet` is the destination wallet id of the destination account.
+- `id` is a two part transfer id, should be built using `timestamp:string` pattern. This field can be used for inquiry.
+- `currency` is the currency of the wallets.
+- `amount` is the amount of the transfer.
+- `maxOverdraftAmount` determines the maximum amount of overdraft value of the sourceWallet after processing the
+  transfer.
+- `metadata` extra informational data attached to this transfer in raw string format.
+- If one or more items failed, the entire batch is failed and the response includes the fail reason of the first failed
+  item, like in:
+
+```json
+[
+  {
+    "id": "1786269458479:1",
+    "reason": "balance.not_enough"
+  }
+]
+```
+
+---
+
 ## Possible Errors
 
 | code                 | message                                       |
