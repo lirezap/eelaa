@@ -89,15 +89,15 @@ Fetches an account and all of its related wallets.
     "ledger": 1,
     "account": 1,
     "wallet": 1,
-    "balance": -2000,
-    "currency": "USD"
+    "currency": "USD",
+    "balance": -2000
   },
   {
     "ledger": 1,
     "account": 1,
     "wallet": 2,
-    "balance": 2000,
-    "currency": "USD"
+    "currency": "USD",
+    "balance": 2000
   }
 ]
 ```
@@ -150,8 +150,8 @@ Fetches a specific wallet of an account.
   "ledger": 1,
   "account": 1,
   "wallet": 1,
-  "balance": -2000,
-  "currency": "USD"
+  "currency": "USD",
+  "balance": -2000
 }
 ```
 
@@ -336,6 +336,65 @@ Submits an atomic batch of transfers, that means all items in a batch must be su
   }
 ]
 ```
+
+---
+
+## Transfer Inquiry
+
+### Endpoint
+
+`POST /messages?numericType=400`
+
+### Description
+
+Inquiries a specific transfer using its id.
+
+### Headers
+
+| Header       | Required | Description      |
+|--------------|----------|------------------|
+| Content-Type | Yes      | application/json |
+
+### Request Body
+
+```json
+{
+  "sequenceId": 10,
+  "ts": "1786273336750",
+  "data": {
+    "ledger": 1,
+    "id": "1786273315084:1"
+  }
+}
+```
+
+### Success Response (200)
+
+```json
+{
+  "ledger": 1,
+  "sourceAccount": 1,
+  "sourceWallet": 1,
+  "destinationAccount": 1,
+  "destinationWallet": 2,
+  "id": "1786273315084:1",
+  "currency": "BTC",
+  "amount": 1000,
+  "maxOverdraftAmount": 10000,
+  "metadata": "{\"key\":\"value\"}",
+  "sourceWalletNewBalance": -2000,
+  "destinationWalletNewBalance": 2000,
+  "ts": 1786273317518
+}
+```
+
+### Notes
+
+- All requests sent by an HTTP client's connection must include a unique `sequenceId`.
+- All requests sent by an HTTP client must include a valid current timestamp in `ts` field.
+- Two previous mentioned fields exists for security/idempotency reasons and can be disabled using environment variables.
+- `ledger` is the ledger id that the inquired transfer belongs to.
+- `id` is the transfer id to be inquired.
 
 ---
 
