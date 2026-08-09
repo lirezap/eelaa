@@ -236,7 +236,7 @@ Submits a batch of transfers, should include at least a single transfer.
 - `id` is a two part transfer id, should be built using `timestamp:string` pattern. This field can be used for inquiry.
 - `currency` is the currency of the wallets.
 - `amount` is the amount of the transfer.
-- `maxOverdraftAmount` determines the maximum amount of overdraft value of the sourceWallet after processing the
+- `maxOverdraftAmount` determines the maximum amount of overdraft value of the sourceWallet when processing the
   transfer.
 - `metadata` extra informational data attached to this transfer in raw string format.
 - If one or more items in the batch failed, the response includes the fail reason of failed transfers; like in:
@@ -322,7 +322,7 @@ Submits an atomic batch of transfers, that means all items in a batch must be su
 - `id` is a two part transfer id, should be built using `timestamp:string` pattern. This field can be used for inquiry.
 - `currency` is the currency of the wallets.
 - `amount` is the amount of the transfer.
-- `maxOverdraftAmount` determines the maximum amount of overdraft value of the sourceWallet after processing the
+- `maxOverdraftAmount` determines the maximum amount of overdraft value of the sourceWallet when processing the
   transfer.
 - `metadata` extra informational data attached to this transfer in raw string format.
 - If one or more items failed, the entire batch is failed and the response includes the fail reason of the first failed
