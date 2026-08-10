@@ -394,7 +394,7 @@ Inquiries a specific transfer using its id.
 - All requests sent by an HTTP client must include a valid current timestamp in `ts` field.
 - Two previous mentioned fields exists for security/idempotency reasons and can be disabled using environment variables.
 - `ledger` is the ledger id that the inquired transfer belongs to.
-- `id` is the transfer id to be inquired.
+- `id` is the transfer id to be inquiry.
 
 ---
 
