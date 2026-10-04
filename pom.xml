@@ -18,7 +18,7 @@
 
     <properties>
         <!-- Java Version -->
-        <java.version>26</java.version>
+        <java.version>27</java.version>
 
         <!-- Extensions Versioning -->
         <os.maven.extension.version>1.7.1</os.maven.extension.version>

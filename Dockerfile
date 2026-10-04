@@ -1,4 +1,4 @@
-FROM eclipse-temurin:26-jre
+FROM eclipse-temurin:27-jre
 
 # Install only the runtime libraries required by the application
 RUN apt-get update \
@@ -10,10 +10,10 @@ RUN groupadd --system app \
     && useradd --system --gid app --create-home --home-dir /opt/app app
 
 WORKDIR /opt/app
-COPY --chown=app:app target/eelaa-*.jar app.jar
+COPY --chown=app:app target/eelaa-*.jar eelaa.jar
 USER app
 
 EXPOSE 7178
 
 ENTRYPOINT ["java"]
-CMD ["-XX:+ExitOnOutOfMemoryError", "-Xms512m", "-Xmx8g", "-XX:+UseCompactObjectHeaders", "-jar","app.jar"]
+CMD ["-XX:+ExitOnOutOfMemoryError", "-Xms512m", "-Xmx8g", "-jar","eelaa.jar"]

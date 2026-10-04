@@ -52,9 +52,9 @@ Documentation in progress.
 
 ### Test & Development Setup (macOS)
 
-- JDK 26
+- JDK 27
     - ```curl -s "https://get.sdkman.io" | bash```
-    - ```sdk install java 26.0.2-oracle```
+    - ```sdk install java 27.0.0-oracle```
 - LZ4 Compression Library
     - ```/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"```
     - ```brew install lz4```
