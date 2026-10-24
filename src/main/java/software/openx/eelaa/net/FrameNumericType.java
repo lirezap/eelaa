@@ -38,7 +38,10 @@ public enum FrameNumericType {
     FAILED_TRANSACTIONS(302),
 
     FETCH_TRANSACTION(400),
-    TRANSACTION(401);
+    TRANSACTION(401),
+
+    FETCH_RECORDS_STATEMENT(500),
+    RECORDS_STATEMENT(501);
 
     private static final FrameNumericType[] frameNumericTypes = FrameNumericType.values();
     private final int value;
