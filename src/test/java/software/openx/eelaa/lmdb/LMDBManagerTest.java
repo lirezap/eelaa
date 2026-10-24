@@ -140,7 +140,7 @@ public class LMDBManagerTest {
     }
 
     @Test
-    public void testIterateFromFirst() throws Exception {
+    public void testIterate() throws Exception {
         var dataDirectoryPath = Files.createTempDirectory(String.valueOf(System.currentTimeMillis()));
         try (var manager = LMDBManager.newInstance(dataDirectoryPath, 1024 * 1024, 1, 0, 0644);
              var arena = Arena.ofConfined()) {
@@ -161,10 +161,10 @@ public class LMDBManagerTest {
             txn = manager.newTxn(arena, NULL, 0);
             var cursor = manager.newCursor(txn, dbi, arena);
             var index = 0;
-            var value = manager.iterateFromFirst(cursor, arena);
+            var value = manager.iterate(cursor, arena);
             while (value != NULL) {
                 assertEquals(values.get(index++), value.getString(0));
-                value = manager.iterateFromFirst(cursor, arena);
+                value = manager.iterate(cursor, arena);
             }
 
             manager.closeCursor(cursor);

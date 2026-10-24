@@ -22,6 +22,7 @@ import software.openx.eelaa.lz4.LZ4;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -98,6 +99,11 @@ final class LMDBBasedLedger extends Ledger {
 
             return fetchedTransaction;
         }, getExecutor());
+    }
+
+    @Override
+    public ArrayList<Transaction> recordsStatement(final long fromRecord, final int size) {
+        return super.recordsStatement(lmdbManager, ledgersDbi, fromRecord, size);
     }
 
     @Override

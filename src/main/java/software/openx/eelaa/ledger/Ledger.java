@@ -26,6 +26,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
 import static java.lang.foreign.MemorySegment.NULL;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static software.openx.eelaa.lmdb.LMDBFlags.MDB_RDONLY;
 
@@ -92,6 +93,41 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
         return CompletableFuture.supplyAsync(() -> processor.fetchTransaction(ledger, id), executor);
     }
 
+    public abstract ArrayList<Transaction> recordsStatement(final long fromRecord, final int size);
+
+    abstract void loadWallets();
+
+    abstract boolean persist(final Transaction... transactions);
+
+    final ArrayList<Transaction> recordsStatement(final LMDBManager lmdbManager, final int ledgersDbi,
+                                                  final long fromRecord, final int size) {
+
+        try (final var arena = Arena.ofConfined()) {
+            final var txn = lmdbManager.newTxn(arena, NULL, MDB_RDONLY);
+            try {
+                final var cursor = lmdbManager.newCursor(txn, ledgersDbi, arena);
+                try {
+                    final var key = arena.allocateFrom(JAVA_LONG, 0);
+                    key.set(JAVA_LONG, 0, fromRecord);
+
+                    final var ledgers = new ArrayList<Transaction>(size);
+
+                    var transaction = lmdbManager.setCursorAt(cursor, key, arena);
+                    while (transaction != NULL && ledgers.size() < size) {
+                        ledgers.add(Transaction.decode(transaction.asSlice(6)));
+                        transaction = lmdbManager.iterate(cursor, arena);
+                    }
+
+                    return ledgers;
+                } finally {
+                    lmdbManager.closeCursor(cursor);
+                }
+            } finally {
+                lmdbManager.commitTxn(txn);
+            }
+        }
+    }
+
     final void loadWallets(final Logger logger, final LMDBManager lmdbManager, final int walletsDbi) {
         logger.info("Loading wallets into ledger ...");
         try (final var arena = Arena.ofConfined()) {
@@ -100,7 +136,7 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
                 final var cursor = lmdbManager.newCursor(txn, walletsDbi, arena);
                 try {
                     var wallets = new ArrayList<Wallet>(100_000);
-                    var wallet = lmdbManager.iterateFromFirst(cursor, arena);
+                    var wallet = lmdbManager.iterate(cursor, arena);
                     while (wallet != NULL) {
                         wallets.add(Wallet.decode(wallet.asSlice(6)));
                         if (wallets.size() == 100_000) {
@@ -109,7 +145,7 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
                             wallets = new ArrayList<>(100_000);
                         }
 
-                        wallet = lmdbManager.iterateFromFirst(cursor, arena);
+                        wallet = lmdbManager.iterate(cursor, arena);
                     }
 
                     if (!wallets.isEmpty()) {
@@ -124,10 +160,6 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
             }
         }
     }
-
-    abstract void loadWallets();
-
-    abstract boolean persist(final Transaction... transactions);
 
     final ExecutorService getExecutor() {
         return executor;

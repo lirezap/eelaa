@@ -26,8 +26,7 @@ import java.nio.file.Path;
 
 import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.ValueLayout.*;
-import static software.openx.eelaa.lmdb.CursorOperations.MDB_LAST;
-import static software.openx.eelaa.lmdb.CursorOperations.MDB_NEXT;
+import static software.openx.eelaa.lmdb.CursorOperations.*;
 import static software.openx.eelaa.lmdb.LMDBFlags.*;
 
 /**
@@ -337,7 +336,34 @@ public final class LMDBManager implements AutoCloseable {
         }
     }
 
-    public MemorySegment iterateFromFirst(final MemorySegment cursor, final Arena valueArena) {
+    public MemorySegment setCursorAt(final MemorySegment cursor, final MemorySegment key, final Arena valueArena) {
+        try {
+            try (final var arena = Arena.ofConfined()) {
+                final var keyVal = asLMDBVal(arena, key);
+                final var dataVal = arena.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
+
+                final var error = GlobalLMDB.mdbCursorGet(cursor, keyVal, dataVal, MDB_SET);
+                if (error == 0) {
+                    final var size = dataVal.get(JAVA_LONG, 0);
+                    final var value = valueArena.allocate(size);
+                    MemorySegmentUtil.putMemory(
+                            value, 0, dataVal.get(ADDRESS, JAVA_LONG.byteSize()).reinterpret(size));
+
+                    return value;
+                }
+
+                if (error == -30798) {
+                    return NULL;
+                }
+
+                throw new RuntimeException(String.format("LMDB cursor get failed with error code: %s", error));
+            }
+        } catch (final Throwable cause) {
+            throw new RuntimeException(cause);
+        }
+    }
+
+    public MemorySegment iterate(final MemorySegment cursor, final Arena valueArena) {
         try {
             try (final var arena = Arena.ofConfined()) {
                 final var keyVal = arena.allocate(JAVA_LONG.byteSize() + ADDRESS.byteSize());
