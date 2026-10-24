@@ -49,6 +49,8 @@ abstract class AbstractHTTPRouter extends SimpleChannelInboundHandler<FullHttpRe
     };
     private static final TypeReference<Message<FetchTransaction>> FETCH_TRANSACTION_TYPE = new TypeReference<>() {
     };
+    private static final TypeReference<Message<FetchRecordsStatement>> FETCH_RECORDS_STATEMENT_TYPE = new TypeReference<>() {
+    };
 
     private static final ByteBuf EMPTY = Unpooled.buffer();
     private static final ByteBuf METHOD_NOT_SUPPORTED = Unpooled.buffer();
@@ -89,6 +91,10 @@ abstract class AbstractHTTPRouter extends SimpleChannelInboundHandler<FullHttpRe
 
     public final Message<FetchTransaction> fetchTransactionMessage(final FullHttpRequest request) {
         return MAPPER.readValue((InputStream) new ByteBufInputStream(request.content()), FETCH_TRANSACTION_TYPE);
+    }
+
+    public final Message<FetchRecordsStatement> fetchRecordsStatementMessage(final FullHttpRequest request) {
+        return MAPPER.readValue((InputStream) new ByteBufInputStream(request.content()), FETCH_RECORDS_STATEMENT_TYPE);
     }
 
     public final void writeJsonValue(final ByteBuf buf, final Object value) {

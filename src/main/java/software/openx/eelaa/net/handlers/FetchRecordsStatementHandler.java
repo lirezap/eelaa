@@ -50,7 +50,7 @@ public final class FetchRecordsStatementHandler extends Handler {
     @Override
     protected void handle() throws Exception {
         if (isValid()) {
-            final var recordsStatement = ledger.recordsStatement(getBuf().readLong(), getBuf().readInt());
+            final var recordsStatement = ledger.fetchRecordsStatement(getBuf().readLong(), getBuf().readInt());
             releaseFrameBuffer();
 
             if (recordsStatement != null && !recordsStatement.isEmpty()) {

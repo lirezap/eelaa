@@ -102,8 +102,12 @@ final class LMDBBasedLedger extends Ledger {
     }
 
     @Override
-    public ArrayList<Transaction> recordsStatement(final long fromRecord, final int size) {
-        return super.recordsStatement(lmdbManager, ledgersDbi, fromRecord, size);
+    public ArrayList<Transaction> fetchRecordsStatement(final long fromRecord, final int size) {
+        return super.fetchRecordsStatement(
+                lmdbManager,
+                transactionsDbi,
+                ledgersDbi,
+                fromRecord, size);
     }
 
     @Override

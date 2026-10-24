@@ -100,9 +100,12 @@ final class WALBasedLedger extends Ledger {
     }
 
     @Override
-    public ArrayList<Transaction> recordsStatement(final long fromRecord, final int size) {
-        return super.recordsStatement(
-                glFileSynchronizer.getLmdbManager(), glFileSynchronizer.getLedgersDbi(), fromRecord, size);
+    public ArrayList<Transaction> fetchRecordsStatement(final long fromRecord, final int size) {
+        return super.fetchRecordsStatement(
+                glFileSynchronizer.getLmdbManager(),
+                glFileSynchronizer.getTransactionsDbi(),
+                glFileSynchronizer.getLedgersDbi(),
+                fromRecord, size);
     }
 
     @Override

@@ -84,6 +84,7 @@ final class HTTPRouter extends AbstractHTTPRouter {
                 case FrameNumericType.BATCH -> handleBatch(ctx, request, false);
                 case FrameNumericType.ATOMIC_BATCH -> handleBatch(ctx, request, true);
                 case FrameNumericType.FETCH_TRANSACTION -> handleFetchTransaction(ctx, request);
+                case FrameNumericType.FETCH_RECORDS_STATEMENT -> handleFetchRecordsStatement(ctx, request);
 
                 case null, default -> respondHandlerNotFound(ctx);
             }
@@ -201,6 +202,20 @@ final class HTTPRouter extends AbstractHTTPRouter {
                     writeJsonValue(buf, transaction);
                     respondJson(ctx, buf);
                 }, cpuHeavyTaskExecutor);
+    }
+
+    private void handleFetchRecordsStatement(final ChannelHandlerContext ctx, final FullHttpRequest request) {
+        final var message = fetchRecordsStatementMessage(request);
+        if (!isValidMessage(ctx, message)) {
+            return;
+        }
+
+        final var recordsStatement =
+                ledger.fetchRecordsStatement(message.getData().getFromRecord(), message.getData().getSize());
+
+        final var buf = ctx.alloc().buffer(recordsStatement.size() * 128);
+        writeJsonValue(buf, recordsStatement);
+        respondJson(ctx, buf);
     }
 
     private <T> boolean isValidMessage(final ChannelHandlerContext ctx, final Message<T> message) {
