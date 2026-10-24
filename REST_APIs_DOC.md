@@ -398,6 +398,82 @@ Inquiries a specific transfer using its id.
 
 ---
 
+## Fetch Records Statement
+
+### Endpoint
+
+`POST /messages?numericType=500`
+
+### Description
+
+Fetches all records of transactions in all ledgers. From record 1 to N.
+
+### Headers
+
+| Header       | Required | Description      |
+|--------------|----------|------------------|
+| Content-Type | Yes      | application/json |
+
+### Request Body
+
+```json
+{
+  "sequenceId": 1,
+  "ts": "1792867007000",
+  "data": {
+    "fromRecord": 1,
+    "size": 10
+  }
+}
+```
+
+### Success Response (200)
+
+```json
+[
+  {
+    "ledger": 1,
+    "sourceAccount": 1,
+    "sourceWallet": 1,
+    "destinationAccount": 1,
+    "destinationWallet": 2,
+    "id": "1792867007000:1",
+    "currency": "BTC",
+    "amount": 1000,
+    "maxOverdraftAmount": 10000,
+    "metadata": "{\"key\":\"value\"}",
+    "sourceWalletNewBalance": -1000,
+    "destinationWalletNewBalance": 1000,
+    "ts": 1792867012820
+  },
+  {
+    "ledger": 1,
+    "sourceAccount": 1,
+    "sourceWallet": 1,
+    "destinationAccount": 1,
+    "destinationWallet": 2,
+    "id": "1792867007000:2",
+    "currency": "BTC",
+    "amount": 1000,
+    "maxOverdraftAmount": 10000,
+    "metadata": "{\"anotherKey\":\"anotherValue\"}",
+    "sourceWalletNewBalance": -2000,
+    "destinationWalletNewBalance": 2000,
+    "ts": 1792867012820
+  }
+]
+```
+
+### Notes
+
+- All requests sent by an HTTP client's connection must include a unique `sequenceId`.
+- All requests sent by an HTTP client must include a valid current timestamp in `ts` field.
+- Two previous mentioned fields exists for security/idempotency reasons and can be disabled using environment variables.
+- `fromRecord` is the record number of the first item to fetch (records counted from 1).
+- `size` is the size of fetched records.
+
+---
+
 ## Possible Errors
 
 | code                 | message                                       |
