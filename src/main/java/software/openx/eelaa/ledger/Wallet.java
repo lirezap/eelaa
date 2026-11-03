@@ -16,20 +16,23 @@
 package software.openx.eelaa.ledger;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import software.openx.eelaa.protocol.StringUtil;
+import software.openx.eelaa.protocol.V1BinaryFrameDeserializable;
+import software.openx.eelaa.protocol.V1BinaryFrameSerializable;
 
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static software.openx.eelaa.protocol.MemorySegmentUtil.*;
+import static software.openx.eelaa.protocol.StringUtil.readNullTerminatedUTF8String;
 
 /**
  * @author Alireza Pourtaghi
  */
-public final class Wallet {
+public final class Wallet implements V1BinaryFrameSerializable, V1BinaryFrameDeserializable<Wallet> {
+    public static final Wallet DESERIALIZER = new Wallet(0, 0, 0);
+
     private final int ledger;
     private final long account;
     private final int wallet;
@@ -50,64 +53,50 @@ public final class Wallet {
         this._thisTurnAccumulatedOverdraft = 0;
     }
 
-    private int binarySize() {
+    @Override
+    public int dataLength() {
         return Math.addExact(24, StringUtil.requiredNullTerminatedUTF8BytesLength(currency));
     }
 
-    public int frameBinarySize() {
-        return Math.addExact(6, binarySize());
+    @Override
+    public void serialize(final MemorySegment memory, long position) {
+        position = putIntLE(memory, position, getLedger());
+        position = putLongLE(memory, position, getAccount());
+        position = putIntLE(memory, position, getWallet());
+        position = putString(memory, position, getCurrency());
+        putLongLE(memory, position, getBalance());
     }
 
-    public ByteBuf encodeV1(final ByteBufAllocator allocator) {
-        final var binarySize = binarySize();
-        final var buffer = allocator.buffer(Math.addExact(6, binarySize));
-
-        buffer.writeByte(0b00000001);
-        buffer.writeByte(0b00000000);
-        buffer.writeInt(binarySize);
+    @Override
+    public void serialize(final ByteBuf buffer) {
         buffer.writeInt(getLedger());
         buffer.writeLong(getAccount());
         buffer.writeInt(getWallet());
         buffer.writeCharSequence(getCurrency(), UTF_8);
         buffer.writeZero(1);
         buffer.writeLong(getBalance());
-
-        return buffer;
     }
 
-    public static Wallet decode(final ByteBuf buf) {
+    @Override
+    public Wallet deserialize(final MemorySegment serialized, final AtomicLong position, final byte version,
+                              final byte flags, final int dataLength) {
+
         return new Wallet(
-                buf.readInt(),
-                buf.readLong(),
-                buf.readInt(),
-                StringUtil.readNullTerminatedUTF8String(buf),
-                buf.readLong());
+                getIntLE(serialized, position),
+                getLongLE(serialized, position),
+                getIntLE(serialized, position),
+                getString(serialized, position),
+                getLongLE(serialized, position));
     }
 
-    public MemorySegment encodeV1(final Arena arena) {
-        final var binarySize = binarySize();
-        final var memory = arena.allocate(6 + binarySize);
-
-        var position = putByteLE(memory, 0, (byte) 0b00000001);
-        position = putByteLE(memory, position, (byte) 0b00000000);
-        position = putIntLE(memory, position, binarySize);
-        position = putIntLE(memory, position, getLedger());
-        position = putLongLE(memory, position, getAccount());
-        position = putIntLE(memory, position, getWallet());
-        position = putString(memory, position, getCurrency());
-        putLongLE(memory, position, getBalance());
-
-        return memory;
-    }
-
-    public static Wallet decode(final MemorySegment memory) {
-        final var position = new AtomicLong(0);
+    @Override
+    public Wallet deserialize(final ByteBuf serialized, final byte version, final byte flags, final int dataLength) {
         return new Wallet(
-                getIntLE(memory, position),
-                getLongLE(memory, position),
-                getIntLE(memory, position),
-                getString(memory, position),
-                getLongLE(memory, position));
+                serialized.readInt(),
+                serialized.readLong(),
+                serialized.readInt(),
+                readNullTerminatedUTF8String(serialized),
+                serialized.readLong());
     }
 
     public int getLedger() {

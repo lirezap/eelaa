@@ -138,7 +138,7 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
                     var wallets = new ArrayList<Wallet>(100_000);
                     var wallet = lmdbManager.iterate(cursor, arena);
                     while (wallet != NULL) {
-                        wallets.add(Wallet.decode(wallet.asSlice(6)));
+                        wallets.add(Wallet.DESERIALIZER.deserialize(wallet));
                         if (wallets.size() == 100_000) {
                             getProcessor().loadWallets(wallets);
                             logger.info("Loaded {} wallets into ledger successfully", wallets.size());

@@ -34,6 +34,8 @@ import static software.openx.eelaa.protocol.StringUtil.readNullTerminatedUTF8Str
 public final class FailedTransaction implements
         V1BinaryFrameSerializable, V1BinaryFrameDeserializable<FailedTransaction> {
 
+    public static final FailedTransaction DESERIALIZER = new FailedTransaction("", "");
+
     private final String id;
     private final String reason;
 

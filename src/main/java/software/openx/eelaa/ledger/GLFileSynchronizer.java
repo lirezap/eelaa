@@ -211,7 +211,7 @@ final class GLFileSynchronizer implements Runnable, AutoCloseable {
                         transaction.getSourceWallet(),
                         transaction.getCurrency(),
                         transaction.getSourceWalletNewBalance()
-                ).encodeV1(arena);
+                ).serialize(arena);
 
                 final var destinationWallet = new Wallet(
                         transaction.getLedger(),
@@ -219,7 +219,7 @@ final class GLFileSynchronizer implements Runnable, AutoCloseable {
                         transaction.getDestinationWallet(),
                         transaction.getCurrency(),
                         transaction.getDestinationWalletNewBalance()
-                ).encodeV1(arena);
+                ).serialize(arena);
 
                 final var key = arena.allocateFrom(transaction.getLedger() + ":" + transaction.getId());
                 if (lmdbManager.put(txn, transactionsDbi, key, transaction.encodeV1(arena))) {

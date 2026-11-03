@@ -56,11 +56,11 @@ public final class FetchWalletHandler extends Handler {
             releaseFrameBuffer();
 
             if (wallet != null) {
-                final var frameHeader = newV1FrameHeaderBuf(8, wallet.frameBinarySize());
+                final var frameHeader = newV1FrameHeaderBuf(8, wallet.frameSize());
                 frameHeader.writeInt(WALLET.value());
                 frameHeader.writeInt(getSequenceId());
                 write(frameHeader);
-                writeAndFlush(wallet.encodeV1(getCtx().alloc()));
+                writeAndFlush(wallet.serialize(getCtx().alloc()));
             } else {
                 respondNothing();
             }

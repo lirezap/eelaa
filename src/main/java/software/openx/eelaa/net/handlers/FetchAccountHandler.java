@@ -58,7 +58,7 @@ public final class FetchAccountHandler extends Handler {
             if (account != null && !account.isEmpty()) {
                 var length = 0;
                 for (final var wallet : account) {
-                    length = Math.addExact(length, wallet.frameBinarySize());
+                    length = Math.addExact(length, wallet.frameSize());
                 }
 
                 final var frameHeader = newV1FrameHeaderBuf(8, length);
@@ -67,7 +67,7 @@ public final class FetchAccountHandler extends Handler {
                 write(frameHeader);
 
                 for (final var wallet : account) {
-                    write(wallet.encodeV1(getCtx().alloc()));
+                    write(wallet.serialize(getCtx().alloc()));
                 }
 
                 flush();

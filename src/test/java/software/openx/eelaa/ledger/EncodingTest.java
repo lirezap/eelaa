@@ -137,12 +137,9 @@ public class EncodingTest {
     @Test
     public void testWallet1() {
         var wallet = new Wallet(1, 2, 3, "IRR", 4);
-        var encoded = wallet.encodeV1(ByteBufAllocator.DEFAULT);
-        assertEquals(0b00000001, encoded.readByte());
-        assertEquals(0b00000000, encoded.readByte());
-        assertEquals(wallet.frameBinarySize() - 6, encoded.readInt());
+        var encoded = wallet.serialize(ByteBufAllocator.DEFAULT);
+        var decoded = Wallet.DESERIALIZER.deserialize(encoded);
 
-        var decoded = Wallet.decode(encoded);
         assertEquals(wallet.getLedger(), decoded.getLedger());
         assertEquals(wallet.getAccount(), decoded.getAccount());
         assertEquals(wallet.getWallet(), decoded.getWallet());
@@ -154,12 +151,9 @@ public class EncodingTest {
     @Test
     public void testWallet2() {
         var wallet = new Wallet(1, 2, 3, null, 4);
-        var encoded = wallet.encodeV1(ByteBufAllocator.DEFAULT);
-        assertEquals(0b00000001, encoded.readByte());
-        assertEquals(0b00000000, encoded.readByte());
-        assertEquals(wallet.frameBinarySize() - 6, encoded.readInt());
+        var encoded = wallet.serialize(ByteBufAllocator.DEFAULT);
+        var decoded = Wallet.DESERIALIZER.deserialize(encoded);
 
-        var decoded = Wallet.decode(encoded);
         assertEquals(wallet.getLedger(), decoded.getLedger());
         assertEquals(wallet.getAccount(), decoded.getAccount());
         assertEquals(wallet.getWallet(), decoded.getWallet());
@@ -172,13 +166,9 @@ public class EncodingTest {
     public void testWallet3() {
         var wallet = new Wallet(1, 2, 3, "IRR", 4);
         try (var arena = Arena.ofConfined()) {
-            var encoded = wallet.encodeV1(arena);
-            var position = new AtomicLong(0);
-            assertEquals(0b00000001, MemorySegmentUtil.getByteLE(encoded, position));
-            assertEquals(0b00000000, MemorySegmentUtil.getByteLE(encoded, position));
-            assertEquals(wallet.frameBinarySize() - 6, MemorySegmentUtil.getIntLE(encoded, position));
+            var encoded = wallet.serialize(arena);
+            var decoded = Wallet.DESERIALIZER.deserialize(encoded);
 
-            var decoded = Wallet.decode(encoded.asSlice(6));
             assertEquals(wallet.getLedger(), decoded.getLedger());
             assertEquals(wallet.getAccount(), decoded.getAccount());
             assertEquals(wallet.getWallet(), decoded.getWallet());
@@ -191,13 +181,9 @@ public class EncodingTest {
     public void testWallet4() {
         var wallet = new Wallet(1, 2, 3, null, 4);
         try (var arena = Arena.ofConfined()) {
-            var encoded = wallet.encodeV1(arena);
-            var position = new AtomicLong(0);
-            assertEquals(0b00000001, MemorySegmentUtil.getByteLE(encoded, position));
-            assertEquals(0b00000000, MemorySegmentUtil.getByteLE(encoded, position));
-            assertEquals(wallet.frameBinarySize() - 6, MemorySegmentUtil.getIntLE(encoded, position));
+            var encoded = wallet.serialize(arena);
+            var decoded = Wallet.DESERIALIZER.deserialize(encoded);
 
-            var decoded = Wallet.decode(encoded.asSlice(6));
             assertEquals(wallet.getLedger(), decoded.getLedger());
             assertEquals(wallet.getAccount(), decoded.getAccount());
             assertEquals(wallet.getWallet(), decoded.getWallet());
@@ -210,7 +196,7 @@ public class EncodingTest {
     public void testFailedTransaction1() {
         var failedTransaction = new FailedTransaction(String.format("%s:%s", System.currentTimeMillis(), 1), "id.not_valid");
         var encoded = failedTransaction.serialize(ByteBufAllocator.DEFAULT);
-        var decoded = failedTransaction.deserialize(encoded);
+        var decoded = FailedTransaction.DESERIALIZER.deserialize(encoded);
 
         assertEquals(failedTransaction.getId(), decoded.getId());
         assertEquals(failedTransaction.getReason(), decoded.getReason());
@@ -221,7 +207,7 @@ public class EncodingTest {
     public void testFailedTransaction2() {
         var failedTransaction = new FailedTransaction(null, null);
         var encoded = failedTransaction.serialize(ByteBufAllocator.DEFAULT);
-        var decoded = failedTransaction.deserialize(encoded);
+        var decoded = FailedTransaction.DESERIALIZER.deserialize(encoded);
 
         assertEquals("", decoded.getId());
         assertEquals("", decoded.getReason());

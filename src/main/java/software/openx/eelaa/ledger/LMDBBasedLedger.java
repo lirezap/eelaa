@@ -129,8 +129,8 @@ final class LMDBBasedLedger extends Ledger {
 
                 for (final var transaction : transactions) {
                     if (transaction != null && !transaction.is_failed()) {
-                        final var sourceWallet = transaction.get_sourceWallet().encodeV1(arena);
-                        final var destinationWallet = transaction.get_destinationWallet().encodeV1(arena);
+                        final var sourceWallet = transaction.get_sourceWallet().serialize(arena);
+                        final var destinationWallet = transaction.get_destinationWallet().serialize(arena);
 
                         final var key = arena.allocateFrom(transaction.getLedger() + ":" + transaction.getId());
                         if (lmdbManager.put(txn, transactionsDbi, key, transaction.encodeV1(arena))) {
