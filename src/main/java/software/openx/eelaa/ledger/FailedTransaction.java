@@ -16,15 +16,24 @@
 package software.openx.eelaa.ledger;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import software.openx.eelaa.memory.StringUtil;
+import software.openx.eelaa.protocol.V1BinaryFrameDeserializable;
+import software.openx.eelaa.protocol.V1BinaryFrameSerializable;
+
+import java.lang.foreign.MemorySegment;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static software.openx.eelaa.memory.MemorySegmentUtil.getString;
+import static software.openx.eelaa.memory.MemorySegmentUtil.putString;
+import static software.openx.eelaa.memory.StringUtil.readNullTerminatedUTF8String;
 
 /**
  * @author Alireza Pourtaghi
  */
-public final class FailedTransaction {
+public final class FailedTransaction implements
+        V1BinaryFrameSerializable, V1BinaryFrameDeserializable<FailedTransaction> {
+
     private final String id;
     private final String reason;
 
@@ -33,36 +42,39 @@ public final class FailedTransaction {
         this.reason = reason == null ? "" : reason;
     }
 
-    private int binarySize() {
+    @Override
+    public int dataLength() {
         return Math.addExact(
                 StringUtil.requiredNullTerminatedUTF8BytesLength(id),
                 StringUtil.requiredNullTerminatedUTF8BytesLength(reason));
     }
 
-    public int frameBinarySize() {
-        return Math.addExact(6, binarySize());
+    @Override
+    public void serialize(final MemorySegment memory, long position) {
+        position = putString(memory, position, getId());
+        putString(memory, position, getReason());
     }
 
-    public ByteBuf encodeV1(final ByteBufAllocator allocator) {
-        final var binarySize = binarySize();
-        final var buffer = allocator.buffer(Math.addExact(6, binarySize));
-
-        buffer.writeByte(0b00000001);
-        buffer.writeByte(0b00000000);
-        buffer.writeInt(binarySize);
+    @Override
+    public void serialize(final ByteBuf buffer) {
         buffer.writeCharSequence(getId(), UTF_8);
         buffer.writeZero(1);
         buffer.writeCharSequence(getReason(), UTF_8);
         buffer.writeZero(1);
-
-        return buffer;
     }
 
-    public static FailedTransaction decode(final ByteBuf buf) {
-        return new FailedTransaction(
-                StringUtil.readNullTerminatedUTF8String(buf),
-                StringUtil.readNullTerminatedUTF8String(buf)
-        );
+    @Override
+    public FailedTransaction deserialize(final MemorySegment serialized, final AtomicLong position, final byte version,
+                                         final byte flags, final int dataLength) {
+
+        return new FailedTransaction(getString(serialized, position), getString(serialized, position));
+    }
+
+    @Override
+    public FailedTransaction deserialize(final ByteBuf serialized, final byte version, final byte flags,
+                                         final int dataLength) {
+
+        return new FailedTransaction(readNullTerminatedUTF8String(serialized), readNullTerminatedUTF8String(serialized));
     }
 
     public String getId() {

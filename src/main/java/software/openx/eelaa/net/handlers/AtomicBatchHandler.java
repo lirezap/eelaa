@@ -56,7 +56,7 @@ public final class AtomicBatchHandler extends BatchHandler {
         for (final var transaction : batch) {
             if (transaction.is_failed()) {
                 failedTransaction = new FailedTransaction(transaction.getId(), transaction.get_failReason());
-                length = failedTransaction.frameBinarySize();
+                length = failedTransaction.frameSize();
                 break;
             }
         }
@@ -67,7 +67,7 @@ public final class AtomicBatchHandler extends BatchHandler {
         write(frameHeader);
 
         if (failedTransaction != null) {
-            write(failedTransaction.encodeV1(getCtx().alloc()));
+            write(failedTransaction.serialize(getCtx().alloc()));
         }
 
         flush();

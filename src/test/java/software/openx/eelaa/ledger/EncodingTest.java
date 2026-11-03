@@ -209,12 +209,9 @@ public class EncodingTest {
     @Test
     public void testFailedTransaction1() {
         var failedTransaction = new FailedTransaction(String.format("%s:%s", System.currentTimeMillis(), 1), "id.not_valid");
-        var encoded = failedTransaction.encodeV1(ByteBufAllocator.DEFAULT);
-        assertEquals(0b00000001, encoded.readByte());
-        assertEquals(0b00000000, encoded.readByte());
-        assertEquals(failedTransaction.frameBinarySize() - 6, encoded.readInt());
+        var encoded = failedTransaction.serialize(ByteBufAllocator.DEFAULT);
+        var decoded = failedTransaction.deserialize(encoded);
 
-        var decoded = FailedTransaction.decode(encoded);
         assertEquals(failedTransaction.getId(), decoded.getId());
         assertEquals(failedTransaction.getReason(), decoded.getReason());
         ReferenceCountUtil.release(encoded);
@@ -223,12 +220,9 @@ public class EncodingTest {
     @Test
     public void testFailedTransaction2() {
         var failedTransaction = new FailedTransaction(null, null);
-        var encoded = failedTransaction.encodeV1(ByteBufAllocator.DEFAULT);
-        assertEquals(0b00000001, encoded.readByte());
-        assertEquals(0b00000000, encoded.readByte());
-        assertEquals(failedTransaction.frameBinarySize() - 6, encoded.readInt());
+        var encoded = failedTransaction.serialize(ByteBufAllocator.DEFAULT);
+        var decoded = failedTransaction.deserialize(encoded);
 
-        var decoded = FailedTransaction.decode(encoded);
         assertEquals("", decoded.getId());
         assertEquals("", decoded.getReason());
         ReferenceCountUtil.release(encoded);

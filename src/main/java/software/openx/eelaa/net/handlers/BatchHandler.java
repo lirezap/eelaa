@@ -77,8 +77,9 @@ public sealed class BatchHandler extends Handler permits AtomicBatchHandler {
         for (final var transaction : batch) {
             if (transaction.is_failed()) {
                 final var failedTransaction = new FailedTransaction(transaction.getId(), transaction.get_failReason());
-                failedTransactions[index++] = failedTransaction.encodeV1(getCtx().alloc());
-                length = Math.addExact(length, failedTransaction.frameBinarySize());
+                final var serializedFailedTransaction = failedTransaction.serialize(getCtx().alloc());
+                failedTransactions[index++] = serializedFailedTransaction;
+                length = Math.addExact(length, serializedFailedTransaction.readableBytes());
             }
         }
 
