@@ -16,7 +16,7 @@
 package software.openx.eelaa.ledger;
 
 import io.netty.buffer.ByteBuf;
-import software.openx.eelaa.memory.StringUtil;
+import software.openx.eelaa.protocol.StringUtil;
 import software.openx.eelaa.protocol.V1BinaryFrameDeserializable;
 import software.openx.eelaa.protocol.V1BinaryFrameSerializable;
 
@@ -24,9 +24,9 @@ import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static software.openx.eelaa.memory.MemorySegmentUtil.getString;
-import static software.openx.eelaa.memory.MemorySegmentUtil.putString;
-import static software.openx.eelaa.memory.StringUtil.readNullTerminatedUTF8String;
+import static software.openx.eelaa.protocol.MemorySegmentUtil.getString;
+import static software.openx.eelaa.protocol.MemorySegmentUtil.putString;
+import static software.openx.eelaa.protocol.StringUtil.readNullTerminatedUTF8String;
 
 /**
  * @author Alireza Pourtaghi

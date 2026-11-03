@@ -33,7 +33,7 @@ import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static software.openx.eelaa.lmdb.LMDBFlags.*;
-import static software.openx.eelaa.memory.MemorySegmentUtil.INT_LE;
+import static software.openx.eelaa.protocol.MemorySegmentUtil.INT_LE;
 
 /**
  * Synchronizer implementation that syncs transactions from GL file to LMDB storage engine.

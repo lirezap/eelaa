@@ -18,7 +18,7 @@ package software.openx.eelaa.ledger;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
 import org.junit.jupiter.api.Test;
-import software.openx.eelaa.memory.MemorySegmentUtil;
+import software.openx.eelaa.protocol.MemorySegmentUtil;
 
 import java.lang.foreign.Arena;
 import java.util.concurrent.atomic.AtomicLong;

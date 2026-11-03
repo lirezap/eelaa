@@ -15,7 +15,7 @@
  */
 package software.openx.eelaa.storage;
 
-import software.openx.eelaa.memory.MemorySegmentUtil;
+import software.openx.eelaa.protocol.MemorySegmentUtil;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -23,7 +23,7 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.channels.FileChannel;
 
-import static software.openx.eelaa.memory.MemorySegmentUtil.LONG_LE;
+import static software.openx.eelaa.protocol.MemorySegmentUtil.LONG_LE;
 import static software.openx.eelaa.storage.AtomicFile.IS_MAC;
 
 /**

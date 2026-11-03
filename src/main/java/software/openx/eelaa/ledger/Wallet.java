@@ -17,14 +17,14 @@ package software.openx.eelaa.ledger;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import software.openx.eelaa.memory.StringUtil;
+import software.openx.eelaa.protocol.StringUtil;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static software.openx.eelaa.memory.MemorySegmentUtil.*;
+import static software.openx.eelaa.protocol.MemorySegmentUtil.*;
 
 /**
  * @author Alireza Pourtaghi

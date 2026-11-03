@@ -21,8 +21,8 @@ import io.netty.buffer.ByteBufAllocator;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
-import static software.openx.eelaa.memory.MemorySegmentUtil.putByteLE;
-import static software.openx.eelaa.memory.MemorySegmentUtil.putIntLE;
+import static software.openx.eelaa.protocol.MemorySegmentUtil.putByteLE;
+import static software.openx.eelaa.protocol.MemorySegmentUtil.putIntLE;
 
 /**
  * Version one of the binary frame format definition.

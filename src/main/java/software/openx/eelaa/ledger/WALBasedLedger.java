@@ -30,7 +30,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import static java.lang.foreign.MemorySegment.NULL;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static software.openx.eelaa.ledger.LedgerConfig.TRANSACTION_ID_REQUIRED_BACKOFF_MS;
-import static software.openx.eelaa.memory.MemorySegmentUtil.*;
+import static software.openx.eelaa.protocol.MemorySegmentUtil.*;
 
 /**
  * WAL based crash-safe monetary general ledger implementation.

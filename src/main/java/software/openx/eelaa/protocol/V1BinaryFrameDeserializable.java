@@ -20,8 +20,8 @@ import io.netty.buffer.ByteBuf;
 import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static software.openx.eelaa.memory.MemorySegmentUtil.getByteLE;
-import static software.openx.eelaa.memory.MemorySegmentUtil.getIntLE;
+import static software.openx.eelaa.protocol.MemorySegmentUtil.getByteLE;
+import static software.openx.eelaa.protocol.MemorySegmentUtil.getIntLE;
 
 /**
  * Version one of the binary frame format deserialization definition.

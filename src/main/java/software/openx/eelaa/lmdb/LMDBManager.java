@@ -17,7 +17,7 @@ package software.openx.eelaa.lmdb;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.openx.eelaa.memory.MemorySegmentUtil;
+import software.openx.eelaa.protocol.MemorySegmentUtil;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;

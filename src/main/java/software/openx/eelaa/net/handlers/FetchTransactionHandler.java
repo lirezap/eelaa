@@ -18,8 +18,8 @@ package software.openx.eelaa.net.handlers;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import software.openx.eelaa.ledger.Ledger;
-import software.openx.eelaa.memory.StringUtil;
 import software.openx.eelaa.net.Handler;
+import software.openx.eelaa.protocol.StringUtil;
 
 import static software.openx.eelaa.net.FrameNumericType.FETCH_TRANSACTION;
 import static software.openx.eelaa.net.FrameNumericType.TRANSACTION;
