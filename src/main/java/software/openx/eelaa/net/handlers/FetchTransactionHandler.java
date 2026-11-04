@@ -57,11 +57,11 @@ public final class FetchTransactionHandler extends Handler {
             releaseFrameBuffer();
 
             if (transaction != null) {
-                final var frameHeader = newV1FrameHeaderBuf(8, transaction.frameBinarySize());
+                final var frameHeader = newV1FrameHeaderBuf(8, transaction.frameSize());
                 frameHeader.writeInt(TRANSACTION.value());
                 frameHeader.writeInt(getSequenceId());
                 write(frameHeader);
-                writeAndFlush(transaction.encodeV1(getCtx().alloc()));
+                writeAndFlush(transaction.serialize(getCtx().alloc()));
             } else {
                 respondNothing();
             }

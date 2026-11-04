@@ -90,7 +90,7 @@ final class WALBasedLedger extends Ledger {
                             lmdbManager.get(transactionsDbi, arena.allocateFrom(ledger + ":" + id), arena);
 
                     if (storedTransaction != NULL) {
-                        return Transaction.decode(storedTransaction.asSlice(6));
+                        return Transaction.DESERIALIZER.deserialize(storedTransaction);
                     }
                 }
             }
@@ -119,7 +119,7 @@ final class WALBasedLedger extends Ledger {
             var allocationSize = 0L;
             for (final var transaction : transactions) {
                 if (transaction != null && !transaction.is_failed()) {
-                    final var encoded = transaction.encodeV1(arena);
+                    final var encoded = transaction.serialize(arena);
                     transaction.set_memoryPointer(encoded);
                     allocationSize = Math.addExact(allocationSize, encoded.byteSize());
                 }

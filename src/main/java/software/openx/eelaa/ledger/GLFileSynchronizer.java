@@ -183,12 +183,9 @@ final class GLFileSynchronizer implements Runnable, AutoCloseable {
         final var transactions = new Transaction[count];
         var index = 0;
         while (buffer.remaining() > 0) {
-            final var version = buffer.get();
-            final var flags = buffer.get();
-            final var length = buffer.getInt();
-
-            transactions[index++] = Transaction.decode(batch.asSlice(buffer.position(), length));
-            buffer.position(Math.addExact(buffer.position(), length));
+            final var transaction = Transaction.DESERIALIZER.deserialize(batch.asSlice(buffer.position()));
+            transactions[index++] = transaction;
+            buffer.position(Math.addExact(buffer.position(), transaction.frameSize()));
         }
 
         return transactions;
@@ -222,7 +219,7 @@ final class GLFileSynchronizer implements Runnable, AutoCloseable {
                 ).serialize(arena);
 
                 final var key = arena.allocateFrom(transaction.getLedger() + ":" + transaction.getId());
-                if (lmdbManager.put(txn, transactionsDbi, key, transaction.encodeV1(arena))) {
+                if (lmdbManager.put(txn, transactionsDbi, key, transaction.serialize(arena))) {
                     lmdbManager.putOrReplace(txn, walletsDbi, sourceWallet.asSlice(6, 16), sourceWallet);
                     lmdbManager.putOrReplace(txn, walletsDbi, destinationWallet.asSlice(6, 16), destinationWallet);
 

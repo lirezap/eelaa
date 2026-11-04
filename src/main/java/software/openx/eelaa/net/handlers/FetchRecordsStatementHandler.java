@@ -56,7 +56,7 @@ public final class FetchRecordsStatementHandler extends Handler {
             if (recordsStatement != null && !recordsStatement.isEmpty()) {
                 var length = 0;
                 for (final var transaction : recordsStatement) {
-                    length = Math.addExact(length, transaction.frameBinarySize());
+                    length = Math.addExact(length, transaction.frameSize());
                 }
 
                 final var frameHeader = newV1FrameHeaderBuf(8, length);
@@ -65,7 +65,7 @@ public final class FetchRecordsStatementHandler extends Handler {
                 write(frameHeader);
 
                 for (final var transaction : recordsStatement) {
-                    write(transaction.encodeV1(getCtx().alloc()));
+                    write(transaction.serialize(getCtx().alloc()));
                 }
 
                 flush();

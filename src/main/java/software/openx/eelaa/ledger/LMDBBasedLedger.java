@@ -92,7 +92,7 @@ final class LMDBBasedLedger extends Ledger {
                             lmdbManager.get(transactionsDbi, arena.allocateFrom(ledger + ":" + id), arena);
 
                     if (storedTransaction != NULL) {
-                        return Transaction.decode(storedTransaction.asSlice(6));
+                        return Transaction.DESERIALIZER.deserialize(storedTransaction);
                     }
                 }
             }
@@ -133,7 +133,7 @@ final class LMDBBasedLedger extends Ledger {
                         final var destinationWallet = transaction.get_destinationWallet().serialize(arena);
 
                         final var key = arena.allocateFrom(transaction.getLedger() + ":" + transaction.getId());
-                        if (lmdbManager.put(txn, transactionsDbi, key, transaction.encodeV1(arena))) {
+                        if (lmdbManager.put(txn, transactionsDbi, key, transaction.serialize(arena))) {
                             lmdbManager.putOrReplace(
                                     txn, walletsDbi, sourceWallet.asSlice(6, 16), sourceWallet);
 

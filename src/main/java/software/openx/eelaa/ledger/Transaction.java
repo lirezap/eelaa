@@ -16,21 +16,24 @@
 package software.openx.eelaa.ledger;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import software.openx.eelaa.protocol.StringUtil;
+import software.openx.eelaa.protocol.V1BinaryFrameDeserializable;
+import software.openx.eelaa.protocol.V1BinaryFrameSerializable;
 
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static software.openx.eelaa.ledger.LedgerConfig.TRANSACTION_ID_REQUIRED_BACKOFF_MS;
 import static software.openx.eelaa.protocol.MemorySegmentUtil.*;
+import static software.openx.eelaa.protocol.StringUtil.readNullTerminatedUTF8String;
 
 /**
  * @author Alireza Pourtaghi
  */
-public final class Transaction {
+public final class Transaction implements V1BinaryFrameSerializable, V1BinaryFrameDeserializable<Transaction> {
+    public static final Transaction DESERIALIZER = new Transaction(0, "");
+
     private final int ledger;
     private final long sourceAccount;
     private final int sourceWallet;
@@ -98,25 +101,34 @@ public final class Transaction {
         this.ts = ts;
     }
 
-    private int binarySize() {
-        var sum = Math.addExact(68, StringUtil.requiredNullTerminatedUTF8BytesLength(id));
-        sum = Math.addExact(sum, StringUtil.requiredNullTerminatedUTF8BytesLength(currency));
-        sum = Math.addExact(sum, StringUtil.requiredNullTerminatedUTF8BytesLength(metadata));
+    @Override
+    public int dataLength() {
+        var length = Math.addExact(68, StringUtil.requiredNullTerminatedUTF8BytesLength(id));
+        length = Math.addExact(length, StringUtil.requiredNullTerminatedUTF8BytesLength(currency));
+        length = Math.addExact(length, StringUtil.requiredNullTerminatedUTF8BytesLength(metadata));
 
-        return sum;
+        return length;
     }
 
-    public int frameBinarySize() {
-        return Math.addExact(6, binarySize());
+    @Override
+    public void serialize(final MemorySegment memory, long position) {
+        position = putIntLE(memory, position, getLedger());
+        position = putLongLE(memory, position, getSourceAccount());
+        position = putIntLE(memory, position, getSourceWallet());
+        position = putLongLE(memory, position, getDestinationAccount());
+        position = putIntLE(memory, position, getDestinationWallet());
+        position = putString(memory, position, getId());
+        position = putString(memory, position, getCurrency());
+        position = putLongLE(memory, position, getAmount());
+        position = putLongLE(memory, position, getMaxOverdraftAmount());
+        position = putString(memory, position, getMetadata());
+        position = putLongLE(memory, position, getSourceWalletNewBalance());
+        position = putLongLE(memory, position, getDestinationWalletNewBalance());
+        putLongLE(memory, position, getTs());
     }
 
-    public ByteBuf encodeV1(final ByteBufAllocator allocator) {
-        final var binarySize = binarySize();
-        final var buffer = allocator.buffer(Math.addExact(6, binarySize));
-
-        buffer.writeByte(0b00000001);
-        buffer.writeByte(0b00000000);
-        buffer.writeInt(binarySize);
+    @Override
+    public void serialize(final ByteBuf buffer) {
         buffer.writeInt(getLedger());
         buffer.writeLong(getSourceAccount());
         buffer.writeInt(getSourceWallet());
@@ -133,67 +145,46 @@ public final class Transaction {
         buffer.writeLong(getSourceWalletNewBalance());
         buffer.writeLong(getDestinationWalletNewBalance());
         buffer.writeLong(getTs());
-
-        return buffer;
     }
 
-    public static Transaction decode(final ByteBuf buf) {
+    @Override
+    public Transaction deserialize(final MemorySegment serialized, final AtomicLong position, final byte version,
+                                   final byte flags, final int dataLength) {
+
         return new Transaction(
-                buf.readInt(),
-                buf.readLong(),
-                buf.readInt(),
-                buf.readLong(),
-                buf.readInt(),
-                StringUtil.readNullTerminatedUTF8String(buf),
-                StringUtil.readNullTerminatedUTF8String(buf),
-                buf.readLong(),
-                buf.readLong(),
-                StringUtil.readNullTerminatedUTF8String(buf),
-                buf.readLong(),
-                buf.readLong(),
-                buf.readLong());
+                getIntLE(serialized, position),
+                getLongLE(serialized, position),
+                getIntLE(serialized, position),
+                getLongLE(serialized, position),
+                getIntLE(serialized, position),
+                getString(serialized, position),
+                getString(serialized, position),
+                getLongLE(serialized, position),
+                getLongLE(serialized, position),
+                getString(serialized, position),
+                getLongLE(serialized, position),
+                getLongLE(serialized, position),
+                getLongLE(serialized, position));
     }
 
-    public MemorySegment encodeV1(final Arena arena) {
-        final var binarySize = binarySize();
-        final var memory = arena.allocate(6 + binarySize);
+    @Override
+    public Transaction deserialize(final ByteBuf serialized, final byte version, final byte flags,
+                                   final int dataLength) {
 
-        var position = putByteLE(memory, 0, (byte) 0b00000001);
-        position = putByteLE(memory, position, (byte) 0b00000000);
-        position = putIntLE(memory, position, binarySize);
-        position = putIntLE(memory, position, getLedger());
-        position = putLongLE(memory, position, getSourceAccount());
-        position = putIntLE(memory, position, getSourceWallet());
-        position = putLongLE(memory, position, getDestinationAccount());
-        position = putIntLE(memory, position, getDestinationWallet());
-        position = putString(memory, position, getId());
-        position = putString(memory, position, getCurrency());
-        position = putLongLE(memory, position, getAmount());
-        position = putLongLE(memory, position, getMaxOverdraftAmount());
-        position = putString(memory, position, getMetadata());
-        position = putLongLE(memory, position, getSourceWalletNewBalance());
-        position = putLongLE(memory, position, getDestinationWalletNewBalance());
-        putLongLE(memory, position, getTs());
-
-        return memory;
-    }
-
-    public static Transaction decode(final MemorySegment memory) {
-        final var position = new AtomicLong(0);
         return new Transaction(
-                getIntLE(memory, position),
-                getLongLE(memory, position),
-                getIntLE(memory, position),
-                getLongLE(memory, position),
-                getIntLE(memory, position),
-                getString(memory, position),
-                getString(memory, position),
-                getLongLE(memory, position),
-                getLongLE(memory, position),
-                getString(memory, position),
-                getLongLE(memory, position),
-                getLongLE(memory, position),
-                getLongLE(memory, position));
+                serialized.readInt(),
+                serialized.readLong(),
+                serialized.readInt(),
+                serialized.readLong(),
+                serialized.readInt(),
+                readNullTerminatedUTF8String(serialized),
+                readNullTerminatedUTF8String(serialized),
+                serialized.readLong(),
+                serialized.readLong(),
+                readNullTerminatedUTF8String(serialized),
+                serialized.readLong(),
+                serialized.readLong(),
+                serialized.readLong());
     }
 
     public String validate(final long now) {

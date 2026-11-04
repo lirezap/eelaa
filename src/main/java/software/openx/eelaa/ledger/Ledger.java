@@ -114,7 +114,7 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
                     var transactionKey = lmdbManager.setCursorAt(cursor, recordNumber, arena);
                     while (transactionKey != NULL && ledgers.size() < size) {
                         final var storedTransaction = lmdbManager.get(txn, transactionsDbi, transactionKey, arena);
-                        ledgers.add(Transaction.decode(storedTransaction.asSlice(6)));
+                        ledgers.add(Transaction.DESERIALIZER.deserialize(storedTransaction));
                         transactionKey = lmdbManager.iterate(cursor, arena);
                     }
 

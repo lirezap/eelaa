@@ -114,12 +114,7 @@ public sealed class BatchHandler extends Handler permits AtomicBatchHandler {
         final var batch = new Transaction[count];
         var index = 0;
         while (getBuf().readableBytes() > 0) {
-            final var version = getBuf().readByte();
-            final var flags = getBuf().readByte();
-            final var length = getBuf().readInt();
-
-            batch[index++] = Transaction.decode(getBuf().slice(getBuf().readerIndex(), length));
-            getBuf().readerIndex(Math.addExact(getBuf().readerIndex(), length));
+            batch[index++] = Transaction.DESERIALIZER.deserialize(getBuf());
         }
 
         // Release incoming frame buffer.

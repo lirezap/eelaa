@@ -18,10 +18,8 @@ package software.openx.eelaa.ledger;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
 import org.junit.jupiter.api.Test;
-import software.openx.eelaa.protocol.MemorySegmentUtil;
 
 import java.lang.foreign.Arena;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -33,12 +31,9 @@ public class EncodingTest {
     @Test
     public void testTransaction1() {
         var transaction = new Transaction(1, 2, 3, 4, 5, String.format("%s:%s", System.currentTimeMillis(), 1), "IRR", 6, 7, "\"{\"a\":\"b\"}\"");
-        var encoded = transaction.encodeV1(ByteBufAllocator.DEFAULT);
-        assertEquals(0b00000001, encoded.readByte());
-        assertEquals(0b00000000, encoded.readByte());
-        assertEquals(transaction.frameBinarySize() - 6, encoded.readInt());
+        var encoded = transaction.serialize(ByteBufAllocator.DEFAULT);
+        var decoded = Transaction.DESERIALIZER.deserialize(encoded);
 
-        var decoded = Transaction.decode(encoded);
         assertEquals(transaction.getLedger(), decoded.getLedger());
         assertEquals(transaction.getSourceAccount(), decoded.getSourceAccount());
         assertEquals(transaction.getSourceWallet(), decoded.getSourceWallet());
@@ -58,12 +53,9 @@ public class EncodingTest {
     @Test
     public void testTransaction2() {
         var transaction = new Transaction(1, 2, 3, 4, 5, null, null, 6, 7, null);
-        var encoded = transaction.encodeV1(ByteBufAllocator.DEFAULT);
-        assertEquals(0b00000001, encoded.readByte());
-        assertEquals(0b00000000, encoded.readByte());
-        assertEquals(transaction.frameBinarySize() - 6, encoded.readInt());
+        var encoded = transaction.serialize(ByteBufAllocator.DEFAULT);
+        var decoded = Transaction.DESERIALIZER.deserialize(encoded);
 
-        var decoded = Transaction.decode(encoded);
         assertEquals(transaction.getLedger(), decoded.getLedger());
         assertEquals(transaction.getSourceAccount(), decoded.getSourceAccount());
         assertEquals(transaction.getSourceWallet(), decoded.getSourceWallet());
@@ -84,13 +76,9 @@ public class EncodingTest {
     public void testTransaction3() {
         var transaction = new Transaction(1, 2, 3, 4, 5, String.format("%s:%s", System.currentTimeMillis(), 1), "IRR", 6, 7, "\"{\"a\":\"b\"}\"");
         try (var arena = Arena.ofConfined()) {
-            var encoded = transaction.encodeV1(arena);
-            var position = new AtomicLong(0);
-            assertEquals(0b00000001, MemorySegmentUtil.getByteLE(encoded, position));
-            assertEquals(0b00000000, MemorySegmentUtil.getByteLE(encoded, position));
-            assertEquals(transaction.frameBinarySize() - 6, MemorySegmentUtil.getIntLE(encoded, position));
+            var encoded = transaction.serialize(arena);
+            var decoded = Transaction.DESERIALIZER.deserialize(encoded);
 
-            var decoded = Transaction.decode(encoded.asSlice(6));
             assertEquals(transaction.getLedger(), decoded.getLedger());
             assertEquals(transaction.getSourceAccount(), decoded.getSourceAccount());
             assertEquals(transaction.getSourceWallet(), decoded.getSourceWallet());
@@ -111,13 +99,9 @@ public class EncodingTest {
     public void testTransaction4() {
         var transaction = new Transaction(1, 2, 3, 4, 5, null, null, 6, 7, null);
         try (var arena = Arena.ofConfined()) {
-            var encoded = transaction.encodeV1(arena);
-            var position = new AtomicLong(0);
-            assertEquals(0b00000001, MemorySegmentUtil.getByteLE(encoded, position));
-            assertEquals(0b00000000, MemorySegmentUtil.getByteLE(encoded, position));
-            assertEquals(transaction.frameBinarySize() - 6, MemorySegmentUtil.getIntLE(encoded, position));
+            var encoded = transaction.serialize(arena);
+            var decoded = Transaction.DESERIALIZER.deserialize(encoded);
 
-            var decoded = Transaction.decode(encoded.asSlice(6));
             assertEquals(transaction.getLedger(), decoded.getLedger());
             assertEquals(transaction.getSourceAccount(), decoded.getSourceAccount());
             assertEquals(transaction.getSourceWallet(), decoded.getSourceWallet());
