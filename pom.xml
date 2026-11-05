@@ -14,7 +14,7 @@
 
     <groupId>software.openx</groupId>
     <artifactId>eelaa</artifactId>
-    <version>0.0.6</version>
+    <version>0.0.7</version>
 
     <properties>
         <!-- Java Version -->
