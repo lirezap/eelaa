@@ -16,17 +16,17 @@
 package software.openx.eelaa.ledger;
 
 import io.netty.buffer.ByteBuf;
-import software.openx.eelaa.protocol.StringUtil;
 import software.openx.eelaa.protocol.V1BinaryFrameDeserializable;
 import software.openx.eelaa.protocol.V1BinaryFrameSerializable;
+import software.openx.eelaa.util.StringUtil;
 
 import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static software.openx.eelaa.ledger.LedgerConfig.TRANSACTION_ID_REQUIRED_BACKOFF_MS;
-import static software.openx.eelaa.protocol.MemorySegmentUtil.*;
-import static software.openx.eelaa.protocol.StringUtil.readNullTerminatedUTF8String;
+import static software.openx.eelaa.util.ByteBufUtil.readNullTerminatedUTF8String;
+import static software.openx.eelaa.util.MemorySegmentUtil.*;
 
 /**
  * @author Alireza Pourtaghi

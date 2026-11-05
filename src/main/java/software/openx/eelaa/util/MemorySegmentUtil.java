@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package software.openx.eelaa.protocol;
+package software.openx.eelaa.util;
 
 import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicLong;

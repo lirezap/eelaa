@@ -21,7 +21,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.ReferenceCountUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.openx.eelaa.protocol.StringUtil;
+import software.openx.eelaa.util.StringUtil;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static software.openx.eelaa.net.FrameNumericType.ERROR;

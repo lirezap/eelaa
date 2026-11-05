@@ -19,7 +19,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import software.openx.eelaa.ledger.Ledger;
 import software.openx.eelaa.net.Handler;
-import software.openx.eelaa.protocol.StringUtil;
+import software.openx.eelaa.util.ByteBufUtil;
 
 import static software.openx.eelaa.net.FrameNumericType.FETCH_TRANSACTION;
 import static software.openx.eelaa.net.FrameNumericType.TRANSACTION;
@@ -52,7 +52,7 @@ public final class FetchTransactionHandler extends Handler {
     protected void handle() throws Exception {
         if (isValid()) {
             final var transaction =
-                    ledger.fetchTransaction(getBuf().readInt(), StringUtil.readNullTerminatedUTF8String(getBuf())).get();
+                    ledger.fetchTransaction(getBuf().readInt(), ByteBufUtil.readNullTerminatedUTF8String(getBuf())).get();
 
             releaseFrameBuffer();
 
