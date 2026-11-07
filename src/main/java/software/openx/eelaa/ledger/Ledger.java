@@ -16,6 +16,10 @@
 package software.openx.eelaa.ledger;
 
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import jdk.jfr.Category;
+import jdk.jfr.Event;
+import jdk.jfr.Label;
+import jdk.jfr.Name;
 import org.slf4j.Logger;
 import software.openx.eelaa.lmdb.LMDBManager;
 import software.openx.eelaa.lz4.LZ4;
@@ -66,31 +70,80 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
 
     public final CompletableFuture<Boolean> process(final Transaction... transactions) {
         return CompletableFuture.supplyAsync(() -> {
+            final var event = new ProcessBatchEvent();
+
+            event.begin();
             processor.process(transactions);
-            return persist(transactions) ? Boolean.TRUE : Boolean.FALSE;
+            final var persisted = persist(transactions);
+            event.end();
+
+            event.batchSize = transactions.length;
+            event.persisted = persisted;
+            event.commit();
+            return persisted ? Boolean.TRUE : Boolean.FALSE;
         }, executor);
     }
 
     public final CompletableFuture<Boolean> processAtomically(final Transaction... transactions) {
         return CompletableFuture.supplyAsync(() -> {
-            if (processor.processAtomically(transactions)) {
-                return persist(transactions) ? Boolean.TRUE : Boolean.FALSE;
-            }
+            final var event = new ProcessBatchAtomicallyEvent();
 
+            event.begin();
+            if (processor.processAtomically(transactions)) {
+                final var persisted = persist(transactions);
+                event.end();
+
+                event.batchSize = transactions.length;
+                event.persisted = persisted;
+                event.commit();
+                return persisted ? Boolean.TRUE : Boolean.FALSE;
+            }
+            event.end();
+
+            event.batchSize = transactions.length;
+            event.persisted = false;
+            event.commit();
             return Boolean.TRUE;
         }, executor);
     }
 
     public final CompletableFuture<ObjectOpenHashSet<Wallet>> fetchAccount(final int ledger, final long account) {
-        return CompletableFuture.supplyAsync(() -> processor.fetchAccount(ledger, account), executor);
+        return CompletableFuture.supplyAsync(() -> {
+            final var event = new FetchAccountEvent();
+
+            event.begin();
+            final var fetchAccount = processor.fetchAccount(ledger, account);
+            event.end();
+
+            event.commit();
+            return fetchAccount;
+        }, executor);
     }
 
     public final CompletableFuture<Wallet> fetchWallet(final int ledger, final long account, final int wallet) {
-        return CompletableFuture.supplyAsync(() -> processor.fetchWallet(ledger, account, wallet), executor);
+        return CompletableFuture.supplyAsync(() -> {
+            final var event = new FetchWalletEvent();
+
+            event.begin();
+            final var fetchedWallet = processor.fetchWallet(ledger, account, wallet);
+            event.end();
+
+            event.commit();
+            return fetchedWallet;
+        }, executor);
     }
 
     public CompletableFuture<Transaction> fetchTransaction(final int ledger, final String id) {
-        return CompletableFuture.supplyAsync(() -> processor.fetchTransaction(ledger, id), executor);
+        return CompletableFuture.supplyAsync(() -> {
+            final var event = new FetchTransactionEvent();
+
+            event.begin();
+            final var fetchedTransaction = processor.fetchTransaction(ledger, id);
+            event.end();
+
+            event.commit();
+            return fetchedTransaction;
+        }, executor);
     }
 
     public abstract ArrayList<Transaction> fetchRecordsStatement(final long fromRecord, final int size);
@@ -180,5 +233,45 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
             // Safe to ignore runnable list!
             executor.shutdownNow();
         }
+    }
+
+    @Name("software.openx.eelaa.ledger.ProcessBatchEvent")
+    @Label("Ledger.process")
+    @Category({"Performance", "Storage"})
+    private static class ProcessBatchEvent extends Event {
+        @Label("Batch Size")
+        public int batchSize;
+
+        @Label("Persistence Result")
+        public boolean persisted;
+    }
+
+    @Name("software.openx.eelaa.ledger.ProcessBatchAtomicallyEvent")
+    @Label("Ledger.processAtomically")
+    @Category({"Performance", "Storage"})
+    private static class ProcessBatchAtomicallyEvent extends Event {
+        @Label("Batch Size")
+        public int batchSize;
+
+        @Label("Persistence Result")
+        public boolean persisted;
+    }
+
+    @Name("software.openx.eelaa.ledger.FetchAccountEvent")
+    @Label("Ledger.fetchAccount")
+    @Category({"Performance", "Memory"})
+    private static class FetchAccountEvent extends Event {
+    }
+
+    @Name("software.openx.eelaa.ledger.FetchWalletEvent")
+    @Label("Ledger.fetchWallet")
+    @Category({"Performance", "Memory"})
+    private static class FetchWalletEvent extends Event {
+    }
+
+    @Name("software.openx.eelaa.ledger.FetchTransactionEvent")
+    @Label("Ledger.fetchTransaction")
+    @Category({"Performance", "Memory"})
+    private static class FetchTransactionEvent extends Event {
     }
 }
