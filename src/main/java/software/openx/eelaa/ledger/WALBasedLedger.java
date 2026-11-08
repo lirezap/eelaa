@@ -15,6 +15,10 @@
  */
 package software.openx.eelaa.ledger;
 
+import jdk.jfr.Category;
+import jdk.jfr.Event;
+import jdk.jfr.Label;
+import jdk.jfr.Name;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.openx.eelaa.lz4.LZ4;
@@ -82,6 +86,9 @@ final class WALBasedLedger extends Ledger {
     public CompletableFuture<Transaction> fetchTransaction(final int ledger, final String id) {
         return super.fetchTransaction(ledger, id).thenApplyAsync(fetchedTransaction -> {
             if (fetchedTransaction == null) {
+                final var event = new FetchWALBasedTransaction();
+
+                event.begin();
                 try (final var arena = Arena.ofConfined()) {
                     final var lmdbManager = glFileSynchronizer.getLmdbManager();
                     final var transactionsDbi = glFileSynchronizer.getTransactionsDbi();
@@ -90,9 +97,15 @@ final class WALBasedLedger extends Ledger {
                             lmdbManager.get(transactionsDbi, arena.allocateFrom(ledger + ":" + id), arena);
 
                     if (storedTransaction != NULL) {
-                        return Transaction.DESERIALIZER.deserialize(storedTransaction);
+                        final var transaction = Transaction.DESERIALIZER.deserialize(storedTransaction);
+                        event.end();
+
+                        event.found = true;
+                        event.commit();
+                        return transaction;
                     }
                 }
+                event.commit();
             }
 
             return fetchedTransaction;
@@ -101,11 +114,17 @@ final class WALBasedLedger extends Ledger {
 
     @Override
     public ArrayList<Transaction> fetchRecordsStatement(final long fromRecord, final int size) {
-        return super.fetchRecordsStatement(
+        final var event = new FetchWALBasedRecordsStatement();
+
+        event.begin();
+        final var recordsStatement = super.fetchRecordsStatement(
                 glFileSynchronizer.getLmdbManager(),
                 glFileSynchronizer.getTransactionsDbi(),
                 glFileSynchronizer.getLedgersDbi(),
                 fromRecord, size);
+        event.end();
+
+        return recordsStatement;
     }
 
     @Override
@@ -173,5 +192,18 @@ final class WALBasedLedger extends Ledger {
         glFileSynchronizer.close();
         transactionsFile.close();
         super.close();
+    }
+
+    @Name("software.openx.FetchWALBasedTransaction")
+    @Label("Fetch Transaction Method")
+    @Category({"Eelaa", "WALBasedLedger", "Performance", "Storage"})
+    private static class FetchWALBasedTransaction extends Event {
+        public boolean found;
+    }
+
+    @Name("software.openx.FetchWALBasedRecordsStatement")
+    @Label("Records Statement Method")
+    @Category({"Eelaa", "WALBasedLedger", "Performance", "Storage"})
+    private static class FetchWALBasedRecordsStatement extends Event {
     }
 }

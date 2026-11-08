@@ -15,6 +15,10 @@
  */
 package software.openx.eelaa.ledger;
 
+import jdk.jfr.Category;
+import jdk.jfr.Event;
+import jdk.jfr.Label;
+import jdk.jfr.Name;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.openx.eelaa.lmdb.LMDBManager;
@@ -87,14 +91,23 @@ final class LMDBBasedLedger extends Ledger {
     public CompletableFuture<Transaction> fetchTransaction(final int ledger, final String id) {
         return super.fetchTransaction(ledger, id).thenApplyAsync(fetchedTransaction -> {
             if (fetchedTransaction == null) {
+                final var event = new FetchLMDBBasedTransaction();
+
+                event.begin();
                 try (final var arena = Arena.ofConfined()) {
                     final var storedTransaction =
                             lmdbManager.get(transactionsDbi, arena.allocateFrom(ledger + ":" + id), arena);
 
                     if (storedTransaction != NULL) {
-                        return Transaction.DESERIALIZER.deserialize(storedTransaction);
+                        final var transaction = Transaction.DESERIALIZER.deserialize(storedTransaction);
+                        event.end();
+
+                        event.found = true;
+                        event.commit();
+                        return transaction;
                     }
                 }
+                event.commit();
             }
 
             return fetchedTransaction;
@@ -103,11 +116,17 @@ final class LMDBBasedLedger extends Ledger {
 
     @Override
     public ArrayList<Transaction> fetchRecordsStatement(final long fromRecord, final int size) {
-        return super.fetchRecordsStatement(
+        final var event = new FetchLMDBBasedRecordsStatement();
+
+        event.begin();
+        final var recordsStatement = super.fetchRecordsStatement(
                 lmdbManager,
                 transactionsDbi,
                 ledgersDbi,
                 fromRecord, size);
+        event.commit();
+
+        return recordsStatement;
     }
 
     @Override
@@ -182,5 +201,18 @@ final class LMDBBasedLedger extends Ledger {
         }).get();
 
         super.close();
+    }
+
+    @Name("software.openx.FetchLMDBBasedTransaction")
+    @Label("Fetch Transaction Method")
+    @Category({"Eelaa", "LMDBBasedLedger", "Performance", "Storage"})
+    private static class FetchLMDBBasedTransaction extends Event {
+        public boolean found;
+    }
+
+    @Name("software.openx.FetchLMDBBasedRecordsStatement")
+    @Label("Records Statement Method")
+    @Category({"Eelaa", "LMDBBasedLedger", "Performance", "Storage"})
+    private static class FetchLMDBBasedRecordsStatement extends Event {
     }
 }
