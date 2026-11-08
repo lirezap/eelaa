@@ -235,9 +235,9 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
         }
     }
 
-    @Name("software.openx.eelaa.ledger.ProcessBatchEvent")
-    @Label("Ledger.process")
-    @Category({"Performance", "Storage"})
+    @Name("software.openx.ProcessBatch")
+    @Label("Process Method")
+    @Category({"Eelaa", "Ledger", "Performance", "Storage"})
     private static class ProcessBatchEvent extends Event {
         @Label("Batch Size")
         public int batchSize;
@@ -246,9 +246,9 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
         public boolean persisted;
     }
 
-    @Name("software.openx.eelaa.ledger.ProcessBatchAtomicallyEvent")
-    @Label("Ledger.processAtomically")
-    @Category({"Performance", "Storage"})
+    @Name("software.openx.ProcessBatchAtomically")
+    @Label("Process Atomically Method")
+    @Category({"Eelaa", "Ledger", "Performance", "Storage"})
     private static class ProcessBatchAtomicallyEvent extends Event {
         @Label("Batch Size")
         public int batchSize;
@@ -257,21 +257,21 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
         public boolean persisted;
     }
 
-    @Name("software.openx.eelaa.ledger.FetchAccountEvent")
-    @Label("Ledger.fetchAccount")
-    @Category({"Performance", "Memory"})
+    @Name("software.openx.FetchAccount")
+    @Label("Fetch Account Method")
+    @Category({"Eelaa", "Ledger", "Performance", "Memory"})
     private static class FetchAccountEvent extends Event {
     }
 
-    @Name("software.openx.eelaa.ledger.FetchWalletEvent")
-    @Label("Ledger.fetchWallet")
-    @Category({"Performance", "Memory"})
+    @Name("software.openx.FetchWallet")
+    @Label("Fetch Wallet Method")
+    @Category({"Eelaa", "Ledger", "Performance", "Memory"})
     private static class FetchWalletEvent extends Event {
     }
 
-    @Name("software.openx.eelaa.ledger.FetchTransactionEvent")
-    @Label("Ledger.fetchTransaction")
-    @Category({"Performance", "Memory"})
+    @Name("software.openx.FetchTransaction")
+    @Label("Fetch Transaction Method")
+    @Category({"Eelaa", "Ledger", "Performance", "Memory"})
     private static class FetchTransactionEvent extends Event {
     }
 }
