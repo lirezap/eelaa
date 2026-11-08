@@ -113,9 +113,8 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
 
             event.begin();
             final var fetchAccount = processor.fetchAccount(ledger, account);
-            event.end();
-
             event.commit();
+
             return fetchAccount;
         }, executor);
     }
@@ -126,9 +125,8 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
 
             event.begin();
             final var fetchedWallet = processor.fetchWallet(ledger, account, wallet);
-            event.end();
-
             event.commit();
+
             return fetchedWallet;
         }, executor);
     }
@@ -139,9 +137,8 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
 
             event.begin();
             final var fetchedTransaction = processor.fetchTransaction(ledger, id);
-            event.end();
-
             event.commit();
+
             return fetchedTransaction;
         }, executor);
     }
