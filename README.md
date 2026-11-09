@@ -17,6 +17,7 @@ second. It can be used as a GL module of a core banking platform or as wallet in
 - Idempotent services
 - Replay attack protection
 - TLS v1.3
+- JFR enabled to record and view metrics
 
 **Engineered around the best practices of designing high performance systems, like:**
 
