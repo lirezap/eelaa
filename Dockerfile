@@ -16,4 +16,4 @@ USER app
 EXPOSE 7178
 
 ENTRYPOINT ["java"]
-CMD ["-XX:+ExitOnOutOfMemoryError", "-Xms512m", "-Xmx8g", "-jar","eelaa.jar"]
+CMD ["-XX:+ExitOnOutOfMemoryError", "-Xms512m", "-Xmx8g", "-XX:StartFlightRecording:dumponexit=true,maxage=10d,maxsize=10GB,name=eelaa", "-jar","eelaa.jar"]
