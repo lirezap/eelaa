@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.6</version>
+        <version>4.1.2</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
@@ -25,12 +25,12 @@
 
         <!-- Dependencies Versioning -->
         <lightbend.config.version>1.4.3</lightbend.config.version>
-        <netty.version>4.2.15.Final</netty.version>
-        <netty.tcnative.boringssl.static.version>2.0.77.Final</netty.tcnative.boringssl.static.version>
-        <agrona.version>2.4.1</agrona.version>
-        <fastutil.version>8.5.18</fastutil.version>
-        <caffeine.version>3.2.4</caffeine.version>
-        <jackson.databind.version>3.2.0</jackson.databind.version>
+        <netty.version>4.2.20.Final</netty.version>
+        <netty.tcnative.boringssl.static.version>2.0.85.Final</netty.tcnative.boringssl.static.version>
+        <agrona.version>2.7.1</agrona.version>
+        <fastutil.version>8.5.19</fastutil.version>
+        <caffeine.version>3.3.1</caffeine.version>
+        <jackson.databind.version>3.2.4</jackson.databind.version>
         <jackson.annotations.version>2.22</jackson.annotations.version>
     </properties>
 
