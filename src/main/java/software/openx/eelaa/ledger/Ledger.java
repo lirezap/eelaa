@@ -16,10 +16,7 @@
 package software.openx.eelaa.ledger;
 
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import jdk.jfr.Category;
-import jdk.jfr.Event;
-import jdk.jfr.Label;
-import jdk.jfr.Name;
+import jdk.jfr.*;
 import org.slf4j.Logger;
 import software.openx.eelaa.lmdb.LMDBManager;
 import software.openx.eelaa.lz4.LZ4;
@@ -77,9 +74,12 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
             final var persisted = persist(transactions);
             event.end();
 
-            event.batchSize = transactions.length;
-            event.persisted = persisted;
-            event.commit();
+            if (event.shouldCommit()) {
+                event.batchSize = transactions.length;
+                event.persisted = persisted;
+                event.commit();
+            }
+
             return persisted ? Boolean.TRUE : Boolean.FALSE;
         }, executor);
     }
@@ -93,16 +93,22 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
                 final var persisted = persist(transactions);
                 event.end();
 
-                event.batchSize = transactions.length;
-                event.persisted = persisted;
-                event.commit();
+                if (event.shouldCommit()) {
+                    event.batchSize = transactions.length;
+                    event.persisted = persisted;
+                    event.commit();
+                }
+
                 return persisted ? Boolean.TRUE : Boolean.FALSE;
             }
             event.end();
 
-            event.batchSize = transactions.length;
-            event.persisted = false;
-            event.commit();
+            if (event.shouldCommit()) {
+                event.batchSize = transactions.length;
+                event.persisted = false;
+                event.commit();
+            }
+
             return Boolean.TRUE;
         }, executor);
     }
@@ -235,6 +241,8 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
     @Name("software.openx.ProcessBatch")
     @Label("Process Method")
     @Category({"Eelaa", "Ledger", "Performance", "Storage"})
+    @Threshold("10 ms")
+    @StackTrace(false)
     private static class ProcessBatchEvent extends Event {
         @Label("Batch Size")
         public int batchSize;
@@ -246,6 +254,8 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
     @Name("software.openx.ProcessBatchAtomically")
     @Label("Process Atomically Method")
     @Category({"Eelaa", "Ledger", "Performance", "Storage"})
+    @Threshold("10 ms")
+    @StackTrace(false)
     private static class ProcessBatchAtomicallyEvent extends Event {
         @Label("Batch Size")
         public int batchSize;
@@ -257,18 +267,24 @@ public sealed abstract class Ledger implements AutoCloseable permits LMDBBasedLe
     @Name("software.openx.FetchAccount")
     @Label("Fetch Account Method")
     @Category({"Eelaa", "Ledger", "Performance", "Memory"})
+    @Threshold("1 ms")
+    @StackTrace(false)
     private static class FetchAccountEvent extends Event {
     }
 
     @Name("software.openx.FetchWallet")
     @Label("Fetch Wallet Method")
     @Category({"Eelaa", "Ledger", "Performance", "Memory"})
+    @Threshold("1 ms")
+    @StackTrace(false)
     private static class FetchWalletEvent extends Event {
     }
 
     @Name("software.openx.FetchTransaction")
     @Label("Fetch Transaction Method")
     @Category({"Eelaa", "Ledger", "Performance", "Memory"})
+    @Threshold("1 ms")
+    @StackTrace(false)
     private static class FetchTransactionEvent extends Event {
     }
 }

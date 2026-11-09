@@ -15,10 +15,7 @@
  */
 package software.openx.eelaa.ledger;
 
-import jdk.jfr.Category;
-import jdk.jfr.Event;
-import jdk.jfr.Label;
-import jdk.jfr.Name;
+import jdk.jfr.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.openx.eelaa.lz4.LZ4;
@@ -197,6 +194,8 @@ final class WALBasedLedger extends Ledger {
     @Name("software.openx.FetchWALBasedTransaction")
     @Label("Fetch Transaction Method")
     @Category({"Eelaa", "WALBasedLedger", "Performance", "Storage"})
+    @Threshold("5 ms")
+    @StackTrace(false)
     private static class FetchWALBasedTransaction extends Event {
         public boolean found;
     }
@@ -204,6 +203,8 @@ final class WALBasedLedger extends Ledger {
     @Name("software.openx.FetchWALBasedRecordsStatement")
     @Label("Records Statement Method")
     @Category({"Eelaa", "WALBasedLedger", "Performance", "Storage"})
+    @Threshold("5 ms")
+    @StackTrace(false)
     private static class FetchWALBasedRecordsStatement extends Event {
     }
 }

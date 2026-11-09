@@ -15,10 +15,7 @@
  */
 package software.openx.eelaa.ledger;
 
-import jdk.jfr.Category;
-import jdk.jfr.Event;
-import jdk.jfr.Label;
-import jdk.jfr.Name;
+import jdk.jfr.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.openx.eelaa.lmdb.LMDBManager;
@@ -206,6 +203,8 @@ final class LMDBBasedLedger extends Ledger {
     @Name("software.openx.FetchLMDBBasedTransaction")
     @Label("Fetch Transaction Method")
     @Category({"Eelaa", "LMDBBasedLedger", "Performance", "Storage"})
+    @Threshold("5 ms")
+    @StackTrace(false)
     private static class FetchLMDBBasedTransaction extends Event {
         public boolean found;
     }
@@ -213,6 +212,8 @@ final class LMDBBasedLedger extends Ledger {
     @Name("software.openx.FetchLMDBBasedRecordsStatement")
     @Label("Records Statement Method")
     @Category({"Eelaa", "LMDBBasedLedger", "Performance", "Storage"})
+    @Threshold("5 ms")
+    @StackTrace(false)
     private static class FetchLMDBBasedRecordsStatement extends Event {
     }
 }
